@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Laravel\Sanctum\PersonalAccessToken;
 
 it('uses a lowercase ULID as the primary key', function () {
@@ -27,3 +28,29 @@ it('can be issued an API token that resolves back to the user', function () {
 
     expect(PersonalAccessToken::findToken($token->plainTextToken)->tokenable_id)->toBe($user->id);
 });
+
+it('allows admin panel access only to the configured admin email', function (string $email, bool $expected) {
+    config(['admin.email' => 'admin@contoh.test']);
+    $user = User::factory()->make(['email' => $email]);
+
+    $canAccess = $user->canAccessPanel(Filament::getPanel('admin'));
+
+    expect($canAccess)->toBe($expected);
+})->with([
+    'the admin email' => ['admin@contoh.test', true],
+    'the admin email in another letter case' => ['Admin@Contoh.Test', true],
+    'another email' => ['orang-lain@contoh.test', false],
+    'an email that only starts with the admin email' => ['admin@contoh.test.example', false],
+]);
+
+it('denies admin panel access to everyone while no admin email is configured', function (?string $configuredEmail) {
+    config(['admin.email' => $configuredEmail]);
+    $user = User::factory()->make();
+
+    $canAccess = $user->canAccessPanel(Filament::getPanel('admin'));
+
+    expect($canAccess)->toBeFalse();
+})->with([
+    'not set' => [null],
+    'an empty value' => [''],
+]);
