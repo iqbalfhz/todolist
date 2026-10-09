@@ -1,6 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 /*
@@ -15,7 +18,12 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
- // ->use(RefreshDatabase::class)
+    ->use(LazilyRefreshDatabase::class)
+    ->beforeEach(function () {
+        Http::preventStrayRequests();
+        Sleep::fake(syncWithCarbon: true);
+        Exceptions::fake();
+    })
     ->in('Feature');
 
 /*
