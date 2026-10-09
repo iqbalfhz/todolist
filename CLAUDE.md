@@ -10,14 +10,14 @@ Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditu
 
 ## Kondisi repo (per 9 Oktober 2026)
 
-Fondasi sudah terpasang, tetapi belum ada fitur aplikasi. Bagian-bagian di bawah tetap menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada.
+Fondasi sudah terpasang, tetapi belum ada fitur aplikasi. Bagian-bagian di bawah tetap menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
-Sudah ada: MySQL untuk lokal dan tes (`todolist` dan `todolist_testing`, sesi MySQL dikunci ke UTC), ULID dan timestamp mikrodetik di tabel bawaan, Sanctum, panel Filament di `/admin` yang dibatasi `ADMIN_EMAIL`, disk `r2`, paket FCM, Intervention Image 4, Scramble, terjemahan `lang/id`, dan prefix `/api/v1`.
+Sudah ada: MySQL untuk lokal dan tes (`todolist` dan `todolist_testing`, sesi MySQL dikunci ke UTC), ULID dan timestamp mikrodetik di tabel bawaan, Sanctum, panel Filament di `/admin` yang dibatasi `ADMIN_EMAIL`, resource Filament "Pengguna" dengan aksi "Reset kata sandi", `AdminUserSeeder`, disk `r2`, paket FCM, Intervention Image 4, Scramble, terjemahan `lang/id`, dan prefix `/api/v1`.
 
 Belum ada:
 
 - `docs/kontrak-api.md`. Sebelum mengerjakan apa pun yang wajib merujuk kontrak, minta pemilik menyalinnya ke repo dulu.
-- Model selain `User`, endpoint, penanganan error terpusat, resource Filament, `config/currencies.php`, dan `DemoSeeder`. `GET /api/v1/user` masih route contoh bawaan `install:api`, bukan endpoint kontrak.
+- Model selain `User`, endpoint, penanganan error terpusat, resource Filament selain "Pengguna", `config/currencies.php`, dan `DemoSeeder`. `GET /api/v1/user` masih route contoh bawaan `install:api`, bukan endpoint kontrak.
 - Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan.
 - ULID untuk `personal_access_tokens.id`: masih bigint bawaan Sanctum, hanya `tokenable_id` yang ULID. Tunggu keputusan pemilik sebelum mengubahnya.
 
@@ -148,6 +148,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 ## Data lokal
 
 - `DemoSeeder` (hanya lokal): dua akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), satu Ruang Bersama, beberapa daftar, tugas, target, dan setoran. Buat ruangnya lewat Action yang sama dengan endpoint terima undangan.
+- `AdminUserSeeder` (hanya lokal, dipanggil juga oleh `DatabaseSeeder`): membuat user dengan email `ADMIN_EMAIL` dan kata sandi `password`, atau mengatur ulang kata sandinya kalau user itu sudah ada. Seeder ini menolak jalan di luar lingkungan `local` dan `testing`; di server, admin dibuat dengan `php artisan make:filament-user`.
 
 ## Tes
 

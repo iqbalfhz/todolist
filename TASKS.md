@@ -5,7 +5,6 @@
 ## Waiting On
 
 - [ ] **Kontrak API (`docs/kontrak-api.md`)** - dari pemilik, since 2026-10-09; semua butir di Backlog v0.1 menunggu file ini
-- [ ] **Email admin yang benar** - dari pemilik, since 2026-10-09; `iqbal@it@tangcity.com` punya dua tanda `@` sehingga tidak bisa dipakai masuk
 - [ ] **Keputusan: `personal_access_tokens.id` ikut ULID atau tetap bigint** - dari pemilik, since 2026-10-09
 - [ ] **Konfirmasi: migrasi bawaan belum pernah jalan di server** - dari pemilik, since 2026-10-09; migrasinya diedit langsung
 - [ ] **Merge `feat/fondasi-proyek` ke `main`** - oleh pemilik, setelah `php artisan test --compact` hijau
@@ -48,3 +47,4 @@
 - [x] ~~Route API di bawah prefix `/api/v1`~~ (2026-10-09)
 - [x] ~~Seeder user admin (`AdminUserSeeder`): email dari `ADMIN_EMAIL`, kata sandi `password`, hanya lokal~~ (2026-10-09)
 - [x] ~~Resource Filament "Pengguna": daftar dan lihat, plus aksi "Reset kata sandi" yang mencabut semua token~~ (2026-10-09)
+- [x] ~~User admin lokal `iqbal.it@tangcity.com` dibuat lewat `AdminUserSeeder`~~ (2026-10-09)
