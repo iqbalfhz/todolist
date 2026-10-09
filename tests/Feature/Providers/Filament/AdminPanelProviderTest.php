@@ -25,3 +25,14 @@ it('shows the dashboard to the admin', function () {
 
     $response->assertOk();
 });
+
+it('stores the admin session in the database with the user id', function () {
+    config(['session.driver' => 'database']);
+    $admin = User::factory()->create();
+    config(['admin.email' => $admin->email]);
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $this->assertDatabaseHas('sessions', ['user_id' => $admin->id]);
+});
