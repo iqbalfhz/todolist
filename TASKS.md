@@ -2,7 +2,6 @@
 
 ## Active
 
-- [ ] **Seeder user admin** - `AdminUserSeeder`: email dari `ADMIN_EMAIL`, kata sandi `password`, hanya untuk lokal
 - [ ] **Resource Filament "Pengguna"** - lihat saja, plus aksi "Reset kata sandi" yang mencabut semua token
 
 ## Waiting On
@@ -49,3 +48,4 @@
 - [x] ~~Pasang Scramble di `/docs/api`~~ (2026-10-09)
 - [x] ~~Pasang `laravel-lang` dan terjemahan `lang/id`~~ (2026-10-09)
 - [x] ~~Route API di bawah prefix `/api/v1`~~ (2026-10-09)
+- [x] ~~Seeder user admin (`AdminUserSeeder`): email dari `ADMIN_EMAIL`, kata sandi `password`, hanya lokal~~ (2026-10-09)
