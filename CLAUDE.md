@@ -1,3 +1,171 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+API untuk aplikasi to-do berdua (tugas, tabungan, liburan, kenangan). Klien satu-satunya adalah app Flutter di repo mobile. Pengguna awal: dua orang, pemilik repo dan pasangannya; rilis publik menyusul.
+
+**Sumber kebenaran: `docs/kontrak-api.md`.** Baca file itu sebelum membuat atau mengubah endpoint, validasi, resource, error, sync, undangan, atau notifikasi. Kalau kode dan kontrak berbeda, ikuti kontrak lalu tanyakan. Kontrak itu salinan dari dokumen perencanaan di claude.ai; perubahan kontrak dilakukan di dokumen dulu, baru salinannya diperbarui.
+
+Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditulis ulang oleh `php artisan boost:update` (jalan otomatis setelah `composer update`), jadi jangan diedit; aturan proyek ditulis di luar blok itu, dan tag pembuka blok jangan pernah ditulis ulang di bagian proyek. Kalau keduanya bertentangan, aturan proyek yang berlaku. Contoh: deploy proyek ini lewat Coolify, bukan Laravel Cloud.
+
+## Kondisi repo (per 9 Oktober 2026)
+
+Repo ini masih skeleton Laravel 13 + Pest + Laravel Boost, ditambah Sanctum dan Filament 5 yang baru dipasang; belum ada kode aplikasi. Bagian-bagian di bawah menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada. Yang belum sesuai dengan target:
+
+- `docs/kontrak-api.md` belum ada. Sebelum mengerjakan apa pun yang wajib merujuk kontrak, minta pemilik menyalinnya ke repo dulu.
+- Belum terpasang: `kreait/laravel-firebase`, `league/flysystem-aws-s3-v3`, Intervention Image, Scramble, `laravel-lang`.
+- Filament 5 baru terpasang sebagai paket: panelnya belum dibuat (`php artisan filament:install --panels`) dan `User::canAccessPanel()` belum ada.
+- Database masih SQLite: `.env.example` (`DB_CONNECTION=sqlite`, juga `APP_LOCALE=en`) dan `phpunit.xml` (`:memory:`).
+- Migrasi bawaan masih memakai `$table->id()`, `foreignId('user_id')`, dan `timestamps()` tanpa presisi mikrodetik; migrasi token Sanctum juga masih `morphs('tokenable')`, belum `ulidMorphs()`.
+- `config/app.php` menulis `'timezone' => 'UTC'` langsung, jadi `APP_TIMEZONE` di `.env` tidak dibaca.
+
+Perbarui atau hapus butir di atas begitu selesai dikerjakan.
+
+## Cakupan v0.1 (yang sedang dibangun)
+
+- Akun dan profil (termasuk foto profil), perangkat (token FCM)
+- Ruang Pribadi, Ruang Bersama, kode undangan
+- Daftar tugas, tugas, penanggung jawab, pengingat
+- Tabungan: target dan setoran
+- Sync (`GET /sync`) dan push notification
+- Panel admin Filament
+
+**Belum dibangun, jangan dibuat dulu:** perjalanan dan checklist persiapan (v0.2), tanggal penting (v0.2), kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
+
+**Belum final:** bagian "Perubahan dari rancangan awal" dan "Masih terbuka" di akhir kontrak belum semuanya disetujui pemilik. Kalau ada yang ditolak, kontrak dan file ini diperbarui.
+
+## Stack
+
+- PHP 8.3+, Laravel 13 tanpa starter kit, MySQL 8.4 LTS
+- Sanctum personal access token (dari `php artisan install:api`), satu token per HP
+- Filament 5 di `/admin`
+- Pest untuk tes, Laravel Pint untuk format
+- Queue driver `database`, scheduler setiap menit
+- Push: FCM HTTP v1 lewat `kreait/laravel-firebase`
+- File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan
+- Intervention Image untuk mengolah foto
+- Scramble untuk dokumentasi API di `/docs/api`
+- Deploy: Coolify, otomatis saat merge ke `main`; tiga proses dari image yang sama: web, `php artisan queue:work`, `php artisan schedule:work`
+
+## Perintah
+
+- `composer run setup` — sekali di awal: pasang dependensi, buat `.env`, generate key, migrate, build aset
+- `composer run dev` — server lokal, queue listener, dan Vite sekaligus
+- `php artisan serve --host=0.0.0.0` — kalau HP perlu mengakses lewat Wi-Fi yang sama
+- `php artisan test` — semua tes (Pest)
+- `php artisan test --compact tests/Feature/NamaTest.php` atau `php artisan test --compact --filter="nama tes"` — satu file atau satu tes
+- `./vendor/bin/pint` — format kode, jalankan sebelum commit
+- `php artisan migrate:fresh --seed` — reset database lokal (jangan pernah di staging/produksi)
+
+## Konfigurasi (`.env`)
+
+- `APP_TIMEZONE=UTC`, `APP_LOCALE=id`, `DB_CONNECTION=mysql`, `QUEUE_CONNECTION=database`
+- `ADMIN_EMAIL` — satu-satunya email yang boleh masuk `/admin`
+- `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore)
+- `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` — disk `r2`, region `auto`, bucket privat
+- Setiap variabel baru ditambahkan juga ke `.env.example` dengan nilai kosong atau contoh.
+
+## Struktur
+
+- Route: `routes/api.php`, semua di bawah prefix `v1` (jadi `/api/v1/...`)
+- Controller: `app/Http/Controllers/Api/V1/`
+- Validasi: Form Request di `app/Http/Requests/`
+- Output: API Resource di `app/Http/Resources/`
+- Akses: Policy per model di `app/Policies/` (cek keanggotaan ruang)
+- Logika bersama (sync, undangan, pengingat, total tabungan): `app/Actions/`
+- Job antrean (push, olah foto): `app/Jobs/`
+- Admin: `app/Filament/`
+- Model daftar tugas bernama `TaskList`, bukan `List` (kata kunci PHP)
+
+## Aturan wajib
+
+### ID dan waktu
+
+- Semua primary key ULID huruf kecil: trait `HasUlids`, `$table->ulid('id')->primary()`, relasi `foreignUlid()`.
+- Migrasi bawaan yang merujuk user ikut ULID: tabel token Sanctum dan `notifications` memakai `ulidMorphs()`, `sessions.user_id` juga ULID.
+- ULID huruf besar dari request ditolak 422 (jangan diam-diam diubah ke huruf kecil).
+- Semua tabel: `$table->timestamps(6)`; tabel konten juga `$table->softDeletes(precision: 6)`. Model memakai `protected $dateFormat = 'Y-m-d H:i:s.u';` (taruh di base model atau trait bersama).
+- Resource memformat tanggal `Y-m-d` dan jam `H:i` secara eksplisit; waktu lengkap memakai format bawaan Laravel (ISO 8601 dengan mikrodetik, akhiran `Z`).
+- Waktu dari HP wajib membawa `Z` atau offset; tanpa itu 422.
+- `created_at`, `updated_at`, `deleted_at` hanya diisi server.
+
+### Uang
+
+- Simpan sebagai `BIGINT` dalam satuan terkecil, plus `currency` (kode ISO 4217). Jangan pernah float atau decimal untuk uang.
+- Desimal per mata uang: IDR 0, JPY 0, USD/SGD/MYR/EUR 2. Simpan sebagai konstanta di `config/currencies.php`, jangan ambil dari `NumberFormatter`.
+- Nominal lebih dari 0, paling besar 10^15. `currency` target hanya bisa diisi saat dibuat.
+
+### Menulis data
+
+- `PUT /<sumber>/{id}` membuat data dengan ID dari HP → 201. Kalau ID sudah ada di ruang yang sama: 200 dengan data tersimpan, tanpa mengubah apa pun. Kalau sudah terhapus: 410 `resource_deleted`. Kalau ID dipakai di ruang lain: 409 `id_conflict`.
+- `PATCH` hanya mengubah kolom yang dikirim; kolom hanya-baca dan tak dikenal diabaikan. Mengosongkan `due_date` ikut mengosongkan `due_time`.
+- `DELETE` = soft delete, 204, aman diulang.
+- Penghapusan berantai (daftar ke tugas, target ke setoran) harus ikut memperbarui `updated_at` anak-anaknya. Pakai query Eloquent, jangan `DB::table()->update()`.
+- Mengubah `assignee_ids` wajib `touch()` tugasnya (pivot tidak punya kursor sendiri).
+- Tulis ke daftar/target yang terhapus: 409 `parent_deleted`; ke daftar yang diarsipkan: 409 `parent_archived`. Validasi induk dengan `whereNull('deleted_at')`, bukan rule `exists` biasa.
+- Daftar aktif terakhir di sebuah ruang tidak boleh dihapus atau diarsipkan: 409 `last_list`. Kunci baris ruang (`lockForUpdate()`) saat menghitung.
+- Data di ruang yang bukan ruang user dianggap tidak ada: 404, bukan 403.
+
+### Error
+
+- Bentuk JSON: `message`, `code`, `errors` (validasi), dan `current` (endpoint yang lewat antrean HP). Dibuat terpusat di `bootstrap/app.php` lewat `withExceptions()`, plus `shouldRenderJsonWhen()` untuk `api/*`.
+- `current` = resource di URL request (route model, atau user untuk `/me`); `null` kalau ID itu belum ada.
+- `not_found` hanya untuk `ModelNotFoundException`. Route yang tidak ada: 404 `route_not_found`.
+- Salah email/kata sandi: 422 `invalid_credentials`, bukan 401. 401 hanya untuk token tidak berlaku.
+- Pesan berbahasa Indonesia dari paket `laravel-lang`. Daftar lengkap `code` ada di bagian Error pada kontrak; jangan menambah kode baru tanpa memperbarui kontrak.
+
+### Sync (`GET /sync`)
+
+- Koleksi: `spaces` (dengan `members`), `task_lists`, `tasks`, `savings_goals`, `savings_entries`.
+- Tiap koleksi diurutkan `(updated_at, id)`, paling banyak 500 baris per halaman; `next_cursor` menyimpan posisi tiap koleksi.
+- `server_time` dicatat saat halaman pertama dan sama di semua halaman. Mundur 5 detik dari `since`, sekali, di halaman pertama.
+- Tanpa `since`: hanya data aktif. Dengan `since`: termasuk yang terhapus.
+- Isi Ruang Pribadi tidak pernah dikirim ke anggota lain. Wajib ada tesnya.
+- Perubahan anggota atau profil anggota (nama, warna, foto) wajib `touch()` ruangnya.
+
+### Ruang dan undangan
+
+- Ruang Pribadi dibuat saat daftar, berisi satu daftar "Tugas". Ruang Bersama dibuat saat kode undangan diterima, berisi tepat 2 orang; satu akun paling banyak satu Ruang Bersama.
+- Kode: 6 karakter dari `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`, berlaku 48 jam, sekali pakai. Input diseragamkan (huruf besar, tanpa spasi/tanda hubung).
+- Terima kode: kunci baris kedua akun (urut ID) lalu baris undangan, dalam satu transaksi. Urutan cek: sudah satu ruang dengan pembuat kode → 200; punya Ruang Bersama dengan orang lain → 409 `shared_space_exists`; masalah apa pun pada kode → 422 `invitation_invalid` dengan pesan yang sama.
+
+### Notifikasi dan pengingat
+
+- Push dikirim dari job antrean ke semua token penerima, hanya jika `notification_prefs` penerima menyala. Semua nilai `data` FCM berupa string.
+- Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`. Penerima, channel, dan prioritasnya ada di kontrak.
+- `remind_at` (UTC) dihitung dari `due_date` + `due_time` di zona waktu ruang; tanpa jam → 08.00. Diklaim dengan `UPDATE ... WHERE reminder_sent_at IS NULL` tanpa menyentuh `updated_at`. Scheduler pakai `withoutOverlapping()`. Telat lebih dari 30 menit: tandai terkirim tanpa push.
+- Token yang ditolak FCM (`UNREGISTERED`) dihapus dari `device_tokens`.
+- `savings_achieved` paling banyak sekali per target (`achieved_notified_at`); total dihitung dalam transaksi yang mengunci baris target.
+
+## Admin (Filament)
+
+- Panel admin di `/admin`, login session biasa (terpisah dari token Sanctum). `User::canAccessPanel()` hanya mengizinkan `ADMIN_EMAIL`.
+- Resource v0.1: Pengguna (lihat; aksi "Reset kata sandi" yang sekaligus mencabut semua token), Ruang dan anggotanya (lihat saja), Undangan (lihat, cabut), Token perangkat (lihat, hapus).
+- Jangan buat resource yang menampilkan isi tugas, daftar, atau tabungan pengguna; itu privasi pengguna.
+
+## Data lokal
+
+- `DemoSeeder` (hanya lokal): dua akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), satu Ruang Bersama, beberapa daftar, tugas, target, dan setoran. Buat ruangnya lewat Action yang sama dengan endpoint terima undangan.
+
+## Tes
+
+- Setiap endpoint punya feature test Pest: berhasil, validasi, akses ke ruang lain (404), dan `PUT` yang diulang.
+- Tes sync wajib mencakup: banyak baris dengan `updated_at` sama, data terhapus, dan kebocoran Ruang Pribadi.
+- Tes memakai MySQL (database `*_testing` di `phpunit.xml`), bukan SQLite, supaya perilaku waktu dan JSON sama dengan produksi.
+
+## Git dan deploy
+
+- Kerja di branch (`feat/...`, `fix/...`), lalu merge ke `main`. Merge ke `main` langsung men-deploy ke Coolify, jadi tes harus hijau dulu.
+- Commit kecil per perubahan, pesan singkat dengan awalan `feat:`, `fix:`, `chore:`, `test:`, atau `docs:`.
+- Migration yang sudah sampai staging/produksi tidak diedit lagi; buat migration baru.
+
+## Jangan
+
+- Jangan mengubah bentuk request atau response tanpa memperbarui `docs/kontrak-api.md`.
+- Jangan commit `.env`, file service account Firebase, atau kunci R2.
+- Jangan menjalankan `migrate:fresh` atau seeder di staging/produksi.
+- Jangan menambah package baru tanpa alasan yang jelas; pakai yang sudah ada di Stack.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
@@ -5,7 +173,7 @@
 
 ## Foundational Context
 
-This application is a Laravel application running on PHP 8.5. Always use the APIs that match the installed major version of each package — do not assume a version.
+This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
