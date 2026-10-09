@@ -10,14 +10,16 @@ Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditu
 
 ## Kondisi repo (per 9 Oktober 2026)
 
-Repo ini masih skeleton Laravel 13 + Pest + Laravel Boost, ditambah Sanctum dan Filament 5 yang baru dipasang; belum ada kode aplikasi. Bagian-bagian di bawah menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada. Yang belum sesuai dengan target:
+Fondasi sudah terpasang, tetapi belum ada fitur aplikasi. Bagian-bagian di bawah tetap menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada.
 
-- `docs/kontrak-api.md` belum ada. Sebelum mengerjakan apa pun yang wajib merujuk kontrak, minta pemilik menyalinnya ke repo dulu.
-- Belum terpasang: `kreait/laravel-firebase`, `league/flysystem-aws-s3-v3`, Intervention Image, Scramble, `laravel-lang`.
-- Filament 5 baru terpasang sebagai paket: panelnya belum dibuat (`php artisan filament:install --panels`) dan `User::canAccessPanel()` belum ada.
-- Database masih SQLite: `.env.example` (`DB_CONNECTION=sqlite`, juga `APP_LOCALE=en`) dan `phpunit.xml` (`:memory:`).
-- Migrasi bawaan masih memakai `$table->id()`, `foreignId('user_id')`, dan `timestamps()` tanpa presisi mikrodetik; migrasi token Sanctum juga masih `morphs('tokenable')`, belum `ulidMorphs()`.
-- `config/app.php` menulis `'timezone' => 'UTC'` langsung, jadi `APP_TIMEZONE` di `.env` tidak dibaca.
+Sudah ada: MySQL untuk lokal dan tes (`todolist` dan `todolist_testing`, sesi MySQL dikunci ke UTC), ULID dan timestamp mikrodetik di tabel bawaan, Sanctum, panel Filament di `/admin` yang dibatasi `ADMIN_EMAIL`, disk `r2`, paket FCM, Intervention Image 4, Scramble, terjemahan `lang/id`, dan prefix `/api/v1`.
+
+Belum ada:
+
+- `docs/kontrak-api.md`. Sebelum mengerjakan apa pun yang wajib merujuk kontrak, minta pemilik menyalinnya ke repo dulu.
+- Model selain `User`, endpoint, penanganan error terpusat, resource Filament, `config/currencies.php`, dan `DemoSeeder`. `GET /api/v1/user` masih route contoh bawaan `install:api`, bukan endpoint kontrak.
+- Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan.
+- ULID untuk `personal_access_tokens.id`: masih bigint bawaan Sanctum, hanya `tokenable_id` yang ULID. Tunggu keputusan pemilik sebelum mengubahnya.
 
 Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
@@ -83,8 +85,8 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 - Semua primary key ULID huruf kecil: trait `HasUlids`, `$table->ulid('id')->primary()`, relasi `foreignUlid()`.
 - Migrasi bawaan yang merujuk user ikut ULID: tabel token Sanctum dan `notifications` memakai `ulidMorphs()`, `sessions.user_id` juga ULID.
-- ULID huruf besar dari request ditolak 422 (jangan diam-diam diubah ke huruf kecil).
-- Semua tabel: `$table->timestamps(6)`; tabel konten juga `$table->softDeletes(precision: 6)`. Model memakai `protected $dateFormat = 'Y-m-d H:i:s.u';` (taruh di base model atau trait bersama).
+- ULID huruf besar dari request ditolak 422 (jangan diam-diam diubah ke huruf kecil). Rule `ulid` bawaan Laravel menerima huruf besar maupun kecil, jadi penolakan ini butuh aturan tambahan.
+- Semua tabel: `$table->timestamps(6)`; tabel konten juga `$table->softDeletes(precision: 6)`. Model memakai trait `App\Models\Concerns\HasMicrosecondTimestamps`, yang menetapkan format `Y-m-d H:i:s.u` lewat `getDateFormat()`. Properti `$dateFormat` tidak bisa ditaruh di trait karena PHP menolaknya sebagai bentrok dengan properti bawaan `Model`. `tests/Unit/ArchTest.php` mewajibkan trait itu dan `HasUlids` di semua model.
 - Resource memformat tanggal `Y-m-d` dan jam `H:i` secara eksplisit; waktu lengkap memakai format bawaan Laravel (ISO 8601 dengan mikrodetik, akhiran `Z`).
 - Waktu dari HP wajib membawa `Z` atau offset; tanpa itu 422.
 - `created_at`, `updated_at`, `deleted_at` hanya diisi server.
@@ -151,7 +153,8 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 - Setiap endpoint punya feature test Pest: berhasil, validasi, akses ke ruang lain (404), dan `PUT` yang diulang.
 - Tes sync wajib mencakup: banyak baris dengan `updated_at` sama, data terhapus, dan kebocoran Ruang Pribadi.
-- Tes memakai MySQL (database `*_testing` di `phpunit.xml`), bukan SQLite, supaya perilaku waktu dan JSON sama dengan produksi.
+- Tes memakai MySQL (database `*_testing` di `phpunit.xml`), bukan SQLite, supaya perilaku waktu dan JSON sama dengan produksi. Database `todolist` dan `todolist_testing` harus sudah dibuat di MySQL lokal.
+- Ekspektasi Pest `toBeUlid()` hanya menerima huruf besar. Untuk ULID proyek ini pakai `toMatch('/^[0-7][0-9a-hjkmnp-tv-z]{25}$/')`.
 
 ## Git dan deploy
 
