@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
@@ -52,7 +53,16 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Create a user, make them the configured admin, and sign them in.
+ */
+function actingAsAdmin(): User
 {
-    // ..
+    $admin = User::factory()->create();
+
+    config(['admin.email' => $admin->email]);
+
+    test()->actingAs($admin);
+
+    return $admin;
 }

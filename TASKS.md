@@ -2,8 +2,6 @@
 
 ## Active
 
-- [ ] **Resource Filament "Pengguna"** - lihat saja, plus aksi "Reset kata sandi" yang mencabut semua token
-
 ## Waiting On
 
 - [ ] **Kontrak API (`docs/kontrak-api.md`)** - dari pemilik, since 2026-10-09; semua butir di Backlog v0.1 menunggu file ini
@@ -49,3 +47,4 @@
 - [x] ~~Pasang `laravel-lang` dan terjemahan `lang/id`~~ (2026-10-09)
 - [x] ~~Route API di bawah prefix `/api/v1`~~ (2026-10-09)
 - [x] ~~Seeder user admin (`AdminUserSeeder`): email dari `ADMIN_EMAIL`, kata sandi `password`, hanya lokal~~ (2026-10-09)
+- [x] ~~Resource Filament "Pengguna": daftar dan lihat, plus aksi "Reset kata sandi" yang mencabut semua token~~ (2026-10-09)
