@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Foto profil** - `POST /me/avatar`, `DELETE /me/avatar`
+- [ ] **Ruang** - `GET /spaces`
 
 ## Waiting On
 
@@ -14,8 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **Perangkat** - `POST /devices`, `DELETE /devices/{token}`
-- [ ] **Ruang** - `GET /spaces`
 - [ ] **Kode undangan** - `POST /invitations`, `POST /invitations/accept`
 - [ ] **Daftar tugas** - `PUT`, `PATCH`, `DELETE /lists/{id}`
 - [ ] **Tugas** - `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab dan `remind_at`
@@ -57,3 +55,5 @@
 - [x] ~~Penanganan error terpusat: `message`, `code`, `errors`, `current`, dan batas request per endpoint~~ (2026-10-10)
 - [x] ~~Akun: `POST /auth/register`, `/auth/login`, `/auth/logout`; Ruang Pribadi dan daftar "Tugas" dibuat saat daftar~~ (2026-10-10)
 - [x] ~~Profil: `GET /me`, `PATCH /me`~~ (2026-10-10)
+- [x] ~~Foto profil: `POST /me/avatar`, `DELETE /me/avatar`; disimpan ulang sebagai JPEG 512 x 512 tanpa EXIF~~ (2026-10-10)
+- [x] ~~Perangkat: `POST /devices`, `DELETE /devices/{token}`~~ (2026-10-10)
