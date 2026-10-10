@@ -28,7 +28,7 @@ class UpdateTask
         return DB::transaction(function () use ($actor, $task, $changes): Task {
             $wasCompleted = $task->completed_at !== null;
 
-            $this->moveToList($task, $changes);
+            $this->moveToList($task, $changes, $actor);
             $this->changeDueDate($task, $changes);
             $this->changeCompletion($task, $changes, $actor);
 
@@ -54,13 +54,13 @@ class UpdateTask
      *
      * @param  array<string, mixed>  $changes
      */
-    private function moveToList(Task $task, array $changes): void
+    private function moveToList(Task $task, array $changes, User $actor): void
     {
         if (! isset($changes['task_list_id']) || $changes['task_list_id'] === $task->task_list_id) {
             return;
         }
 
-        $list = $this->findWritableTaskList->handle($changes['task_list_id']);
+        $list = $this->findWritableTaskList->handle($actor, $changes['task_list_id']);
 
         if ($list->space_id !== $task->space_id) {
             throw ValidationException::withMessages([

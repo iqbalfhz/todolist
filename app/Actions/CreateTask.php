@@ -25,7 +25,7 @@ class CreateTask
     public function handle(User $actor, string $id, array $data): Task
     {
         return DB::transaction(function () use ($actor, $id, $data): Task {
-            $list = $this->findWritableTaskList->handle($data['task_list_id']);
+            $list = $this->findWritableTaskList->handle($actor, $data['task_list_id']);
             $assigneeIds = $this->resolveAssignees->handle($data['assignee_ids'] ?? [$actor->id], $list->space_id);
 
             $task = new Task(array_filter(

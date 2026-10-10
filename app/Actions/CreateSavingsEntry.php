@@ -24,7 +24,7 @@ class CreateSavingsEntry
     public function handle(User $actor, string $id, array $data): SavingsEntry
     {
         return DB::transaction(function () use ($actor, $id, $data): SavingsEntry {
-            $goal = $this->findWritableSavingsGoal->handle($data['savings_goal_id']);
+            $goal = $this->findWritableSavingsGoal->handle($actor, $data['savings_goal_id']);
 
             $entry = new SavingsEntry(array_filter(
                 Arr::only($data, ['amount', 'entry_date', 'note']),
