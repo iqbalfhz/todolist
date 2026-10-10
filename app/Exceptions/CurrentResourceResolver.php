@@ -3,7 +3,9 @@
 namespace App\Exceptions;
 
 use App\Http\Resources\TaskListResource;
+use App\Http\Resources\TaskResource;
 use App\Http\Resources\UserResource;
+use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
 use App\Rules\LowercaseUlid;
@@ -21,6 +23,7 @@ class CurrentResourceResolver
      */
     private const QUEUED_RESOURCES = [
         'lists' => [TaskList::class, TaskListResource::class],
+        'tasks' => [Task::class, TaskResource::class],
     ];
 
     /**

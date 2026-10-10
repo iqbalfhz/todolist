@@ -20,6 +20,9 @@ class DeleteTaskList
         DB::transaction(function () use ($list): void {
             $this->keepOneActiveList->handle($list);
 
+            // Wait for tasks that are being written to this list, so none is left behind undeleted.
+            TaskList::query()->whereKey($list->id)->lockForUpdate()->first();
+
             $list->tasks()->delete();
             $list->delete();
         });

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SpaceController;
+use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskListController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,5 +41,9 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/lists/{id}', [TaskListController::class, 'store'])->name('lists.store');
         Route::patch('/lists/{id}', [TaskListController::class, 'update'])->name('lists.update');
         Route::delete('/lists/{id}', [TaskListController::class, 'destroy'])->name('lists.destroy');
+
+        Route::put('/tasks/{id}', [TaskController::class, 'store'])->name('tasks.store');
+        Route::patch('/tasks/{id}', [TaskController::class, 'update'])->name('tasks.update');
+        Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     });
 });

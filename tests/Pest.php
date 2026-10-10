@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
+use Kreait\Firebase\Contract\Messaging;
 use Tests\TestCase;
 
 /*
@@ -26,6 +27,11 @@ pest()->extend(TestCase::class)
         Http::preventStrayRequests();
         Sleep::fake(syncWithCarbon: true);
         Exceptions::fake();
+
+        // FCM is called through Guzzle, which the HTTP guard above does not cover.
+        $this->app->bind(Messaging::class, fn () => throw new LogicException(
+            'A push reached FCM in a test. Fake the queue for SendPushNotification or mock Messaging.',
+        ));
     })
     ->in('Feature');
 
@@ -79,6 +85,19 @@ function actingAsApiUser(): User
     test()->actingAs($user, 'sanctum');
 
     return $user;
+}
+
+/**
+ * Sign in a registered user who shares a space with a partner.
+ *
+ * @return array{0: User, 1: User, 2: Space} The signed-in user, the partner, and their shared space.
+ */
+function actingAsPartnered(): array
+{
+    $user = actingAsApiUser();
+    $partner = User::factory()->withPersonalSpace()->create();
+
+    return [$user, $partner, sharedSpaceBetween($user, $partner)];
 }
 
 /**

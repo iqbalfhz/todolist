@@ -49,7 +49,7 @@ class ApiExceptionRenderer
             $payload,
             $this->statusFor($exception, $code),
             $exception instanceof HttpExceptionInterface ? $exception->getHeaders() : [],
-        );
+        )->withException($exception);
     }
 
     /**
