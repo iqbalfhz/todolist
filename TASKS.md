@@ -2,7 +2,6 @@
 
 ## Active
 
-- [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama
 
 ## Waiting On
 
@@ -57,3 +56,4 @@
 - [x] ~~Pengingat terjadwal: `php artisan reminders:send` tiap menit dengan `withoutOverlapping()`; klaim tanpa menyentuh `updated_at`, telat lebih dari 30 menit ditandai terkirim tanpa push~~ (2026-10-10)
 - [x] ~~Push notification: job FCM untuk keenam jenis push (`task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`); teksnya masih sementara~~ (2026-10-10)
 - [x] ~~Resource Filament: Ruang dan anggotanya (lihat saja), Undangan (lihat, aksi "Cabut"), Token perangkat (lihat, hapus); isi tugas, daftar, dan tabungan tidak ditampilkan~~ (2026-10-10)
+- [x] ~~`DemoSeeder`: akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), Ruang Bersama lewat alur undangan, beberapa daftar, tugas, target, dan setoran; ikut dipanggil `DatabaseSeeder`~~ (2026-10-10)
