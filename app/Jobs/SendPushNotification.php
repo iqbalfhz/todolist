@@ -44,7 +44,7 @@ class SendPushNotification implements ShouldQueue
     /**
      * Send the push to every device of the recipient, unless they turned this kind off.
      */
-    public function handle(Messaging $messaging): void
+    public function handle(): void
     {
         $user = User::query()->find($this->userId);
 
@@ -58,7 +58,9 @@ class SendPushNotification implements ShouldQueue
             return;
         }
 
-        $report = $messaging->sendMulticast($this->message(), $tokens);
+        // FCM is set up only when there is something to send, so a push to
+        // someone without a device does not need Firebase credentials.
+        $report = resolve(Messaging::class)->sendMulticast($this->message(), $tokens);
 
         // FCM answers UNREGISTERED for a token whose app was uninstalled or signed out.
         DeviceToken::query()->whereIn('token', $report->unknownTokens())->delete();

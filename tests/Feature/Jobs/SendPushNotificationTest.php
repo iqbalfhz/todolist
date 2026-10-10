@@ -128,6 +128,13 @@ it('sends nothing when the recipient has no device', function () {
     SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
 });
 
+// Setting up FCM throws in tests, as it does on a machine without Firebase credentials.
+it('does not set up FCM when the recipient has no device', function () {
+    $user = User::factory()->create();
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+})->throwsNoExceptions();
+
 it('removes the tokens FCM reports as unregistered', function () {
     fakeFcm(new stdClass, unregisteredTokens: ['fcm-sudah-dicopot']);
     $user = User::factory()->create();
