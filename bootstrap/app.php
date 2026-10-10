@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // In production every request arrives through Coolify's proxy, which ends
+        // TLS. Trusting it makes the app see HTTPS and the IP of the real client.
+        $middleware->trustProxies(at: '*');
+
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('api/*') ? null : route('filament.admin.auth.login'),
         );
