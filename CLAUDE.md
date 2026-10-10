@@ -8,18 +8,15 @@ API untuk aplikasi to-do berdua (tugas, tabungan, liburan, kenangan). Klien satu
 
 Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditulis ulang oleh `php artisan boost:update` (jalan otomatis setelah `composer update`), jadi jangan diedit; aturan proyek ditulis di luar blok itu, dan tag pembuka blok jangan pernah ditulis ulang di bagian proyek. Kalau keduanya bertentangan, aturan proyek yang berlaku. Contoh: deploy proyek ini lewat Coolify, bukan Laravel Cloud.
 
-## Kondisi repo (per 9 Oktober 2026)
+## Kondisi repo (per 10 Oktober 2026)
 
-Fondasi sudah terpasang, tetapi belum ada fitur aplikasi. Bagian-bagian di bawah tetap menggambarkan target, jadi cek dulu sebelum menganggap sesuatu sudah ada. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun dan bertes: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
-Sudah ada: MySQL untuk lokal dan tes (`todolist` dan `todolist_testing`, sesi MySQL dikunci ke UTC), ULID dan timestamp mikrodetik di tabel bawaan, Sanctum, panel Filament di `/admin` yang dibatasi `ADMIN_EMAIL`, resource Filament "Pengguna" dengan aksi "Reset kata sandi", `AdminUserSeeder`, disk `r2`, paket FCM, Intervention Image 4, Scramble, terjemahan `lang/id`, dan prefix `/api/v1`.
+Belum beres:
 
-Belum ada:
-
-- `docs/kontrak-api.md`. Sebelum mengerjakan apa pun yang wajib merujuk kontrak, minta pemilik menyalinnya ke repo dulu.
-- Model selain `User`, endpoint, penanganan error terpusat, resource Filament selain "Pengguna", `config/currencies.php`, dan `DemoSeeder`. `GET /api/v1/user` masih route contoh bawaan `install:api`, bukan endpoint kontrak.
 - Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan.
-- ULID untuk `personal_access_tokens.id`: masih bigint bawaan Sanctum, hanya `tokenable_id` yang ULID. Tunggu keputusan pemilik sebelum mengubahnya.
+- Teks push selain pengingat dan `partner_joined` masih sementara di `lang/id/push.php`, karena bagian "Bahasa dan microcopy" belum disalin ke repo.
+- `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
 Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
@@ -57,7 +54,8 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - `php artisan test` — semua tes (Pest)
 - `php artisan test --compact tests/Feature/NamaTest.php` atau `php artisan test --compact --filter="nama tes"` — satu file atau satu tes
 - `./vendor/bin/pint` — format kode, jalankan sebelum commit
-- `php artisan migrate:fresh --seed` — reset database lokal (jangan pernah di staging/produksi)
+- `php artisan migrate:fresh --seed` — reset database lokal lalu isi admin dan data contoh (jangan pernah di staging/produksi)
+- `php artisan reminders:send` — kirim pengingat yang jatuh tempo sekarang; di server dijalankan scheduler tiap menit
 
 ## Konfigurasi (`.env`)
 
@@ -74,8 +72,10 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Validasi: Form Request di `app/Http/Requests/`
 - Output: API Resource di `app/Http/Resources/`
 - Akses: Policy per model di `app/Policies/` (cek keanggotaan ruang)
-- Logika bersama (sync, undangan, pengingat, total tabungan): `app/Actions/`
-- Job antrean (push, olah foto): `app/Jobs/`
+- Logika bersama (sync, undangan, pengingat, total tabungan): `app/Actions/`. Action yang butuh pelaku menerima `User $actor` dan memeriksa aksesnya dengan `Gate::forUser($actor)`, bukan user yang sedang login, supaya bisa dipanggil dari seeder dan job.
+- Job antrean (push, hitung ulang pengingat): `app/Jobs/`. Foto profil diolah langsung di request, sesuai kontrak.
+- Perintah terjadwal: `routes/console.php`
+- Enum: `app/Enums/`; aturan validasi sendiri: `app/Rules/`; pembentuk error: `app/Exceptions/`
 - Admin: `app/Filament/`
 - Model daftar tugas bernama `TaskList`, bukan `List` (kata kunci PHP)
 
@@ -122,6 +122,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Tiap koleksi diurutkan `(updated_at, id)`, paling banyak 500 baris per halaman; `next_cursor` menyimpan posisi tiap koleksi.
 - `server_time` dicatat saat halaman pertama dan sama di semua halaman. Mundur 5 detik dari `since`, sekali, di halaman pertama.
 - Tanpa `since`: hanya data aktif. Dengan `since`: termasuk yang terhapus.
+- `cursor` yang bukan buatan server dibalas 422 `validation_failed`. Kalau `cursor` dikirim, `since` tidak dibaca.
 - Isi Ruang Pribadi tidak pernah dikirim ke anggota lain. Wajib ada tesnya.
 - Perubahan anggota atau profil anggota (nama, warna, foto) wajib `touch()` ruangnya.
 
@@ -136,6 +137,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Push dikirim dari job antrean ke semua token penerima, hanya jika `notification_prefs` penerima menyala. Semua nilai `data` FCM berupa string.
 - Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`. Penerima, channel, dan prioritasnya ada di kontrak.
 - `remind_at` (UTC) dihitung dari `due_date` + `due_time` di zona waktu ruang; tanpa jam → 08.00. Diklaim dengan `UPDATE ... WHERE reminder_sent_at IS NULL` tanpa menyentuh `updated_at`. Scheduler pakai `withoutOverlapping()`. Telat lebih dari 30 menit: tandai terkirim tanpa push.
+- Pengingat tugas yang selesai, terhapus, atau ada di daftar arsip dibiarkan terbuka, jadi masih terkirim kalau tugasnya kembali dalam 30 menit itu; setelahnya ikut ditandai terkirim.
 - Token yang ditolak FCM (`UNREGISTERED`) dihapus dari `device_tokens`.
 - `savings_achieved` paling banyak sekali per target (`achieved_notified_at`); total dihitung dalam transaksi yang mengunci baris target.
 
@@ -147,7 +149,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 ## Data lokal
 
-- `DemoSeeder` (hanya lokal): dua akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), satu Ruang Bersama, beberapa daftar, tugas, target, dan setoran. Buat ruangnya lewat Action yang sama dengan endpoint terima undangan.
+- `DemoSeeder` (hanya lokal, dipanggil juga oleh `DatabaseSeeder`): dua akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), satu Ruang Bersama, beberapa daftar, tugas, target, dan setoran. Buat ruangnya lewat Action yang sama dengan endpoint terima undangan. Kalau akun contoh sudah ada, seeder ini tidak membuat apa-apa.
 - `AdminUserSeeder` (hanya lokal, dipanggil juga oleh `DatabaseSeeder`): membuat user dengan email `ADMIN_EMAIL` dan kata sandi `password`, atau mengatur ulang kata sandinya kalau user itu sudah ada. Seeder ini menolak jalan di luar lingkungan `local` dan `testing`; di server, admin dibuat dengan `php artisan make:filament-user`.
 
 ## Tes
@@ -156,6 +158,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Tes sync wajib mencakup: banyak baris dengan `updated_at` sama, data terhapus, dan kebocoran Ruang Pribadi.
 - Tes memakai MySQL (database `*_testing` di `phpunit.xml`), bukan SQLite, supaya perilaku waktu dan JSON sama dengan produksi. Database `todolist` dan `todolist_testing` harus sudah dibuat di MySQL lokal.
 - Ekspektasi Pest `toBeUlid()` hanya menerima huruf besar. Untuk ULID proyek ini pakai `toMatch('/^[0-7][0-9a-hjkmnp-tv-z]{25}$/')`.
+- Tes tidak boleh menyentuh FCM asli: `tests/Pest.php` membuat `Messaging` melempar error saat dibuat. Tes yang memicu push ke penerima yang punya perangkat memakai `Queue::fake([SendPushNotification::class])` atau mock `Messaging`.
 
 ## Git dan deploy
 
