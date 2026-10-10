@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SavingsEntryController;
 use App\Http\Controllers\Api\V1\SavingsGoalController;
 use App\Http\Controllers\Api\V1\SpaceController;
+use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskListController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/invitations/accept', [AcceptedInvitationController::class, 'store'])
             ->middleware('throttle:invitation-accept')
             ->name('invitations.accept');
+
+        Route::get('/sync', [SyncController::class, 'show'])->name('sync.show');
 
         Route::put('/lists/{id}', [TaskListController::class, 'store'])->name('lists.store');
         Route::patch('/lists/{id}', [TaskListController::class, 'update'])->name('lists.update');

@@ -52,6 +52,7 @@ return [
         'assignee_not_member' => 'Penanggung jawab harus anggota ruang ini.',
         'space_not_member' => 'Ruang ini tidak ditemukan.',
         'different_space' => 'Daftar tujuan harus berada di ruang yang sama.',
+        'sync_cursor' => ':Attribute tidak berlaku, mulai sinkron dari awal.',
     ],
 
     /*

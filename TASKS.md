@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Sync** - `GET /sync` dengan kursor per koleksi
+- [ ] **Pengingat terjadwal** - scheduler tiap menit, klaim tanpa menyentuh `updated_at`
 
 ## Waiting On
 
@@ -15,7 +15,6 @@
 ## Backlog v0.1
 
 - [ ] **Push notification** - job FCM untuk enam jenis push
-- [ ] **Pengingat terjadwal** - scheduler tiap menit, klaim tanpa menyentuh `updated_at`
 - [ ] **Resource Filament lain** - Ruang, Undangan, Token perangkat
 - [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama
 
@@ -57,3 +56,4 @@
 - [x] ~~Tugas: `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab, `remind_at`, selesai, pindah daftar, push `task_assigned` dan `task_completed`~~ (2026-10-10)
 - [x] ~~Target tabungan: `PUT`, `PATCH`, `DELETE /savings-goals/{id}`; mata uang hanya saat dibuat, arsip, hapus berantai ke setoran~~ (2026-10-10)
 - [x] ~~Setoran: `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai dihitung ulang, push `savings_deposit` dan `savings_achieved` (sekali per target)~~ (2026-10-10)
+- [x] ~~Sync: `GET /sync` dengan `since` dan `cursor`; 500 baris per koleksi per halaman, urut `(updated_at, id)`, mundur 5 detik, isi Ruang Pribadi pasangan tidak ikut~~ (2026-10-10)
