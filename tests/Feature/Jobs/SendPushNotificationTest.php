@@ -1,0 +1,141 @@
+<?php
+
+use App\Enums\PushType;
+use App\Jobs\SendPushNotification;
+use App\Models\DeviceToken;
+use App\Models\User;
+use Kreait\Firebase\Contract\Messaging;
+use Kreait\Firebase\Exception\Messaging\NotFound;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\MessageTarget;
+use Kreait\Firebase\Messaging\MulticastSendReport;
+use Kreait\Firebase\Messaging\SendReport;
+use Mockery\MockInterface;
+
+/**
+ * Replace FCM with a double that records the one multicast it is asked to send.
+ *
+ * @param  list<string>  $unregisteredTokens
+ */
+function fakeFcm(object $sent, array $unregisteredTokens = []): void
+{
+    test()->mock(Messaging::class, function (MockInterface $messaging) use ($sent, $unregisteredTokens): void {
+        $messaging->shouldReceive('sendMulticast')
+            ->once()
+            ->withArgs(function (CloudMessage $message, array $tokens) use ($sent): bool {
+                $sent->message = json_decode(json_encode($message), true);
+                $sent->tokens = $tokens;
+
+                return true;
+            })
+            ->andReturn(MulticastSendReport::withItems(array_map(
+                fn (string $token) => SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, $token), new NotFound('Unregistered')),
+                $unregisteredTokens,
+            )));
+    });
+}
+
+it('sends the push to every device of the recipient', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-hp']);
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-tablet']);
+    DeviceToken::factory()->create(['token' => 'fcm-orang-lain']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Beli galon', 'Tenggat hari ini, 17.00', 'id-ruang', taskId: 'id-tugas');
+
+    expect($sent->tokens)->toEqualCanonicalizing(['fcm-hp', 'fcm-tablet'])
+        ->and($sent->message['notification'])->toBe(['title' => 'Beli galon', 'body' => 'Tenggat hari ini, 17.00'])
+        ->and($sent->message['data'])->toBe(['type' => 'task_reminder', 'space_id' => 'id-ruang', 'task_id' => 'id-tugas']);
+});
+
+it('uses the channel, priority, tag, and visibility of each push type', function (PushType $type, array $ids, array $android) {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, $type, 'Judul', 'Isi', 'id-ruang', ...$ids);
+
+    expect($sent->message['android'])->toBe($android);
+})->with([
+    'a task reminder' => [
+        PushType::TaskReminder,
+        ['taskId' => 'id-tugas'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'task-id-tugas']],
+    ],
+    'a task assignment' => [
+        PushType::TaskAssigned,
+        ['taskId' => 'id-tugas'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'task-id-tugas']],
+    ],
+    'a completed task' => [
+        PushType::TaskCompleted,
+        ['taskId' => 'id-tugas'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'task-id-tugas']],
+    ],
+    'a deposit, hidden on the lock screen' => [
+        PushType::SavingsDeposit,
+        ['savingsGoalId' => 'id-target'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
+    ],
+    'an achieved goal, hidden on the lock screen' => [
+        PushType::SavingsAchieved,
+        ['savingsGoalId' => 'id-target'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
+    ],
+    'a partner who joined' => [
+        PushType::PartnerJoined,
+        [],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'space-id-ruang']],
+    ],
+]);
+
+it('sends nothing when the recipient turned that kind of push off', function (PushType $type, string $preference) {
+    $this->mock(Messaging::class)->shouldNotReceive('sendMulticast');
+    $user = User::factory()->create(['notification_prefs' => [$preference => false]]);
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, $type, 'Judul', 'Isi', 'id-ruang');
+})->with([
+    'task reminders' => [PushType::TaskReminder, 'task_reminders'],
+    'task assignments' => [PushType::TaskAssigned, 'partner_activity'],
+    'completed tasks' => [PushType::TaskCompleted, 'partner_activity'],
+    'deposits' => [PushType::SavingsDeposit, 'savings_activity'],
+    'achieved goals' => [PushType::SavingsAchieved, 'savings_activity'],
+]);
+
+it('sends partner_joined even when every preference is off', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create(['notification_prefs' => [
+        'task_reminders' => false,
+        'partner_activity' => false,
+        'savings_activity' => false,
+    ]]);
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-hp']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::PartnerJoined, 'Ruang Bersama', 'Isi', 'id-ruang');
+
+    expect($sent->tokens)->toBe(['fcm-hp']);
+});
+
+it('sends nothing when the recipient has no device', function () {
+    $this->mock(Messaging::class)->shouldNotReceive('sendMulticast');
+    $user = User::factory()->create();
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+});
+
+it('removes the tokens FCM reports as unregistered', function () {
+    fakeFcm(new stdClass, unregisteredTokens: ['fcm-sudah-dicopot']);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-sudah-dicopot']);
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-masih-aktif']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+
+    $this->assertDatabaseMissing('device_tokens', ['token' => 'fcm-sudah-dicopot']);
+    $this->assertDatabaseHas('device_tokens', ['token' => 'fcm-masih-aktif']);
+});

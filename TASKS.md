@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Ruang** - `GET /spaces`
+- [ ] **Daftar tugas** - `PUT`, `PATCH`, `DELETE /lists/{id}`
 
 ## Waiting On
 
@@ -14,8 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **Kode undangan** - `POST /invitations`, `POST /invitations/accept`
-- [ ] **Daftar tugas** - `PUT`, `PATCH`, `DELETE /lists/{id}`
 - [ ] **Tugas** - `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab dan `remind_at`
 - [ ] **Target tabungan** - `PUT`, `PATCH`, `DELETE /savings-goals/{id}`
 - [ ] **Setoran** - `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai
@@ -57,3 +55,5 @@
 - [x] ~~Profil: `GET /me`, `PATCH /me`~~ (2026-10-10)
 - [x] ~~Foto profil: `POST /me/avatar`, `DELETE /me/avatar`; disimpan ulang sebagai JPEG 512 x 512 tanpa EXIF~~ (2026-10-10)
 - [x] ~~Perangkat: `POST /devices`, `DELETE /devices/{token}`~~ (2026-10-10)
+- [x] ~~Ruang: `GET /spaces` beserta profil anggotanya~~ (2026-10-10)
+- [x] ~~Kode undangan: `POST /invitations`, `POST /invitations/accept`; Ruang Bersama dibuat saat kode diterima~~ (2026-10-10)
