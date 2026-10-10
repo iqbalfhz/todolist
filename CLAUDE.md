@@ -35,7 +35,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 ## Stack
 
-- PHP 8.3+, Laravel 13 tanpa starter kit, MySQL 8.4 LTS
+- PHP 8.4+ (paket yang terkunci di `composer.lock` butuh minimal 8.4.1), Laravel 13 tanpa starter kit, MySQL 8.4 LTS
 - Sanctum personal access token (dari `php artisan install:api`), satu token per HP
 - Filament 5 di `/admin`
 - Pest untuk tes, Laravel Pint untuk format
