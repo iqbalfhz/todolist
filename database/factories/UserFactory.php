@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Actions\CreatePersonalSpace;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,16 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Give the user the personal space and first list that registration creates.
+     */
+    public function withPersonalSpace(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            app(CreatePersonalSpace::class)->handle($user);
+        });
     }
 
     /**

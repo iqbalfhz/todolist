@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -27,6 +28,11 @@ class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasMicrosecondTimestamps, HasUlids, Notifiable;
+
+    /**
+     * The filesystem disk that holds profile photos.
+     */
+    public const AVATAR_DISK = 'r2';
 
     /**
      * The notification preferences an account starts with.
@@ -108,6 +114,18 @@ class User extends Authenticatable implements FilamentUser
     public function isMemberOf(string $spaceId): bool
     {
         return $this->spaces()->whereKey($spaceId)->exists();
+    }
+
+    /**
+     * Get a signed URL for the profile photo, valid for seven days, the longest R2 allows.
+     */
+    public function avatarUrl(): ?string
+    {
+        if ($this->avatar_path === null) {
+            return null;
+        }
+
+        return Storage::disk(self::AVATAR_DISK)->temporaryUrl($this->avatar_path, now()->addDays(7));
     }
 
     /**

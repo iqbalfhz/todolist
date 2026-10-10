@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Space;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
@@ -65,4 +66,24 @@ function actingAsAdmin(): User
     test()->actingAs($admin);
 
     return $admin;
+}
+
+/**
+ * Create a registered user, with their personal space, and sign them in to the API.
+ */
+function actingAsApiUser(): User
+{
+    $user = User::factory()->withPersonalSpace()->create();
+
+    test()->actingAs($user, 'sanctum');
+
+    return $user;
+}
+
+/**
+ * Create the space that two partners share, owned by the one who sent the invitation.
+ */
+function sharedSpaceBetween(User $owner, User $partner): Space
+{
+    return Space::factory()->for($owner, 'owner')->sharedWith($partner)->create();
 }

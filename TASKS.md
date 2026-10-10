@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Penanganan error terpusat** - bentuk JSON `message`, `code`, `errors`, `current`; batas request per endpoint
+- [ ] **Foto profil** - `POST /me/avatar`, `DELETE /me/avatar`
 
 ## Waiting On
 
@@ -14,9 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **Akun** - `POST /auth/register`, `/auth/login`, `/auth/logout`; Ruang Pribadi dan daftar "Tugas" dibuat saat daftar
-- [ ] **Profil** - `GET /me`, `PATCH /me`
-- [ ] **Foto profil** - `POST /me/avatar`, `DELETE /me/avatar`
 - [ ] **Perangkat** - `POST /devices`, `DELETE /devices/{token}`
 - [ ] **Ruang** - `GET /spaces`
 - [ ] **Kode undangan** - `POST /invitations`, `POST /invitations/accept`
@@ -57,3 +54,6 @@
 - [x] ~~Kontrak API masuk ke `docs/kontrak-api.md`~~ (2026-10-10)
 - [x] ~~Keputusan: `personal_access_tokens.id` tetap bigint, sesuai contoh token di kontrak~~ (2026-10-10)
 - [x] ~~Skema dan model data v0.1: ruang, anggota, undangan, daftar, tugas, target, setoran, token perangkat, kolom profil~~ (2026-10-10)
+- [x] ~~Penanganan error terpusat: `message`, `code`, `errors`, `current`, dan batas request per endpoint~~ (2026-10-10)
+- [x] ~~Akun: `POST /auth/register`, `/auth/login`, `/auth/logout`; Ruang Pribadi dan daftar "Tugas" dibuat saat daftar~~ (2026-10-10)
+- [x] ~~Profil: `GET /me`, `PATCH /me`~~ (2026-10-10)
