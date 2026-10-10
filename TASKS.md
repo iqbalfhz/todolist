@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Target tabungan** - `PUT`, `PATCH`, `DELETE /savings-goals/{id}`
+- [ ] **Sync** - `GET /sync` dengan kursor per koleksi
 
 ## Waiting On
 
@@ -14,8 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **Setoran** - `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai
-- [ ] **Sync** - `GET /sync` dengan kursor per koleksi
 - [ ] **Push notification** - job FCM untuk enam jenis push
 - [ ] **Pengingat terjadwal** - scheduler tiap menit, klaim tanpa menyentuh `updated_at`
 - [ ] **Resource Filament lain** - Ruang, Undangan, Token perangkat
@@ -57,3 +55,5 @@
 - [x] ~~Kode undangan: `POST /invitations`, `POST /invitations/accept`; Ruang Bersama dibuat saat kode diterima~~ (2026-10-10)
 - [x] ~~Daftar tugas: `PUT`, `PATCH`, `DELETE /lists/{id}`; PUT aman diulang, daftar aktif terakhir tidak bisa dihapus atau diarsipkan~~ (2026-10-10)
 - [x] ~~Tugas: `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab, `remind_at`, selesai, pindah daftar, push `task_assigned` dan `task_completed`~~ (2026-10-10)
+- [x] ~~Target tabungan: `PUT`, `PATCH`, `DELETE /savings-goals/{id}`; mata uang hanya saat dibuat, arsip, hapus berantai ke setoran~~ (2026-10-10)
+- [x] ~~Setoran: `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai dihitung ulang, push `savings_deposit` dan `savings_achieved` (sekali per target)~~ (2026-10-10)

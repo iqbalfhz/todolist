@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
+use App\Http\Controllers\Api\V1\SavingsEntryController;
+use App\Http\Controllers\Api\V1\SavingsGoalController;
 use App\Http\Controllers\Api\V1\SpaceController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskListController;
@@ -45,5 +47,13 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/tasks/{id}', [TaskController::class, 'store'])->name('tasks.store');
         Route::patch('/tasks/{id}', [TaskController::class, 'update'])->name('tasks.update');
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+
+        Route::put('/savings-goals/{id}', [SavingsGoalController::class, 'store'])->name('savings-goals.store');
+        Route::patch('/savings-goals/{id}', [SavingsGoalController::class, 'update'])->name('savings-goals.update');
+        Route::delete('/savings-goals/{id}', [SavingsGoalController::class, 'destroy'])->name('savings-goals.destroy');
+
+        Route::put('/savings-entries/{id}', [SavingsEntryController::class, 'store'])->name('savings-entries.store');
+        Route::patch('/savings-entries/{id}', [SavingsEntryController::class, 'update'])->name('savings-entries.update');
+        Route::delete('/savings-entries/{id}', [SavingsEntryController::class, 'destroy'])->name('savings-entries.destroy');
     });
 });
