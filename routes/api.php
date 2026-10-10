@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SpaceController;
+use App\Http\Controllers\Api\V1\TaskListController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -35,5 +36,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/invitations/accept', [AcceptedInvitationController::class, 'store'])
             ->middleware('throttle:invitation-accept')
             ->name('invitations.accept');
+
+        Route::put('/lists/{id}', [TaskListController::class, 'store'])->name('lists.store');
+        Route::patch('/lists/{id}', [TaskListController::class, 'update'])->name('lists.update');
+        Route::delete('/lists/{id}', [TaskListController::class, 'destroy'])->name('lists.destroy');
     });
 });

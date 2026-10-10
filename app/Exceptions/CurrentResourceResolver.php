@@ -2,8 +2,11 @@
 
 namespace App\Exceptions;
 
+use App\Http\Resources\TaskListResource;
 use App\Http\Resources\UserResource;
+use App\Models\TaskList;
 use App\Models\User;
+use App\Rules\LowercaseUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +19,9 @@ class CurrentResourceResolver
      *
      * @var array<string, array{class-string<Model>, class-string<JsonResource>}>
      */
-    private const QUEUED_RESOURCES = [];
+    private const QUEUED_RESOURCES = [
+        'lists' => [TaskList::class, TaskListResource::class],
+    ];
 
     /**
      * Determine whether the request went to an endpoint the app sends from its offline queue.
@@ -50,7 +55,9 @@ class CurrentResourceResolver
             return null;
         }
 
-        $record = $model::withTrashed()->find((string) $request->route('id'));
+        $id = $request->route('id');
+
+        $record = LowercaseUlid::matches($id) ? $model::withTrashed()->find($id) : null;
 
         if ($record === null || ! $user->isMemberOf($record->space_id)) {
             return null;

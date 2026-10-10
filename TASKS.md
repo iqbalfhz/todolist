@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Daftar tugas** - `PUT`, `PATCH`, `DELETE /lists/{id}`
+- [ ] **Tugas** - `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab dan `remind_at`
 
 ## Waiting On
 
@@ -14,7 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **Tugas** - `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab dan `remind_at`
 - [ ] **Target tabungan** - `PUT`, `PATCH`, `DELETE /savings-goals/{id}`
 - [ ] **Setoran** - `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai
 - [ ] **Sync** - `GET /sync` dengan kursor per koleksi
@@ -57,3 +56,4 @@
 - [x] ~~Perangkat: `POST /devices`, `DELETE /devices/{token}`~~ (2026-10-10)
 - [x] ~~Ruang: `GET /spaces` beserta profil anggotanya~~ (2026-10-10)
 - [x] ~~Kode undangan: `POST /invitations`, `POST /invitations/accept`; Ruang Bersama dibuat saat kode diterima~~ (2026-10-10)
+- [x] ~~Daftar tugas: `PUT`, `PATCH`, `DELETE /lists/{id}`; PUT aman diulang, daftar aktif terakhir tidak bisa dihapus atau diarsipkan~~ (2026-10-10)

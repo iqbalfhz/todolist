@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -78,6 +79,14 @@ function actingAsApiUser(): User
     test()->actingAs($user, 'sanctum');
 
     return $user;
+}
+
+/**
+ * Generate an ID the way the phone does: a lowercase ULID.
+ */
+function newId(): string
+{
+    return Str::lower((string) Str::ulid());
 }
 
 /**

@@ -2,6 +2,7 @@
 
 namespace App\Rules;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,16 @@ class Iso8601WithOffset implements ValidationRule
      * An ISO 8601 date-time that ends in Z or a UTC offset.
      */
     private const PATTERN = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/';
+
+    /**
+     * Convert a validated time from the phone to UTC.
+     *
+     * A time ahead of the server clock is pulled back to now, not rejected.
+     */
+    public static function toServerTime(string $value): CarbonImmutable
+    {
+        return CarbonImmutable::parse($value)->utc()->min(now());
+    }
 
     /**
      * Run the validation rule.
