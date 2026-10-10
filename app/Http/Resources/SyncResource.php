@@ -42,6 +42,7 @@ class SyncResource extends JsonResource
             'meta' => [
                 'server_time' => $this->resource['server_time'],
                 'has_more' => $this->resource['next_cursor'] !== null,
+                /** @var string|null */
                 'next_cursor' => $this->resource['next_cursor'],
             ],
         ];
