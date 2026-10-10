@@ -26,6 +26,19 @@ it('shows the dashboard to the admin', function () {
     $response->assertOk();
 });
 
+it('returns 404 for what users keep in their spaces, which the panel never shows', function (string $url) {
+    actingAsAdmin();
+
+    $response = $this->get($url);
+
+    $response->assertNotFound();
+})->with([
+    'task lists' => ['/admin/task-lists'],
+    'tasks' => ['/admin/tasks'],
+    'savings goals' => ['/admin/savings-goals'],
+    'savings entries' => ['/admin/savings-entries'],
+]);
+
 it('stores the admin session in the database with the user id', function () {
     config(['session.driver' => 'database']);
     $admin = User::factory()->create();

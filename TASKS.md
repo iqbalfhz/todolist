@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **Resource Filament lain** - Ruang, Undangan, Token perangkat
+- [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama
 
 ## Waiting On
 
@@ -14,7 +14,6 @@
 
 ## Backlog v0.1
 
-- [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama
 
 ## Someday
 
@@ -57,3 +56,4 @@
 - [x] ~~Sync: `GET /sync` dengan `since` dan `cursor`; 500 baris per koleksi per halaman, urut `(updated_at, id)`, mundur 5 detik, isi Ruang Pribadi pasangan tidak ikut~~ (2026-10-10)
 - [x] ~~Pengingat terjadwal: `php artisan reminders:send` tiap menit dengan `withoutOverlapping()`; klaim tanpa menyentuh `updated_at`, telat lebih dari 30 menit ditandai terkirim tanpa push~~ (2026-10-10)
 - [x] ~~Push notification: job FCM untuk keenam jenis push (`task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`); teksnya masih sementara~~ (2026-10-10)
+- [x] ~~Resource Filament: Ruang dan anggotanya (lihat saja), Undangan (lihat, aksi "Cabut"), Token perangkat (lihat, hapus); isi tugas, daftar, dan tabungan tidak ditampilkan~~ (2026-10-10)

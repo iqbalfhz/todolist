@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\InvitationStatus;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use Database\Factories\SpaceInvitationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,11 +44,34 @@ class SpaceInvitation extends Model
     }
 
     /**
+     * Get the user who accepted the invitation.
+     */
+    public function acceptor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'accepted_by');
+    }
+
+    /**
      * Get the shared space that was created when the invitation was accepted.
      */
     public function space(): BelongsTo
     {
         return $this->belongsTo(Space::class);
+    }
+
+    /**
+     * Get where the invitation stands. Only one that is neither accepted nor revoked can expire.
+     *
+     * @return Attribute<InvitationStatus, never>
+     */
+    protected function status(): Attribute
+    {
+        return Attribute::get(fn (): InvitationStatus => match (true) {
+            $this->accepted_at !== null => InvitationStatus::Accepted,
+            $this->revoked_at !== null => InvitationStatus::Revoked,
+            $this->expires_at->lessThanOrEqualTo(now()) => InvitationStatus::Expired,
+            default => InvitationStatus::Active,
+        });
     }
 
     /**
