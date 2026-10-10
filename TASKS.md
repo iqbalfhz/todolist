@@ -2,33 +2,39 @@
 
 ## Active
 
+- [ ] **Penanganan error terpusat** - bentuk JSON `message`, `code`, `errors`, `current`; batas request per endpoint
+
 ## Waiting On
 
-- [ ] **Kontrak API (`docs/kontrak-api.md`)** - dari pemilik, since 2026-10-09; semua butir di Backlog v0.1 menunggu file ini
-- [ ] **Keputusan: `personal_access_tokens.id` ikut ULID atau tetap bigint** - dari pemilik, since 2026-10-09
+- [ ] **Teks push notification** - dari pemilik, since 2026-10-10; kontrak merujuk bagian "Bahasa dan microcopy" di tab utama, yang belum ada di repo
+- [ ] **Persetujuan daftar "Perubahan dari rancangan awal" di kontrak** - dari pemilik, since 2026-10-10; semua butirnya belum dicentang, kode mengikuti kontrak apa adanya
 - [ ] **Konfirmasi: migrasi bawaan belum pernah jalan di server** - dari pemilik, since 2026-10-09; migrasinya diedit langsung
-- [ ] **Merge `feat/fondasi-proyek` ke `main`** - oleh pemilik, setelah `php artisan test --compact` hijau
+- [ ] **Merge `feat/fondasi-proyek` lalu `feat/api-v0.1` ke `main`** - oleh pemilik, setelah `php artisan test --compact` hijau
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
 
 ## Backlog v0.1
 
-- [ ] **Penanganan error terpusat** - bentuk JSON `message`, `code`, `errors`, `current` di `bootstrap/app.php`; menunggu kontrak
-- [ ] **Akun dan profil** - daftar, masuk, `/me`, foto profil; menunggu kontrak
-- [ ] **Perangkat** - token FCM, satu token Sanctum per HP; menunggu kontrak
-- [ ] **Ruang Pribadi dan Ruang Bersama** - menunggu kontrak
-- [ ] **Kode undangan** - buat, terima, cabut; menunggu kontrak
-- [ ] **Daftar tugas dan tugas** - penanggung jawab dan pengingat; menunggu kontrak
-- [ ] **Tabungan** - target, setoran, dan `config/currencies.php`; menunggu kontrak
-- [ ] **Sync (`GET /sync`)** - menunggu kontrak
-- [ ] **Push notification** - job FCM dan pengingat terjadwal; menunggu kontrak
-- [ ] **Resource Filament lain** - Ruang, Undangan, Token perangkat; menunggu model dari kontrak
-- [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama; menunggu model dari kontrak
+- [ ] **Akun** - `POST /auth/register`, `/auth/login`, `/auth/logout`; Ruang Pribadi dan daftar "Tugas" dibuat saat daftar
+- [ ] **Profil** - `GET /me`, `PATCH /me`
+- [ ] **Foto profil** - `POST /me/avatar`, `DELETE /me/avatar`
+- [ ] **Perangkat** - `POST /devices`, `DELETE /devices/{token}`
+- [ ] **Ruang** - `GET /spaces`
+- [ ] **Kode undangan** - `POST /invitations`, `POST /invitations/accept`
+- [ ] **Daftar tugas** - `PUT`, `PATCH`, `DELETE /lists/{id}`
+- [ ] **Tugas** - `PUT`, `PATCH`, `DELETE /tasks/{id}`; penanggung jawab dan `remind_at`
+- [ ] **Target tabungan** - `PUT`, `PATCH`, `DELETE /savings-goals/{id}`
+- [ ] **Setoran** - `PUT`, `PATCH`, `DELETE /savings-entries/{id}`; status tercapai
+- [ ] **Sync** - `GET /sync` dengan kursor per koleksi
+- [ ] **Push notification** - job FCM untuk enam jenis push
+- [ ] **Pengingat terjadwal** - scheduler tiap menit, klaim tanpa menyentuh `updated_at`
+- [ ] **Resource Filament lain** - Ruang, Undangan, Token perangkat
+- [ ] **`DemoSeeder`** - dua akun contoh dan satu Ruang Bersama
 
 ## Someday
 
 - [ ] **v0.2** - perjalanan, checklist persiapan, tanggal penting
 - [ ] **v0.3** - kenangan dan foto
-- [ ] **v1.0** - ekspor data, hapus akun, tugas berulang
+- [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
 
 ## Done
@@ -48,3 +54,6 @@
 - [x] ~~Seeder user admin (`AdminUserSeeder`): email dari `ADMIN_EMAIL`, kata sandi `password`, hanya lokal~~ (2026-10-09)
 - [x] ~~Resource Filament "Pengguna": daftar dan lihat, plus aksi "Reset kata sandi" yang mencabut semua token~~ (2026-10-09)
 - [x] ~~User admin lokal `iqbal.it@tangcity.com` dibuat lewat `AdminUserSeeder`~~ (2026-10-09)
+- [x] ~~Kontrak API masuk ke `docs/kontrak-api.md`~~ (2026-10-10)
+- [x] ~~Keputusan: `personal_access_tokens.id` tetap bigint, sesuai contoh token di kontrak~~ (2026-10-10)
+- [x] ~~Skema dan model data v0.1: ruang, anggota, undangan, daftar, tugas, target, setoran, token perangkat, kolom profil~~ (2026-10-10)
