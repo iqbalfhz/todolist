@@ -2,17 +2,16 @@
 
 ## Active
 
-
 ## Waiting On
 
 - [ ] **Teks push notification** - dari pemilik, since 2026-10-10; kontrak merujuk bagian "Bahasa dan microcopy" di tab utama, yang belum ada di repo
 - [ ] **Persetujuan daftar "Perubahan dari rancangan awal" di kontrak** - dari pemilik, since 2026-10-10; semua butirnya belum dicentang, kode mengikuti kontrak apa adanya
+- [ ] **Catat di kontrak: perilaku sync yang belum tertulis** - dari pemilik, since 2026-10-10; `cursor` yang bukan buatan server dibalas 422 `validation_failed` (app mengulang sync dari `since`), dan `since` tidak dibaca kalau `cursor` dikirim
 - [ ] **Konfirmasi: migrasi bawaan belum pernah jalan di server** - dari pemilik, since 2026-10-09; migrasinya diedit langsung
 - [ ] **Merge `feat/fondasi-proyek` lalu `feat/api-v0.1` ke `main`** - oleh pemilik, setelah `php artisan test --compact` hijau
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
 
 ## Backlog v0.1
-
 
 ## Someday
 
