@@ -4,7 +4,6 @@
 
 ## Waiting On
 
-- [ ] **Hapus akun uji di server** - oleh pemilik, since 2026-10-11; jalankan perintah pembersih di Terminal Coolify, yang sekaligus menampilkan apakah pengingat dan antrean sudah bekerja
 - [ ] **Samakan dokumen perencanaan dengan keputusan 11 Oktober** - oleh pemilik, since 2026-10-11; centang ke-18 butir "Perubahan dari rancangan awal", jawab dua pertanyaan "Masih terbuka", tulis dua perilaku sync (`cursor` yang bukan buatan server dibalas 422 `validation_failed`; `since` tidak dibaca kalau `cursor` dikirim), lalu salin ulang ke `docs/kontrak-api.md`
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
 - [ ] **Backup database produksi** - oleh pemilik, since 2026-10-11; aktifkan Backups terjadwal di halaman database Coolify sebelum data sungguhan masuk
@@ -65,3 +64,4 @@
 - [x] ~~Keputusan pemilik atas kontrak: ke-18 butir "Perubahan dari rancangan awal" disetujui, nominal tetap disebut di push setoran, dan lupa kata sandi cukup lewat reset manual oleh admin~~ (2026-10-11)
 - [x] ~~Teks push: teks yang sudah ada di `lang/id/push.php` disahkan pemilik sebagai teks final~~ (2026-10-11)
 - [x] ~~Uji alur nyata di server dengan dua akun uji: daftar, undangan, daftar tugas, tugas, tabungan, sync, keluar, dan masuk; ke-28 pemeriksaan lolos~~ (2026-10-11)
+- [x] ~~Akun uji dihapus dari server; pemeriksaannya menunjukkan pengingat terjadwal mengklaim tugas yang jatuh tempo, antrean kosong, dan tidak ada job gagal~~ (2026-10-11)

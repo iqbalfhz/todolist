@@ -15,7 +15,7 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist
 Belum beres:
 
 - Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, unggah foto profil gagal dan push tidak terkirim.
-- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos. Yang belum pernah dicoba di sana: unggah foto profil, pendaftaran perangkat, dan pengiriman push.
+- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Yang belum pernah dicoba di sana: unggah foto profil, pendaftaran perangkat, dan pengiriman push.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
