@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+cd /app
+
+# Apply pending migrations before any process serves a request or runs a job.
+# If this fails the container stops, and Coolify keeps the previous one running.
+php artisan migrate --force
+
+# Cache config, routes, events, and views with the environment of this container.
+php artisan optimize
+
+exec supervisord -c /etc/supervisord.conf

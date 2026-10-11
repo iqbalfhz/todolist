@@ -15,6 +15,7 @@ Seluruh cakupan v0.1 sudah dibangun dan bertes: ke-25 endpoint di kontrak, pengi
 Belum beres:
 
 - Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan.
+- Image Docker belum pernah di-build. Docker tidak terpasang di mesin pengembang, jadi build pertamanya terjadi di Coolify. Yang sudah diuji di lokal hanya isi image-nya: dependensi tanpa paket dev, langkah start, dan request dalam mode produksi.
 - Teks push selain pengingat dan `partner_joined` masih sementara di `lang/id/push.php`, karena bagian "Bahasa dan microcopy" belum disalin ke repo.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -44,7 +45,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan
 - Intervention Image untuk mengolah foto
 - Scramble untuk dokumentasi API di `/docs/api`
-- Deploy: Coolify, otomatis saat merge ke `main`; tiga proses dari image yang sama: web, `php artisan queue:work`, `php artisan schedule:work`
+- Deploy: Coolify dengan build pack Dockerfile, otomatis saat merge ke `main`. Image-nya `dunglas/frankenphp` (mode klasik, tanpa Octane), dan satu container menjalankan tiga proses lewat supervisor: FrankenPHP untuk web, `php artisan queue:work`, dan `php artisan schedule:work`
 
 ## Perintah
 
@@ -61,7 +62,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 - `APP_TIMEZONE=UTC`, `APP_LOCALE=id`, `DB_CONNECTION=mysql`, `QUEUE_CONNECTION=database`
 - `ADMIN_EMAIL` — satu-satunya email yang boleh masuk `/admin`
-- `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore)
+- `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore), atau isi JSON-nya langsung dalam satu baris, yang lebih mudah di Coolify
 - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` — disk `r2`, region `auto`, bucket privat
 - Setiap variabel baru ditambahkan juga ke `.env.example` dengan nilai kosong atau contoh.
 
@@ -75,6 +76,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Logika bersama (sync, undangan, pengingat, total tabungan): `app/Actions/`. Action yang butuh pelaku menerima `User $actor` dan memeriksa aksesnya dengan `Gate::forUser($actor)`, bukan user yang sedang login, supaya bisa dipanggil dari seeder dan job.
 - Job antrean (push, hitung ulang pengingat): `app/Jobs/`. Foto profil diolah langsung di request, sesuai kontrak.
 - Perintah terjadwal: `routes/console.php`
+- Deploy: `Dockerfile`, `.dockerignore`, dan folder `docker/` (pengaturan PHP produksi, konfigurasi supervisor, skrip start)
 - Enum: `app/Enums/`; aturan validasi sendiri: `app/Rules/`; pembentuk error: `app/Exceptions/`
 - Admin: `app/Filament/`
 - Model daftar tugas bernama `TaskList`, bukan `List` (kata kunci PHP)
@@ -165,6 +167,10 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Kerja di branch (`feat/...`, `fix/...`), lalu merge ke `main`. Merge ke `main` langsung men-deploy ke Coolify, jadi tes harus hijau dulu.
 - Commit kecil per perubahan, pesan singkat dengan awalan `feat:`, `fix:`, `chore:`, `test:`, atau `docs:`.
 - Migration yang sudah sampai staging/produksi tidak diedit lagi; buat migration baru.
+- Setiap container mulai, `docker/start-container` menjalankan `php artisan migrate --force` lalu `php artisan optimize`, baru menyalakan ketiga proses. Kalau migrasi gagal, container berhenti dan Coolify mempertahankan versi sebelumnya.
+- Di Coolify: Ports Exposes `80`, health check memakai `/up` dari `HEALTHCHECK` di Dockerfile, dan log aplikasi tampil di tab Logs karena `LOG_CHANNEL=stderr`.
+- Variabel yang wajib diisi di Coolify: `APP_KEY`, `APP_URL`, `APP_LOCALE=id`, `DB_*`, dan `ADMIN_EMAIL`. Kredensial R2 dan Firebase baru diperlukan saat foto profil dan push dipakai.
+- `bootstrap/app.php` memercayai semua proxy, karena di produksi aplikasi hanya bisa dijangkau lewat proxy Coolify. Jangan membuka port container langsung ke internet.
 
 ## Jangan
 

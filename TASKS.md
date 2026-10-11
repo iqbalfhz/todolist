@@ -8,7 +8,9 @@
 - [ ] **Persetujuan daftar "Perubahan dari rancangan awal" di kontrak** - dari pemilik, since 2026-10-10; semua butirnya belum dicentang, kode mengikuti kontrak apa adanya
 - [ ] **Catat di kontrak: perilaku sync yang belum tertulis** - dari pemilik, since 2026-10-10; `cursor` yang bukan buatan server dibalas 422 `validation_failed` (app mengulang sync dari `since`), dan `since` tidak dibaca kalau `cursor` dikirim
 - [ ] **Konfirmasi: migrasi bawaan belum pernah jalan di server** - dari pemilik, since 2026-10-09; migrasinya diedit langsung
-- [ ] **Merge `feat/fondasi-proyek` lalu `feat/api-v0.1` ke `main`** - oleh pemilik, setelah `php artisan test --compact` hijau
+- [ ] **Siapkan aplikasi di Coolify** - oleh pemilik, since 2026-10-11; database MySQL 8.4, aplikasi dengan build pack Dockerfile, Ports Exposes `80`, domain, dan variabel lingkungan
+- [ ] **Merge `feat/api-v0.1` ke `main`** - oleh pemilik, setelah Coolify siap dan `php artisan test --compact` hijau; `feat/fondasi-proyek` sudah termuat di dalamnya
+- [ ] **Buat admin di server** - oleh pemilik, setelah deploy pertama: `php artisan make:filament-user` dengan email `ADMIN_EMAIL`
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
 
 ## Backlog v0.1
@@ -19,6 +21,7 @@
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
+- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
 
@@ -56,3 +59,4 @@
 - [x] ~~Push notification: job FCM untuk keenam jenis push (`task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`); teksnya masih sementara~~ (2026-10-10)
 - [x] ~~Resource Filament: Ruang dan anggotanya (lihat saja), Undangan (lihat, aksi "Cabut"), Token perangkat (lihat, hapus); isi tugas, daftar, dan tabungan tidak ditampilkan~~ (2026-10-10)
 - [x] ~~`DemoSeeder`: akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), Ruang Bersama lewat alur undangan, beberapa daftar, tugas, target, dan setoran; ikut dipanggil `DatabaseSeeder`~~ (2026-10-10)
+- [x] ~~Persiapan produksi: aplikasi memercayai proxy Coolify, syarat PHP disamakan dengan `composer.lock` (8.4), dan image FrankenPHP yang menjalankan web, antrean, dan scheduler~~ (2026-10-11)
