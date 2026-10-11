@@ -4,9 +4,8 @@
 
 ## Waiting On
 
-- [ ] **Teks push notification** - dari pemilik, since 2026-10-10; kontrak merujuk bagian "Bahasa dan microcopy" di tab utama, yang belum ada di repo
-- [ ] **Persetujuan daftar "Perubahan dari rancangan awal" di kontrak** - dari pemilik, since 2026-10-10; semua butirnya belum dicentang, kode mengikuti kontrak apa adanya
-- [ ] **Catat di kontrak: perilaku sync yang belum tertulis** - dari pemilik, since 2026-10-10; `cursor` yang bukan buatan server dibalas 422 `validation_failed` (app mengulang sync dari `since`), dan `since` tidak dibaca kalau `cursor` dikirim
+- [ ] **Hapus akun uji di server** - oleh pemilik, since 2026-10-11; jalankan perintah pembersih di Terminal Coolify, yang sekaligus menampilkan apakah pengingat dan antrean sudah bekerja
+- [ ] **Samakan dokumen perencanaan dengan keputusan 11 Oktober** - oleh pemilik, since 2026-10-11; centang ke-18 butir "Perubahan dari rancangan awal", jawab dua pertanyaan "Masih terbuka", tulis dua perilaku sync (`cursor` yang bukan buatan server dibalas 422 `validation_failed`; `since` tidak dibaca kalau `cursor` dikirim), lalu salin ulang ke `docs/kontrak-api.md`
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
 - [ ] **Backup database produksi** - oleh pemilik, since 2026-10-11; aktifkan Backups terjadwal di halaman database Coolify sebelum data sungguhan masuk
 - [ ] **Jangan kirim variabel ke proses build di Coolify** - oleh pemilik, since 2026-10-11; `APP_KEY` dan `DB_PASSWORD` ikut terkirim sebagai build arg padahal tidak dibutuhkan saat build
@@ -63,3 +62,6 @@
 - [x] ~~Aplikasi di Coolify: MySQL 8.4, build pack Dockerfile, domain `todolist.iqbalfhz.my.id`, variabel lingkungan, dan auto deploy lewat webhook GitHub~~ (2026-10-11)
 - [x] ~~`feat/api-v0.1` di-merge ke `main` dan ter-deploy; image FrankenPHP ter-build di percobaan pertama~~ (2026-10-11)
 - [x] ~~Akun admin dibuat di server dan bisa masuk ke `/admin`~~ (2026-10-11)
+- [x] ~~Keputusan pemilik atas kontrak: ke-18 butir "Perubahan dari rancangan awal" disetujui, nominal tetap disebut di push setoran, dan lupa kata sandi cukup lewat reset manual oleh admin~~ (2026-10-11)
+- [x] ~~Teks push: teks yang sudah ada di `lang/id/push.php` disahkan pemilik sebagai teks final~~ (2026-10-11)
+- [x] ~~Uji alur nyata di server dengan dua akun uji: daftar, undangan, daftar tugas, tugas, tabungan, sync, keluar, dan masuk; ke-28 pemeriksaan lolos~~ (2026-10-11)

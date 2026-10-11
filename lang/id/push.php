@@ -7,9 +7,9 @@ return [
     | Push Notification Texts
     |--------------------------------------------------------------------------
     |
-    | The texts of the six push notifications. Only the reminder and the
-    | partner_joined texts come from the API contract. The others are
-    | provisional until the "Bahasa dan microcopy" section is copied here.
+    | The texts of the six push notifications. The reminder and the
+    | partner_joined texts come from the API contract. The owner approved
+    | the others as they are written here on 11 October 2026.
     |
     */
 

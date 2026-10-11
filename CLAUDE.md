@@ -15,9 +15,8 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist
 Belum beres:
 
 - Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, unggah foto profil gagal dan push tidak terkirim.
-- Di server baru `/up`, panel admin, dan balasan error API yang sudah dicoba. Alur daftar sampai sync belum pernah dijalankan di sana; yang pertama mencobanya adalah app Flutter.
+- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos. Yang belum pernah dicoba di sana: unggah foto profil, pendaftaran perangkat, dan pengiriman push.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
-- Teks push selain pengingat dan `partner_joined` masih sementara di `lang/id/push.php`, karena bagian "Bahasa dan microcopy" belum disalin ke repo.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
 Perbarui atau hapus butir di atas begitu selesai dikerjakan.
@@ -33,7 +32,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 **Belum dibangun, jangan dibuat dulu:** perjalanan dan checklist persiapan (v0.2), tanggal penting (v0.2), kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
 
-**Belum final:** bagian "Perubahan dari rancangan awal" dan "Masih terbuka" di akhir kontrak belum semuanya disetujui pemilik. Kalau ada yang ditolak, kontrak dan file ini diperbarui.
+**Sudah disetujui pemilik (11 Oktober 2026):** ke-18 butir "Perubahan dari rancangan awal" dan dua saran di "Masih terbuka" pada akhir kontrak, yaitu nominal tetap disebut di push setoran, dan lupa kata sandi di v0.1 cukup lewat reset manual oleh admin. Teks push di `lang/id/push.php` juga sudah disahkan sebagai teks final. Kotak centang di salinan kontrak baru berubah setelah dokumen perencanaan diperbarui.
 
 ## Stack
 
