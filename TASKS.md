@@ -60,3 +60,4 @@
 - [x] ~~Resource Filament: Ruang dan anggotanya (lihat saja), Undangan (lihat, aksi "Cabut"), Token perangkat (lihat, hapus); isi tugas, daftar, dan tabungan tidak ditampilkan~~ (2026-10-10)
 - [x] ~~`DemoSeeder`: akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), Ruang Bersama lewat alur undangan, beberapa daftar, tugas, target, dan setoran; ikut dipanggil `DatabaseSeeder`~~ (2026-10-10)
 - [x] ~~Persiapan produksi: aplikasi memercayai proxy Coolify, syarat PHP disamakan dengan `composer.lock` (8.4), dan image FrankenPHP yang menjalankan web, antrean, dan scheduler~~ (2026-10-11)
+- [x] ~~Panel admin: halaman utama disebut "Dashboard", dan ikon menu Ruang dibedakan dari ikon Dashboard~~ (2026-10-11)

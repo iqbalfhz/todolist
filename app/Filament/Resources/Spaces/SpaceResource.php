@@ -21,7 +21,7 @@ class SpaceResource extends Resource
 {
     protected static ?string $model = Space::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquares2x2;
 
     protected static ?int $navigationSort = 2;
 
