@@ -5,10 +5,8 @@
 ## Waiting On
 
 - [ ] **Samakan dokumen perencanaan dengan keputusan 11 Oktober** - oleh pemilik, since 2026-10-11; centang ke-18 butir "Perubahan dari rancangan awal", jawab dua pertanyaan "Masih terbuka", tulis dua perilaku sync (`cursor` yang bukan buatan server dibalas 422 `validation_failed`; `since` tidak dibaca kalau `cursor` dikirim), lalu salin ulang ke `docs/kontrak-api.md`
-- [ ] **Kredensial Firebase** - dari pemilik; FCM belum pernah dicoba ke layanan asli
-- [ ] **Hapus akun uji foto di server** - oleh pemilik, since 2026-10-11; jalankan lagi perintah pembersih di Terminal Coolify
 - [ ] **Backup database produksi** - oleh pemilik, since 2026-10-11; aktifkan Backups terjadwal di halaman database Coolify sebelum data sungguhan masuk
-- [ ] **Jangan kirim variabel ke proses build di Coolify** - oleh pemilik, since 2026-10-11; `APP_KEY` dan `DB_PASSWORD` ikut terkirim sebagai build arg padahal tidak dibutuhkan saat build
+- [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
 
 ## Backlog v0.1
 
@@ -68,3 +66,6 @@
 - [x] ~~Akun uji dihapus dari server; pemeriksaannya menunjukkan pengingat terjadwal mengklaim tugas yang jatuh tempo, antrean kosong, dan tidak ada job gagal~~ (2026-10-11)
 - [x] ~~Cloudflare R2 terpasang di server (bucket `todolist-avatar`); unggah, ganti, dan hapus foto profil lolos uji di server~~ (2026-10-11)
 - [x] ~~Kegagalan penyimpanan ke R2 sekarang tercatat penyebabnya di log~~ (2026-10-11)
+- [x] ~~Firebase: proyek `todolist-cb119` dibuat, kredensialnya dipasang di server sebagai File Mount, dan FCM menerimanya (uji validasi token)~~ (2026-10-11)
+- [x] ~~Akun uji foto dihapus dari server~~ (2026-10-11)
+- [x] ~~Coolify tidak lagi mengirim variabel ke proses build (Build arguments: Managed manually in Dockerfile)~~ (2026-10-11)

@@ -14,8 +14,8 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist
 
 Belum beres:
 
-- FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, push tidak terkirim.
-- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push.
+- Kredensial Firebase (proyek `todolist-cb119`) sudah terpasang di server dan diterima FCM, tetapi belum ada push yang benar-benar sampai ke HP. Itu baru bisa diuji setelah app Flutter mendaftarkan perangkatnya lewat `POST /devices`.
+- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push ke HP sungguhan.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -63,7 +63,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - `APP_TIMEZONE=UTC`, `APP_LOCALE=id`, `DB_CONNECTION=mysql`, `QUEUE_CONNECTION=database`
 - `APP_TIMEZONE` selain `UTC` ditolak saat aplikasi mulai (`AppServiceProvider`), juga di server. Zona waktu yang dilihat pengguna diatur per akun dan per ruang (bawaan `Asia/Jakarta`).
 - `ADMIN_EMAIL` — satu-satunya email yang boleh masuk `/admin`
-- `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore), atau isi JSON-nya langsung dalam satu baris, yang lebih mudah di Coolify
+- `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore). Di server, berkasnya dipasang Coolify sebagai File Mount di `/etc/secrets/firebase.json`
 - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` — disk `r2`, region `auto`, bucket privat
 - Setiap variabel baru ditambahkan juga ke `.env.example` dengan nilai kosong atau contoh.
 
