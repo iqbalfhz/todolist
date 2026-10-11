@@ -8,14 +8,15 @@ API untuk aplikasi to-do berdua (tugas, tabungan, liburan, kenangan). Klien satu
 
 Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditulis ulang oleh `php artisan boost:update` (jalan otomatis setelah `composer update`), jadi jangan diedit; aturan proyek ditulis di luar blok itu, dan tag pembuka blok jangan pernah ditulis ulang di bagian proyek. Kalau keduanya bertentangan, aturan proyek yang berlaku. Contoh: deploy proyek ini lewat Coolify, bukan Laravel Cloud.
 
-## Kondisi repo (per 10 Oktober 2026)
+## Kondisi repo (per 11 Oktober 2026)
 
-Seluruh cakupan v0.1 sudah dibangun dan bertes: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
 Belum beres:
 
-- Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan.
-- Image Docker belum pernah di-build. Docker tidak terpasang di mesin pengembang, jadi build pertamanya terjadi di Coolify. Yang sudah diuji di lokal hanya isi image-nya: dependensi tanpa paket dev, langkah start, dan request dalam mode produksi.
+- Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, unggah foto profil gagal dan push tidak terkirim.
+- Di server baru `/up`, panel admin, dan balasan error API yang sudah dicoba. Alur daftar sampai sync belum pernah dijalankan di sana; yang pertama mencobanya adalah app Flutter.
+- Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - Teks push selain pengingat dan `partner_joined` masih sementara di `lang/id/push.php`, karena bagian "Bahasa dan microcopy" belum disalin ke repo.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -172,6 +173,8 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Di Coolify: Ports Exposes `80`, health check memakai `/up` dari `HEALTHCHECK` di Dockerfile, dan log aplikasi tampil di tab Logs karena `LOG_CHANNEL=stderr`.
 - Variabel yang wajib diisi di Coolify: `APP_KEY`, `APP_URL`, `APP_LOCALE=id`, `DB_*`, dan `ADMIN_EMAIL`. Kredensial R2 dan Firebase baru diperlukan saat foto profil dan push dipakai.
 - `bootstrap/app.php` memercayai semua proxy, karena di produksi aplikasi hanya bisa dijangkau lewat proxy Coolify. Jangan membuka port container langsung ke internet.
+- Domain produksi lewat Cloudflare lebih dulu, baru proxy Coolify. Akibatnya IP yang terbaca aplikasi adalah IP Cloudflare, jadi batas request per IP (daftar, masuk, terima undangan) belum dihitung per pengguna. Rapikan sebelum rilis publik.
+- Akun admin di server dibuat dengan `php artisan make:filament-user` di Terminal Coolify. Kata sandinya diganti lewat menu Pengguna, aksi "Reset kata sandi".
 
 ## Jangan
 

@@ -7,11 +7,9 @@
 - [ ] **Teks push notification** - dari pemilik, since 2026-10-10; kontrak merujuk bagian "Bahasa dan microcopy" di tab utama, yang belum ada di repo
 - [ ] **Persetujuan daftar "Perubahan dari rancangan awal" di kontrak** - dari pemilik, since 2026-10-10; semua butirnya belum dicentang, kode mengikuti kontrak apa adanya
 - [ ] **Catat di kontrak: perilaku sync yang belum tertulis** - dari pemilik, since 2026-10-10; `cursor` yang bukan buatan server dibalas 422 `validation_failed` (app mengulang sync dari `since`), dan `since` tidak dibaca kalau `cursor` dikirim
-- [ ] **Konfirmasi: migrasi bawaan belum pernah jalan di server** - dari pemilik, since 2026-10-09; migrasinya diedit langsung
-- [ ] **Siapkan aplikasi di Coolify** - oleh pemilik, since 2026-10-11; database MySQL 8.4, aplikasi dengan build pack Dockerfile, Ports Exposes `80`, domain, dan variabel lingkungan
-- [ ] **Merge `feat/api-v0.1` ke `main`** - oleh pemilik, setelah Coolify siap dan `php artisan test --compact` hijau; `feat/fondasi-proyek` sudah termuat di dalamnya
-- [ ] **Buat admin di server** - oleh pemilik, setelah deploy pertama: `php artisan make:filament-user` dengan email `ADMIN_EMAIL`
 - [ ] **Kredensial Cloudflare R2 dan Firebase** - dari pemilik; disk `r2` dan FCM belum pernah dicoba ke layanan asli
+- [ ] **Backup database produksi** - oleh pemilik, since 2026-10-11; aktifkan Backups terjadwal di halaman database Coolify sebelum data sungguhan masuk
+- [ ] **Jangan kirim variabel ke proses build di Coolify** - oleh pemilik, since 2026-10-11; `APP_KEY` dan `DB_PASSWORD` ikut terkirim sebagai build arg padahal tidak dibutuhkan saat build
 
 ## Backlog v0.1
 
@@ -21,7 +19,7 @@
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
-- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
+- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, baca IP klien asli di belakang Cloudflare untuk batas request, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
 
@@ -61,3 +59,7 @@
 - [x] ~~`DemoSeeder`: akun `aku@contoh.test` dan `pasangan@contoh.test` (kata sandi `password`), Ruang Bersama lewat alur undangan, beberapa daftar, tugas, target, dan setoran; ikut dipanggil `DatabaseSeeder`~~ (2026-10-10)
 - [x] ~~Persiapan produksi: aplikasi memercayai proxy Coolify, syarat PHP disamakan dengan `composer.lock` (8.4), dan image FrankenPHP yang menjalankan web, antrean, dan scheduler~~ (2026-10-11)
 - [x] ~~Panel admin: halaman utama disebut "Dashboard", dan ikon menu Ruang dibedakan dari ikon Dashboard~~ (2026-10-11)
+- [x] ~~Migrasi bawaan yang diedit: database produksi dibuat baru dan seluruh migrasi jalan bersih di sana~~ (2026-10-11)
+- [x] ~~Aplikasi di Coolify: MySQL 8.4, build pack Dockerfile, domain `todolist.iqbalfhz.my.id`, variabel lingkungan, dan auto deploy lewat webhook GitHub~~ (2026-10-11)
+- [x] ~~`feat/api-v0.1` di-merge ke `main` dan ter-deploy; image FrankenPHP ter-build di percobaan pertama~~ (2026-10-11)
+- [x] ~~Akun admin dibuat di server dan bisa masuk ke `/admin`~~ (2026-10-11)
