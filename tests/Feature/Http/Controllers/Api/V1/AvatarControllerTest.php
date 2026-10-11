@@ -84,6 +84,21 @@ describe('store', function () {
         expect($sharedSpace->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.000000Z');
     });
 
+    it('returns 500 with the server_error code and keeps the profile unchanged when the storage refuses the photo', function () {
+        config([
+            'filesystems.disks.r2.key' => 'kunci-akses',
+            'filesystems.disks.r2.secret' => 'kunci-rahasia',
+            'filesystems.disks.r2.bucket' => '',
+            'filesystems.disks.r2.endpoint' => 'https://akun.r2.cloudflarestorage.com',
+        ]);
+        $user = actingAsApiUser();
+
+        $response = $this->post('/api/v1/me/avatar', ['photo' => UploadedFile::fake()->image('foto.jpg')]);
+
+        $response->assertInternalServerError()->assertJsonPath('code', 'server_error');
+        expect($user->fresh())->avatar_path->toBeNull()->avatar_version->toBe(0);
+    });
+
     it('returns 422 for an upload that is not an accepted photo', function (?UploadedFile $photo) {
         Storage::fake('r2');
         $user = actingAsApiUser();

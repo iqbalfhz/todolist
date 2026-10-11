@@ -70,7 +70,7 @@ return [
             'use_path_style_endpoint' => false,
             'visibility' => 'private',
             'throw' => false,
-            'report' => false,
+            'report' => true,
         ],
 
     ],
