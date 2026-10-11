@@ -484,6 +484,8 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Setiap daftar diurutkan `(updated_at, id)` dan dipotong paling banyak 500 baris. `next_cursor` menyimpan posisi terakhir tiap daftar; app cukup mengirimnya balik apa adanya. Dengan begitu baris yang `updated_at`-nya sama tidak terulang atau terlewat.
 - Tanpa `since`: semua data aktif di semua ruangmu, tanpa yang terhapus. Hanya dipakai saat database lokal akun itu masih kosong, yaitu setelah daftar atau saat akun itu pertama kali masuk di HP tersebut.
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
+- `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
+- Kalau `cursor` dikirim, `since` tidak dibaca.
 
 ### Aturan di HP
 
@@ -551,31 +553,35 @@ Isi pesan yang diterima app, disederhanakan:
 
 Daftar ini menyesuaikan atau menambah rancangan di tab utama, setelah kontrak ditulis dan diperiksa ulang. Centang yang kamu setujui; yang belum, beri komentar di barisnya.
 
+Semua butir di bawah disetujui pada 11 Oktober 2026 dan sudah diterapkan di API. Tiga di antaranya juga menyangkut app, yang belum dibuat: Beranda dari cache lokal, tambah cepat ke daftar aktif pertama, dan tema yang disimpan di HP.
+
 ### Perilaku
 
-- [ ] `GET /home` dihapus. Beranda dihitung dari cache lokal yang diisi `GET /sync`, jadi tetap cepat dan jalan saat offline. Kriteria FR-15 di tab utama perlu disesuaikan.
-- [ ] Ruang Bersama baru dibuat saat pasangan memakai kode, bukan saat "Ajak pasangan" diketuk, jadi tidak ada ruang setengah jadi. `POST /spaces` dihapus.
-- [ ] Satu akun paling banyak punya satu Ruang Bersama di v0.1.
-- [ ] Tugas yang punya tanggal tapi tanpa jam diingatkan pukul 08.00 di hari tenggatnya.
-- [ ] Pengingat yang telat lebih dari 30 menit dilewati, dan tugas di daftar arsip tidak diingatkan.
-- [ ] Setiap ruang selalu punya minimal satu daftar aktif, dan tambah cepat masuk ke daftar aktif pertama.
-- [ ] Pindah daftar hanya bisa di dalam ruang yang sama.
-- [ ] Mata uang target hanya dipilih saat target dibuat.
-- [ ] Preferensi notifikasi dibagi tiga kelompok sesuai layar Pengaturan, bukan per jenis seperti tertulis di FR-11.
-- [ ] Kalau dua HP mengubah kolom yang sama, yang terakhir sampai di server menang, termasuk perubahan offline yang baru terkirim belakangan.
-- [ ] `PUT` hanya membuat; data yang sudah ada tidak ditimpa, jadi kiriman ulang dari antrean selalu aman.
-- [ ] Rupiah disimpan tanpa desimal.
-- [ ] Tema disimpan di HP, bukan di server.
+- [x] `GET /home` dihapus. Beranda dihitung dari cache lokal yang diisi `GET /sync`, jadi tetap cepat dan jalan saat offline. Kriteria FR-15 di tab utama perlu disesuaikan.
+- [x] Ruang Bersama baru dibuat saat pasangan memakai kode, bukan saat "Ajak pasangan" diketuk, jadi tidak ada ruang setengah jadi. `POST /spaces` dihapus.
+- [x] Satu akun paling banyak punya satu Ruang Bersama di v0.1.
+- [x] Tugas yang punya tanggal tapi tanpa jam diingatkan pukul 08.00 di hari tenggatnya.
+- [x] Pengingat yang telat lebih dari 30 menit dilewati, dan tugas di daftar arsip tidak diingatkan.
+- [x] Setiap ruang selalu punya minimal satu daftar aktif, dan tambah cepat masuk ke daftar aktif pertama.
+- [x] Pindah daftar hanya bisa di dalam ruang yang sama.
+- [x] Mata uang target hanya dipilih saat target dibuat.
+- [x] Preferensi notifikasi dibagi tiga kelompok sesuai layar Pengaturan, bukan per jenis seperti tertulis di FR-11.
+- [x] Kalau dua HP mengubah kolom yang sama, yang terakhir sampai di server menang, termasuk perubahan offline yang baru terkirim belakangan.
+- [x] `PUT` hanya membuat; data yang sudah ada tidak ditimpa, jadi kiriman ulang dari antrean selalu aman.
+- [x] Rupiah disimpan tanpa desimal.
+- [x] Tema disimpan di HP, bukan di server.
 
 ### Tabel (ERD)
 
-- [ ] `users`: tambah `avatar_version`; `birth_date` disimpan sebagai teks supaya tahun boleh kosong.
-- [ ] `space_invitations.space_id` boleh kosong sampai kode diterima.
-- [ ] `savings_entries`: tambah `space_id` (disalin dari targetnya), supaya setoran yang terhapus ikut tersinkron.
-- [ ] `savings_goals`: tambah `achieved_notified_at`.
-- [ ] Semua `created_at`, `updated_at`, dan `deleted_at` memakai presisi mikrodetik.
+- [x] `users`: tambah `avatar_version`; `birth_date` disimpan sebagai teks supaya tahun boleh kosong.
+- [x] `space_invitations.space_id` boleh kosong sampai kode diterima.
+- [x] `savings_entries`: tambah `space_id` (disalin dari targetnya), supaya setoran yang terhapus ikut tersinkron.
+- [x] `savings_goals`: tambah `achieved_notified_at`.
+- [x] Semua `created_at`, `updated_at`, dan `deleted_at` memakai presisi mikrodetik.
 
-### Masih terbuka
+### Sudah diputuskan
 
-- Teks notifikasi setoran menyebut nominal ("menabung Rp200.000"), dan teks push lewat server Google. Saranku tetap sebut nominal, karena judul tugas pun lewat jalur yang sama dan nominalnya sudah disembunyikan di layar kunci. Setuju?
-- Lupa kata sandi belum ada di v0.1. Untuk kalian berdua, reset dilakukan manual di server (sekaligus mencabut semua token akun itu), lalu versi di app dibuat sebelum rilis publik. Cukup begitu?
+Dua pertanyaan yang sebelumnya terbuka, diputuskan pada 11 Oktober 2026:
+
+- Teks notifikasi setoran tetap menyebut nominal ("menabung Rp200.000"). Judul tugas pun lewat jalur yang sama, dan nominalnya disembunyikan di layar kunci.
+- Lupa kata sandi belum ada di v0.1. Reset dilakukan manual lewat panel admin (sekaligus mencabut semua token akun itu), lalu versi di app dibuat sebelum rilis publik.

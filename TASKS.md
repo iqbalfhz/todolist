@@ -4,7 +4,7 @@
 
 ## Waiting On
 
-- [ ] **Samakan dokumen perencanaan dengan keputusan 11 Oktober** - oleh pemilik, since 2026-10-11; centang ke-18 butir "Perubahan dari rancangan awal", jawab dua pertanyaan "Masih terbuka", tulis dua perilaku sync (`cursor` yang bukan buatan server dibalas 422 `validation_failed`; `since` tidak dibaca kalau `cursor` dikirim), lalu salin ulang ke `docs/kontrak-api.md`
+- [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
 
@@ -71,3 +71,4 @@
 - [x] ~~Coolify tidak lagi mengirim variabel ke proses build (Build arguments: Managed manually in Dockerfile)~~ (2026-10-11)
 - [x] ~~Backup database produksi: jadwal harian di Coolify, 7 backup lokal terakhir disimpan, dan backup pertama berhasil~~ (2026-10-11)
 - [x] ~~Backup database juga diunggah ke R2 (bucket `todolist-backup`, 30 backup terakhir disimpan); backup pertama tersedia di server dan di R2~~ (2026-10-11)
+- [x] ~~Salinan kontrak di repo dicentang (18 butir), dua pertanyaan terbukanya dicatat sebagai keputusan, dan dua aturan sync ditambahkan~~ (2026-10-11)

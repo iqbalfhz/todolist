@@ -32,7 +32,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 
 **Belum dibangun, jangan dibuat dulu:** perjalanan dan checklist persiapan (v0.2), tanggal penting (v0.2), kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
 
-**Sudah disetujui pemilik (11 Oktober 2026):** ke-18 butir "Perubahan dari rancangan awal" dan dua saran di "Masih terbuka" pada akhir kontrak, yaitu nominal tetap disebut di push setoran, dan lupa kata sandi di v0.1 cukup lewat reset manual oleh admin. Teks push di `lang/id/push.php` juga sudah disahkan sebagai teks final. Kotak centang di salinan kontrak baru berubah setelah dokumen perencanaan diperbarui.
+**Sudah disetujui pemilik (11 Oktober 2026):** ke-18 butir "Perubahan dari rancangan awal" dan dua pertanyaan yang dulu ada di "Masih terbuka" pada akhir kontrak (kini "Sudah diputuskan"), yaitu nominal tetap disebut di push setoran, dan lupa kata sandi di v0.1 cukup lewat reset manual oleh admin. Teks push di `lang/id/push.php` juga sudah disahkan sebagai teks final. Atas permintaan pemilik, salinan kontrak di repo sudah dicentang dan dilengkapi dua aturan sync pada tanggal itu, lebih dulu daripada dokumen perencanaan di claude.ai; dokumen itu masih perlu disamakan.
 
 ## Stack
 
