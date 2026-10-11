@@ -26,6 +26,14 @@ it('shows the dashboard to the admin', function () {
     $response->assertOk();
 });
 
+it('calls the home page of the panel Dashboard, not Dasbor', function () {
+    actingAsAdmin();
+
+    $response = $this->get('/admin');
+
+    $response->assertOk()->assertSee('Dashboard')->assertDontSee('Dasbor');
+});
+
 it('returns 404 for what users keep in their spaces, which the panel never shows', function (string $url) {
     actingAsAdmin();
 
