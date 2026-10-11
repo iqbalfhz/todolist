@@ -61,6 +61,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 ## Konfigurasi (`.env`)
 
 - `APP_TIMEZONE=UTC`, `APP_LOCALE=id`, `DB_CONNECTION=mysql`, `QUEUE_CONNECTION=database`
+- `APP_TIMEZONE` selain `UTC` ditolak saat aplikasi mulai (`AppServiceProvider`), juga di server. Zona waktu yang dilihat pengguna diatur per akun dan per ruang (bawaan `Asia/Jakarta`).
 - `ADMIN_EMAIL` — satu-satunya email yang boleh masuk `/admin`
 - `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore), atau isi JSON-nya langsung dalam satu baris, yang lebih mudah di Coolify
 - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` — disk `r2`, region `auto`, bucket privat

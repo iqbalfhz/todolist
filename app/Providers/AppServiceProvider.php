@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use LogicException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +24,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->ensureApplicationRunsInUtc();
         $this->configureRateLimiting();
+    }
+
+    /**
+     * Stop the application when it is configured for a timezone other than UTC.
+     *
+     * Times are stored in UTC and compared as text, so another server
+     * timezone silently shifts reminders, completion times, and sync by its
+     * offset. What users see follows the timezone of their account and space.
+     */
+    private function ensureApplicationRunsInUtc(): void
+    {
+        if (config('app.timezone') !== 'UTC') {
+            throw new LogicException('APP_TIMEZONE harus UTC. Zona waktu pengguna diatur per akun dan per ruang, bukan di server.');
+        }
     }
 
     /**
