@@ -14,8 +14,8 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist
 
 Belum beres:
 
-- Uji coba ke layanan asli: disk `r2` dan FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, unggah foto profil gagal dan push tidak terkirim.
-- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Yang belum pernah dicoba di sana: unggah foto profil, pendaftaran perangkat, dan pengiriman push.
+- FCM belum pernah dipakai dengan kredensial sungguhan, dan kredensialnya belum diisi di server. Sampai itu ada, push tidak terkirim.
+- Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -42,7 +42,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Pest untuk tes, Laravel Pint untuk format
 - Queue driver `database`, scheduler setiap menit
 - Push: FCM HTTP v1 lewat `kreait/laravel-firebase`
-- File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan
+- File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan. Disk ini tidak melempar error, tetapi melaporkannya ke log (`report`), jadi penyebab kegagalan unggah bisa dilihat di log server
 - Intervention Image untuk mengolah foto
 - Scramble untuk dokumentasi API di `/docs/api`
 - Deploy: Coolify dengan build pack Dockerfile, otomatis saat merge ke `main`. Image-nya `dunglas/frankenphp` (mode klasik, tanpa Octane), dan satu container menjalankan tiga proses lewat supervisor: FrankenPHP untuk web, `php artisan queue:work`, dan `php artisan schedule:work`
