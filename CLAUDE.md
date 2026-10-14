@@ -16,7 +16,7 @@ Belum beres:
 
 - Kredensial Firebase (proyek `todolist-cb119`) sudah terpasang di server dan diterima FCM, tetapi belum ada push yang benar-benar sampai ke HP. Itu baru bisa diuji setelah app Flutter mendaftarkan perangkatnya lewat `POST /devices`.
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push ke HP sungguhan.
-- `trustProxies(at: 'REMOTE_ADDR')` belum dicek di server. Setelah ter-deploy, kirim tiga login gagal dengan email yang sama ke server, dua di antaranya membawa `X-Forwarded-For` palsu; `X-RateLimit-Remaining` harus turun 4, 3, 2. Dengan `at: '*'` hasilnya 4, 4, 3, karena IP palsu dianggap klien baru.
+- Sejak `trustProxies(at: 'REMOTE_ADDR')` ter-deploy, IP di tabel `sessions` belum dicek ulang. Hasilnya harus tetap IP publik pengguna; kalau yang muncul IP lain yang sama untuk semua orang, semua pengguna berbagi satu jatah batas request.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -176,7 +176,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Domain produksi lewat Cloudflare Tunnel (tunnel "Coolify"): route-nya meneruskan hostname ke `http://localhost:8089` di server, dan record DNS-nya dibuat otomatis oleh tunnel, jadi tidak ada record A yang diatur manual. Domain diganti di route tunnel, bukan di kolom Domains Coolify, karena request tidak lewat proxy Coolify.
 - Port mappings aplikasi di Coolify `127.0.0.1:8089:80`, jadi port itu hanya bisa dijangkau dari server sendiri. Jangan diubah ke `8089:80`: Docker akan membukanya ke internet, padahal aplikasi memercayai header proxy dari siapa pun.
 - Aplikasi dulu bernama `todolist` (domain lama `todolist.iqbalfhz.my.id`, sudah dilepas). Nama database, bucket R2, proyek Firebase, dan repo GitHub sengaja tetap `todolist`; pengguna tidak melihatnya, dan menggantinya berisiko memutus koneksi yang sudah jalan.
-- Batas request per IP (daftar, masuk, terima undangan) membaca IP pengguna asli, bukan IP Cloudflare atau tunnel: IP yang tercatat di tabel `sessions` sama dengan IP publik pengguna (dicek 14 Oktober 2026).
+- Batas request per IP (daftar, masuk, terima undangan) membaca IP pengguna asli, bukan IP Cloudflare atau tunnel: IP yang tercatat di tabel `sessions` sama dengan IP publik pengguna. Header `X-Forwarded-For` palsu tidak mengubahnya: tiga login gagal dengan email yang sama, dua di antaranya dengan header palsu, memberi `X-RateLimit-Remaining` 4, 3, 2 (dicek di server 14 Oktober 2026; dengan `at: '*'` hasilnya 4, 4, 3).
 - Akun admin di server dibuat dengan `php artisan make:filament-user` di Terminal Coolify. Kata sandinya diganti lewat menu Pengguna, aksi "Reset kata sandi".
 
 ## Jangan
