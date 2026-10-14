@@ -4,6 +4,7 @@
 
 ## Waiting On
 
+- [ ] **Cek perbaikan IP klien di server** - menunggu `fix/ip-klien-asli` ter-deploy, since 2026-10-14; tiga login gagal dengan email yang sama, dua dengan `X-Forwarded-For` palsu, harus memberi `X-RateLimit-Remaining` 4, 3, 2
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -16,7 +17,7 @@
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
-- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, baca IP klien asli di belakang Cloudflare untuk batas request, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
+- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
 
@@ -74,3 +75,5 @@
 - [x] ~~Salinan kontrak di repo dicentang (18 butir), dua pertanyaan terbukanya dicatat sebagai keputusan, dan dua aturan sync ditambahkan~~ (2026-10-11)
 - [x] ~~Nama aplikasi jadi Denly Days di repo: `.env.example` dan CLAUDE.md~~ (2026-10-14)
 - [x] ~~Domain pindah ke `denlydays.iqbalfhz.my.id` lewat route Cloudflare Tunnel, `APP_NAME` dan `APP_URL` diganti di Coolify; `/up`, halaman masuk admin ("Denly Days"), dan API lolos dicek, dan `todolist.iqbalfhz.my.id` sudah tidak ada di DNS~~ (2026-10-14)
+- [x] ~~IP klien di server: IP yang tercatat di tabel `sessions` sama dengan IP publik pemilik, jadi batas request tidak memakai IP Cloudflare~~ (2026-10-14)
+- [x] ~~Batas request tidak bisa lagi diakali dengan `X-Forwarded-For` palsu: Laravel hanya memercayai pemanggil langsung (`trustProxies(at: 'REMOTE_ADDR')`), bukan semua IP~~ (2026-10-14)
