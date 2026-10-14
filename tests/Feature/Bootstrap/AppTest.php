@@ -16,3 +16,13 @@ it('counts the registration limit per client behind the proxy, not for the proxy
 
     $response->assertUnprocessable();
 });
+
+it('returns 429 to a client that forges X-Forwarded-For entries in front of the address the proxy added', function () {
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson('/api/v1/auth/register', [], ['X-Forwarded-For' => "192.0.2.{$attempt}, 203.0.113.7"]);
+    }
+
+    $response = $this->postJson('/api/v1/auth/register', [], ['X-Forwarded-For' => '192.0.2.99, 203.0.113.7']);
+
+    $response->assertTooManyRequests();
+});

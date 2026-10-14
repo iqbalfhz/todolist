@@ -14,9 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // In production every request arrives through Coolify's proxy, which ends
-        // TLS. Trusting it makes the app see HTTPS and the IP of the real client.
-        $middleware->trustProxies(at: '*');
+        // In production every request arrives from cloudflared (Cloudflare Tunnel)
+        // through Docker. Trusting only that caller makes the app see HTTPS and take
+        // the client IP from the last X-Forwarded-For entry, which Cloudflare adds;
+        // the client can forge the entries before it. '*' would trust every address
+        // and let a forged first entry slip past the rate limits.
+        $middleware->trustProxies(at: 'REMOTE_ADDR');
 
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('api/*') ? null : route('filament.admin.auth.login'),
