@@ -4,7 +4,6 @@
 
 ## Waiting On
 
-- [ ] **Cek ulang IP di tabel `sessions`** - oleh pemilik, since 2026-10-14; jalankan lagi perintah tinker yang membaca sesi `curl` terakhir, dan hasilnya harus IP publik pemilik, bukan IP lain yang sama untuk semua orang
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -78,3 +77,4 @@
 - [x] ~~IP klien di server: IP yang tercatat di tabel `sessions` sama dengan IP publik pemilik, jadi batas request tidak memakai IP Cloudflare~~ (2026-10-14)
 - [x] ~~Batas request tidak bisa lagi diakali dengan `X-Forwarded-For` palsu: Laravel hanya memercayai pemanggil langsung (`trustProxies(at: 'REMOTE_ADDR')`), bukan semua IP~~ (2026-10-14)
 - [x] ~~Perbaikan IP klien ter-deploy dan dicek di server: tiga login gagal dengan email yang sama, dua dengan `X-Forwarded-For` palsu, memberi `X-RateLimit-Remaining` 4, 3, 2, dan link admin tetap HTTPS~~ (2026-10-14)
+- [x] ~~Setelah perbaikan, IP di tabel `sessions` dicek ulang dan tetap IP publik pemilik~~ (2026-10-14)
