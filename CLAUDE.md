@@ -14,7 +14,7 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlyday
 
 Belum beres:
 
-- Nama aplikasi sekarang Denly Days, dan domainnya dipindah dari `todolist.iqbalfhz.my.id` ke `denlydays.iqbalfhz.my.id`. Sampai DNS di Cloudflare serta domain, `APP_URL`, dan `APP_NAME` di Coolify diganti, server masih hanya menjawab di domain lama. Nama database, bucket R2, proyek Firebase, dan repo GitHub sengaja tetap `todolist`.
+- Nama aplikasi sekarang Denly Days, dan domainnya dipindah dari `todolist.iqbalfhz.my.id` ke `denlydays.iqbalfhz.my.id`. Sampai subdomain di route Cloudflare Tunnel serta `APP_URL` dan `APP_NAME` di Coolify diganti, server masih hanya menjawab di domain lama. Nama database, bucket R2, proyek Firebase, dan repo GitHub sengaja tetap `todolist`.
 - Kredensial Firebase (proyek `todolist-cb119`) sudah terpasang di server dan diterima FCM, tetapi belum ada push yang benar-benar sampai ke HP. Itu baru bisa diuji setelah app Flutter mendaftarkan perangkatnya lewat `POST /devices`.
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push ke HP sungguhan.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
@@ -173,7 +173,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Di Coolify: Ports Exposes `80`, health check memakai `/up` dari `HEALTHCHECK` di Dockerfile, dan log aplikasi tampil di tab Logs karena `LOG_CHANNEL=stderr`.
 - Variabel yang wajib diisi di Coolify: `APP_KEY`, `APP_URL`, `APP_LOCALE=id`, `DB_*`, dan `ADMIN_EMAIL`. Kredensial R2 dan Firebase baru diperlukan saat foto profil dan push dipakai.
 - `bootstrap/app.php` memercayai semua proxy, karena di produksi aplikasi hanya bisa dijangkau lewat proxy Coolify. Jangan membuka port container langsung ke internet.
-- Domain produksi lewat Cloudflare lebih dulu, baru proxy Coolify. Akibatnya IP yang terbaca aplikasi adalah IP Cloudflare, jadi batas request per IP (daftar, masuk, terima undangan) belum dihitung per pengguna. Rapikan sebelum rilis publik.
+- Domain produksi lewat Cloudflare Tunnel (tunnel "Coolify"): route-nya meneruskan hostname ke `http://localhost:8089` di server, dan record DNS-nya dibuat otomatis oleh tunnel, jadi tidak ada record A yang diatur manual. Belum dipastikan apakah batas request per IP (daftar, masuk, terima undangan) membaca IP pengguna asli atau IP Cloudflare/tunnel. Rapikan sebelum rilis publik.
 - Akun admin di server dibuat dengan `php artisan make:filament-user` di Terminal Coolify. Kata sandinya diganti lewat menu Pengguna, aksi "Reset kata sandi".
 
 ## Jangan

@@ -4,7 +4,7 @@
 
 ## Waiting On
 
-- [ ] **Pindah domain ke `denlydays.iqbalfhz.my.id`** - oleh pemilik, since 2026-10-14; tambah record DNS di Cloudflare, tambah domain baru serta ganti `APP_URL` dan `APP_NAME` di Coolify, redeploy, cek `/up` dan `/admin`, lalu lepas domain lama
+- [ ] **Pindah domain ke `denlydays.iqbalfhz.my.id`** - oleh pemilik, since 2026-10-14; ganti subdomain route Cloudflare Tunnel dari `todolist` ke `denlydays`, ganti `APP_URL` dan `APP_NAME` di Coolify, redeploy, cek `/up` dan `/admin`, lalu hapus record DNS `todolist` kalau masih tersisa
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
