@@ -2,18 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-API untuk aplikasi to-do berdua (tugas, tabungan, liburan, kenangan). Klien satu-satunya adalah app Flutter di repo mobile. Pengguna awal: dua orang, pemilik repo dan pasangannya; rilis publik menyusul.
+API untuk Denly Days, aplikasi to-do berdua (tugas, tabungan, liburan, kenangan). Klien satu-satunya adalah app Flutter di repo mobile. Pengguna awal: dua orang, pemilik repo dan pasangannya; rilis publik menyusul.
 
 **Sumber kebenaran: `docs/kontrak-api.md`.** Baca file itu sebelum membuat atau mengubah endpoint, validasi, resource, error, sync, undangan, atau notifikasi. Kalau kode dan kontrak berbeda, ikuti kontrak lalu tanyakan. Kontrak itu salinan dari dokumen perencanaan di claude.ai; perubahan kontrak dilakukan di dokumen dulu, baru salinannya diperbarui.
 
 Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditulis ulang oleh `php artisan boost:update` (jalan otomatis setelah `composer update`), jadi jangan diedit; aturan proyek ditulis di luar blok itu, dan tag pembuka blok jangan pernah ditulis ulang di bagian proyek. Kalau keduanya bertentangan, aturan proyek yang berlaku. Contoh: deploy proyek ini lewat Coolify, bukan Laravel Cloud.
 
-## Kondisi repo (per 11 Oktober 2026)
+## Kondisi repo (per 14 Oktober 2026)
 
-Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://todolist.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
 Belum beres:
 
+- Nama aplikasi sekarang Denly Days, dan domainnya dipindah dari `todolist.iqbalfhz.my.id` ke `denlydays.iqbalfhz.my.id`. Sampai DNS di Cloudflare serta domain, `APP_URL`, dan `APP_NAME` di Coolify diganti, server masih hanya menjawab di domain lama. Nama database, bucket R2, proyek Firebase, dan repo GitHub sengaja tetap `todolist`.
 - Kredensial Firebase (proyek `todolist-cb119`) sudah terpasang di server dan diterima FCM, tetapi belum ada push yang benar-benar sampai ke HP. Itu baru bisa diuji setelah app Flutter mendaftarkan perangkatnya lewat `POST /devices`.
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana. Yang belum pernah dicoba: pendaftaran perangkat dan pengiriman push ke HP sungguhan.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.

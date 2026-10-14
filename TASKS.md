@@ -4,6 +4,7 @@
 
 ## Waiting On
 
+- [ ] **Pindah domain ke `denlydays.iqbalfhz.my.id`** - oleh pemilik, since 2026-10-14; tambah record DNS di Cloudflare, tambah domain baru serta ganti `APP_URL` dan `APP_NAME` di Coolify, redeploy, cek `/up` dan `/admin`, lalu lepas domain lama
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -72,3 +73,4 @@
 - [x] ~~Backup database produksi: jadwal harian di Coolify, 7 backup lokal terakhir disimpan, dan backup pertama berhasil~~ (2026-10-11)
 - [x] ~~Backup database juga diunggah ke R2 (bucket `todolist-backup`, 30 backup terakhir disimpan); backup pertama tersedia di server dan di R2~~ (2026-10-11)
 - [x] ~~Salinan kontrak di repo dicentang (18 butir), dua pertanyaan terbukanya dicatat sebagai keputusan, dan dua aturan sync ditambahkan~~ (2026-10-11)
+- [x] ~~Nama aplikasi jadi Denly Days di repo: `.env.example` dan CLAUDE.md~~ (2026-10-14)
