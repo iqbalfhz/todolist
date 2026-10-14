@@ -4,7 +4,6 @@
 
 ## Waiting On
 
-- [ ] **Pindah domain ke `denlydays.iqbalfhz.my.id`** - oleh pemilik, since 2026-10-14; ganti subdomain route Cloudflare Tunnel dari `todolist` ke `denlydays`, ganti `APP_URL` dan `APP_NAME` di Coolify, redeploy, cek `/up` dan `/admin`, lalu hapus record DNS `todolist` kalau masih tersisa
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -74,3 +73,4 @@
 - [x] ~~Backup database juga diunggah ke R2 (bucket `todolist-backup`, 30 backup terakhir disimpan); backup pertama tersedia di server dan di R2~~ (2026-10-11)
 - [x] ~~Salinan kontrak di repo dicentang (18 butir), dua pertanyaan terbukanya dicatat sebagai keputusan, dan dua aturan sync ditambahkan~~ (2026-10-11)
 - [x] ~~Nama aplikasi jadi Denly Days di repo: `.env.example` dan CLAUDE.md~~ (2026-10-14)
+- [x] ~~Domain pindah ke `denlydays.iqbalfhz.my.id` lewat route Cloudflare Tunnel, `APP_NAME` dan `APP_URL` diganti di Coolify; `/up`, halaman masuk admin ("Denly Days"), dan API lolos dicek, dan `todolist.iqbalfhz.my.id` sudah tidak ada di DNS~~ (2026-10-14)
