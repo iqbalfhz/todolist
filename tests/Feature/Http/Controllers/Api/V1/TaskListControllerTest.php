@@ -3,6 +3,7 @@
 use App\Models\Space;
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\Trip;
 use App\Models\User;
 
 describe('store', function () {
@@ -24,6 +25,7 @@ describe('store', function () {
             'data' => [
                 'id' => $id,
                 'space_id' => $space->id,
+                'trip_id' => null,
                 'name' => 'Belanja',
                 'emoji' => '🛒',
                 'color' => 'toska',
@@ -182,6 +184,82 @@ describe('store', function () {
         $this->assertDatabaseCount('task_lists', 1);
     });
 
+    it('creates the checklist of a trip when trip_id is sent', function () {
+        [$user, $partner, $space] = actingAsPartnered();
+        $trip = Trip::factory()->for($space)->create();
+        $id = newId();
+
+        $response = $this->putJson("/api/v1/lists/{$id}", [
+            'space_id' => $space->id,
+            'trip_id' => $trip->id,
+            'name' => 'Persiapan Bali',
+            'position' => 1024,
+        ]);
+
+        $response->assertCreated()->assertJsonPath('data.trip_id', $trip->id);
+        $this->assertDatabaseHas('task_lists', ['id' => $id, 'trip_id' => $trip->id]);
+    });
+
+    it('returns 422 on trip_id when the trip already has a checklist or is in another space', function (Closure $trip, string $message) {
+        [$user, $partner, $space] = actingAsPartnered();
+
+        $response = $this->putJson('/api/v1/lists/'.newId(), [
+            'space_id' => $space->id,
+            'trip_id' => $trip($user, $space)->id,
+            'name' => 'Persiapan',
+            'position' => 1024,
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('code', 'validation_failed')
+            ->assertJsonPath('errors.trip_id.0', $message);
+    })->with([
+        'a trip that already has a checklist' => [
+            function (User $user, Space $space) {
+                $trip = Trip::factory()->for($space)->create();
+                TaskList::factory()->for($space)->create(['trip_id' => $trip->id]);
+
+                return $trip;
+            },
+            'Perjalanan ini sudah punya checklist.',
+        ],
+        'a trip in the user\'s personal space' => [
+            fn (User $user) => Trip::factory()->for($user->personalSpace())->create(),
+            'Perjalanan harus berada di ruang yang sama dengan daftarnya.',
+        ],
+    ]);
+
+    it('returns 409 with the parent_deleted code when the trip was deleted', function () {
+        $user = actingAsApiUser();
+        $trip = Trip::factory()->for($user->personalSpace())->create();
+        $trip->delete();
+
+        $response = $this->putJson('/api/v1/lists/'.newId(), [
+            'space_id' => $user->personalSpace()->id,
+            'trip_id' => $trip->id,
+            'name' => 'Persiapan',
+            'position' => 1024,
+        ]);
+
+        $response->assertConflict()
+            ->assertJsonPath('code', 'parent_deleted')
+            ->assertJsonPath('message', 'Perjalanan ini sudah dihapus.');
+    });
+
+    it('returns 404 when the trip belongs to another couple', function () {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/lists/'.newId(), [
+            'space_id' => $user->personalSpace()->id,
+            'trip_id' => Trip::factory()->create()->id,
+            'name' => 'Persiapan',
+            'position' => 1024,
+        ]);
+
+        $response->assertNotFound()->assertJsonPath('code', 'not_found');
+        expect($user->personalSpace()->taskLists()->count())->toBe(1);
+    });
+
     it('returns 401 when no token is sent', function () {
         $response = $this->putJson('/api/v1/lists/'.newId(), []);
 
@@ -322,6 +400,41 @@ describe('update', function () {
         'an archive time without an offset' => [['archived_at' => '2026-10-08T10:30:00'], 'archived_at'],
     ]);
 
+    it('returns 409 with the trip_checklist code when archiving the checklist of a trip', function () {
+        $user = actingAsApiUser();
+        $checklist = TaskList::factory()->for($user->personalSpace())->create([
+            'trip_id' => Trip::factory()->for($user->personalSpace()),
+        ]);
+
+        $response = $this->patchJson("/api/v1/lists/{$checklist->id}", ['archived_at' => '2026-10-22T10:30:00Z']);
+
+        $response->assertConflict()
+            ->assertJsonPath('code', 'trip_checklist')
+            ->assertJsonPath('message', 'Checklist ini ikut perjalanannya. Hapus perjalanannya kalau ingin menghapus checklist.')
+            ->assertJsonPath('current.archived_at', null);
+    });
+
+    it('lets the checklist of a trip be renamed', function () {
+        $user = actingAsApiUser();
+        $checklist = TaskList::factory()->for($user->personalSpace())->create([
+            'trip_id' => Trip::factory()->for($user->personalSpace()),
+        ]);
+
+        $response = $this->patchJson("/api/v1/lists/{$checklist->id}", ['name' => 'Bawaan ke Bali']);
+
+        $response->assertOk()->assertJsonPath('data.name', 'Bawaan ke Bali');
+    });
+
+    it('returns 409 with the last_list code when archiving the only ordinary list, even with a checklist left', function () {
+        $user = actingAsApiUser();
+        $list = $user->personalSpace()->taskLists()->sole();
+        TaskList::factory()->for($user->personalSpace())->create(['trip_id' => Trip::factory()->for($user->personalSpace())]);
+
+        $response = $this->patchJson("/api/v1/lists/{$list->id}", ['archived_at' => '2026-10-22T10:30:00Z']);
+
+        $response->assertConflict()->assertJsonPath('code', 'last_list');
+    });
+
     it('returns 401 when no token is sent', function () {
         $response = $this->patchJson('/api/v1/lists/'.newId(), ['name' => 'Belanja']);
 
@@ -393,6 +506,29 @@ describe('destroy', function () {
         $response = $this->deleteJson("/api/v1/lists/{$list->id}");
 
         $response->assertNotFound()->assertJsonPath('code', 'not_found');
+        $this->assertNotSoftDeleted($list);
+    });
+
+    it('returns 409 with the trip_checklist code when deleting the checklist of a trip', function () {
+        $user = actingAsApiUser();
+        $checklist = TaskList::factory()->for($user->personalSpace())->create([
+            'trip_id' => Trip::factory()->for($user->personalSpace()),
+        ]);
+
+        $response = $this->deleteJson("/api/v1/lists/{$checklist->id}");
+
+        $response->assertConflict()->assertJsonPath('code', 'trip_checklist');
+        $this->assertNotSoftDeleted($checklist);
+    });
+
+    it('returns 409 with the last_list code when deleting the only ordinary list, even with a checklist left', function () {
+        $user = actingAsApiUser();
+        $list = $user->personalSpace()->taskLists()->sole();
+        TaskList::factory()->for($user->personalSpace())->create(['trip_id' => Trip::factory()->for($user->personalSpace())]);
+
+        $response = $this->deleteJson("/api/v1/lists/{$list->id}");
+
+        $response->assertConflict()->assertJsonPath('code', 'last_list');
         $this->assertNotSoftDeleted($list);
     });
 

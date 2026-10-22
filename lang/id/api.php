@@ -21,6 +21,7 @@ return [
         'parent_archived' => 'Daftar ini sudah diarsipkan.',
         'last_list' => 'Setiap ruang harus punya minimal satu daftar aktif.',
         'id_conflict' => 'ID ini sudah dipakai data lain.',
+        'trip_checklist' => 'Checklist ini ikut perjalanannya. Hapus perjalanannya kalau ingin menghapus checklist.',
         'shared_space_exists' => 'Kamu sudah punya Ruang Bersama.',
         'resource_deleted' => 'Data ini sudah dihapus.',
         'validation_failed' => 'Data yang dikirim tidak valid.',
@@ -33,6 +34,7 @@ return [
     'parent_deleted' => [
         'task_list' => 'Daftar ini sudah dihapus.',
         'savings_goal' => 'Target ini sudah dihapus.',
+        'trip' => 'Perjalanan ini sudah dihapus.',
     ],
 
     /*
@@ -53,6 +55,11 @@ return [
         'space_not_member' => 'Ruang ini tidak ditemukan.',
         'different_space' => 'Daftar tujuan harus berada di ruang yang sama.',
         'sync_cursor' => ':Attribute tidak berlaku, mulai sinkron dari awal.',
+        'end_date_needs_start_date' => 'Tanggal selesai butuh tanggal mulai.',
+        'end_date_before_start_date' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+        'savings_goal_different_space' => 'Target tabungan harus berada di ruang yang sama dengan perjalanannya.',
+        'trip_different_space' => 'Perjalanan harus berada di ruang yang sama dengan daftarnya.',
+        'trip_has_checklist' => 'Perjalanan ini sudah punya checklist.',
     ],
 
     /*
@@ -79,6 +86,7 @@ return [
         'notification_prefs.partner_activity' => 'aktivitas pasangan',
         'notification_prefs.savings_activity' => 'aktivitas tabungan',
         'notification_prefs.special_dates' => 'pengingat tanggal penting',
+        'notification_prefs.trip_reminders' => 'pengingat perjalanan',
         'photo' => 'foto',
         'token' => 'token',
         'fcm_token' => 'token FCM',
@@ -107,6 +115,10 @@ return [
         'note' => 'catatan',
         'type' => 'jenis',
         'date' => 'tanggal',
+        'destination' => 'tujuan',
+        'start_date' => 'tanggal mulai',
+        'end_date' => 'tanggal selesai',
+        'trip_id' => 'perjalanan',
         'since' => 'since',
         'cursor' => 'cursor',
     ],

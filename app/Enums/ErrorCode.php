@@ -12,6 +12,7 @@ enum ErrorCode: string
     case ParentArchived = 'parent_archived';
     case LastList = 'last_list';
     case IdConflict = 'id_conflict';
+    case TripChecklist = 'trip_checklist';
     case SharedSpaceExists = 'shared_space_exists';
     case ResourceDeleted = 'resource_deleted';
     case ValidationFailed = 'validation_failed';
@@ -29,7 +30,7 @@ enum ErrorCode: string
             self::Unauthenticated => 401,
             self::Forbidden => 403,
             self::NotFound, self::RouteNotFound => 404,
-            self::ParentDeleted, self::ParentArchived, self::LastList, self::IdConflict, self::SharedSpaceExists => 409,
+            self::ParentDeleted, self::ParentArchived, self::LastList, self::IdConflict, self::TripChecklist, self::SharedSpaceExists => 409,
             self::ResourceDeleted => 410,
             self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid => 422,
             self::TooManyRequests => 429,

@@ -44,6 +44,7 @@ class User extends Authenticatable implements FilamentUser
         'partner_activity' => true,
         'savings_activity' => true,
         'special_dates' => true,
+        'trip_reminders' => true,
     ];
 
     /**

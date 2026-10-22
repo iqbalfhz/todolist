@@ -100,6 +100,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['memberId' => 'id-anggota'],
         ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'birthday-id-anggota']],
     ],
+    'a trip reminder' => [
+        PushType::TripReminder,
+        ['tripId' => 'id-perjalanan'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'trip-id-perjalanan']],
+    ],
 ]);
 
 it('sends the special date or the member a reminder is about in the data', function (array $ids, array $data) {
@@ -116,6 +121,17 @@ it('sends the special date or the member a reminder is about in the data', funct
     'a member birthday' => [['memberId' => 'id-anggota'], ['type' => 'special_date_reminder', 'space_id' => 'id-ruang', 'member_id' => 'id-anggota']],
 ]);
 
+it('sends the trip a reminder is about in the data', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, PushType::TripReminder, 'Perjalanan', 'Liburan ke Bali besok', 'id-ruang', tripId: 'id-perjalanan');
+
+    expect($sent->message['data'])->toBe(['type' => 'trip_reminder', 'space_id' => 'id-ruang', 'trip_id' => 'id-perjalanan']);
+});
+
 it('sends nothing when the recipient turned that kind of push off', function (PushType $type, string $preference) {
     $this->mock(Messaging::class)->shouldNotReceive('sendMulticast');
     $user = User::factory()->create(['notification_prefs' => [$preference => false]]);
@@ -129,6 +145,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'deposits' => [PushType::SavingsDeposit, 'savings_activity'],
     'achieved goals' => [PushType::SavingsAchieved, 'savings_activity'],
     'special dates' => [PushType::SpecialDateReminder, 'special_dates'],
+    'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
 ]);
 
 it('sends partner_joined even when every preference is off', function () {

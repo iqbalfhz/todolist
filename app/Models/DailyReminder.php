@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A reminder about a special date or a member's birthday that was already sent.
+ * A reminder that goes out at 08.00 and was already sent: a special date, a
+ * member's birthday, or a trip.
  */
 #[Fillable(['reminder_key', 'remind_on'])]
-class SpecialDateReminder extends Model
+class DailyReminder extends Model
 {
     use HasMicrosecondTimestamps, HasUlids;
 }

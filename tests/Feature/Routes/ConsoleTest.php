@@ -3,6 +3,7 @@
 use App\Jobs\SendPushNotification;
 use App\Models\SpecialDate;
 use App\Models\Task;
+use App\Models\Trip;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Queue;
@@ -45,6 +46,27 @@ it('sends the special date reminders that are due and reports how many', functio
 it('runs special-dates:remind every minute without overlapping', function () {
     $event = collect(app(Schedule::class)->events())
         ->sole(fn (Event $event) => str_contains($event->command, 'special-dates:remind'));
+
+    expect($event->expression)->toBe('* * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue()
+        ->and($event->expiresAt)->toBe(5);
+});
+
+it('sends the trip reminders that are due and reports how many', function () {
+    Queue::fake([SendPushNotification::class]);
+    Trip::factory()->create(['start_date' => '2026-10-29']);
+    $this->travelTo('2026-10-22 01:00:00');
+
+    $this->artisan('trips:remind')
+        ->expectsOutput('Trip reminders sent: 1.')
+        ->assertSuccessful();
+
+    Queue::assertPushedTimes(SendPushNotification::class, 1);
+});
+
+it('runs trips:remind every minute without overlapping', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->sole(fn (Event $event) => str_contains($event->command, 'trips:remind'));
 
     expect($event->expression)->toBe('* * * * *')
         ->and($event->withoutOverlapping)->toBeTrue()

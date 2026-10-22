@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\SpecialDateController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskListController;
+use App\Http\Controllers\Api\V1\TripController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -63,5 +64,9 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/special-dates/{id}', [SpecialDateController::class, 'store'])->name('special-dates.store');
         Route::patch('/special-dates/{id}', [SpecialDateController::class, 'update'])->name('special-dates.update');
         Route::delete('/special-dates/{id}', [SpecialDateController::class, 'destroy'])->name('special-dates.destroy');
+
+        Route::put('/trips/{id}', [TripController::class, 'store'])->name('trips.store');
+        Route::patch('/trips/{id}', [TripController::class, 'update'])->name('trips.update');
+        Route::delete('/trips/{id}', [TripController::class, 'destroy'])->name('trips.destroy');
     });
 });

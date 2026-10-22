@@ -27,6 +27,7 @@ describe('show', function () {
                     'partner_activity' => true,
                     'savings_activity' => true,
                     'special_dates' => true,
+                    'trip_reminders' => true,
                 ],
                 'avatar_url' => null,
                 'avatar_version' => 0,
@@ -112,16 +113,17 @@ describe('update', function () {
             'partner_activity' => false,
             'savings_activity' => true,
             'special_dates' => true,
+            'trip_reminders' => true,
         ]);
     });
 
-    it('turns the special date reminders off', function () {
+    it('turns the special date or trip reminders off', function (string $preference) {
         actingAsApiUser();
 
-        $response = $this->patchJson('/api/v1/me', ['notification_prefs' => ['special_dates' => false]]);
+        $response = $this->patchJson('/api/v1/me', ['notification_prefs' => [$preference => false]]);
 
-        $response->assertOk()->assertJsonPath('data.notification_prefs.special_dates', false);
-    });
+        $response->assertOk()->assertJsonPath("data.notification_prefs.{$preference}", false);
+    })->with(['special_dates', 'trip_reminders']);
 
     it('ignores read-only and unknown fields', function () {
         $user = actingAsApiUser();

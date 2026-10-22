@@ -2,6 +2,7 @@
 
 use App\Actions\SendDueReminders;
 use App\Actions\SendSpecialDateReminders;
+use App\Actions\SendTripReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -26,5 +27,15 @@ Artisan::command('special-dates:remind', function (SendSpecialDateReminders $sen
 
     $this->info("Special date reminders sent: {$sent}.");
 })->purpose('Send the push reminders of the special dates and birthdays that are coming up')
+    ->everyMinute()
+    ->withoutOverlapping(5);
+
+// Runs every minute, but sends only in spaces where it is between 08.00 and
+// 08.30, and only once per reminder.
+Artisan::command('trips:remind', function (SendTripReminders $sendTripReminders) {
+    $sent = $sendTripReminders->handle();
+
+    $this->info("Trip reminders sent: {$sent}.");
+})->purpose('Send the push reminders of the trips that start in 7 days or tomorrow')
     ->everyMinute()
     ->withoutOverlapping(5);

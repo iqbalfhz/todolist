@@ -7,6 +7,7 @@ use App\Models\Space;
 use App\Models\SpecialDate;
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\Trip;
 use App\Models\User;
 use App\Rules\SyncCursor;
 
@@ -16,6 +17,7 @@ dataset('content rows', [
     'a goal' => ['savings_goals', fn (Space $space) => SavingsGoal::factory()->for($space)->create()],
     'a deposit' => ['savings_entries', fn (Space $space) => SavingsEntry::factory()->for(SavingsGoal::factory()->for($space))->create()],
     'a special date' => ['special_dates', fn (Space $space) => SpecialDate::factory()->for($space)->create()],
+    'a trip' => ['trips', fn (Space $space) => Trip::factory()->for($space)->create()],
 ]);
 
 it('returns everything a new account has in the shape of the contract', function () {
@@ -56,6 +58,7 @@ it('returns everything a new account has in the shape of the contract', function
                 [
                     'id' => $list->id,
                     'space_id' => $space->id,
+                    'trip_id' => null,
                     'name' => 'Tugas',
                     'emoji' => null,
                     'color' => 'mawar',
@@ -71,6 +74,7 @@ it('returns everything a new account has in the shape of the contract', function
             'savings_goals' => [],
             'savings_entries' => [],
             'special_dates' => [],
+            'trips' => [],
         ],
         'meta' => [
             'server_time' => '2026-10-08T11:10:05.123456Z',
@@ -107,6 +111,12 @@ it('returns each row exactly as its own endpoint returned it', function () {
         'title' => 'Ulang tahun Ibu',
         'date' => '--03-02',
     ])->json('data');
+    $trip = $this->putJson('/api/v1/trips/'.newId(), [
+        'space_id' => $space->id,
+        'title' => 'Liburan ke Bali',
+        'start_date' => '2027-06-20',
+        'savings_goal_id' => $goal['id'],
+    ])->json('data');
 
     $response = $this->getJson('/api/v1/sync');
 
@@ -114,7 +124,8 @@ it('returns each row exactly as its own endpoint returned it', function () {
         ->assertJsonPath('data.tasks', [$task])
         ->assertJsonPath('data.savings_goals', [$goal])
         ->assertJsonPath('data.savings_entries', [$entry])
-        ->assertJsonPath('data.special_dates', [$specialDate]);
+        ->assertJsonPath('data.special_dates', [$specialDate])
+        ->assertJsonPath('data.trips', [$trip]);
 });
 
 it('orders each collection by updated_at and then by ID', function () {
@@ -235,6 +246,7 @@ it('never sends the content of the personal space of the partner', function (arr
     Task::factory()->for($privateSpace->taskLists()->sole())->create();
     SavingsEntry::factory()->for(SavingsGoal::factory()->for($privateSpace))->create();
     SpecialDate::factory()->for($privateSpace)->create();
+    Trip::factory()->for($privateSpace)->create();
 
     $response = $this->getJson('/api/v1/sync?'.http_build_query($query));
 
@@ -341,6 +353,15 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
         ['cursor' => base64_encode(json_encode([
             'server_time' => '2026-02-30 10:00:00.000000',
             'with_deleted' => false,
+            'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null, 'trips' => null],
+        ]))],
+        'cursor',
+        'Cursor tidak berlaku, mulai sinkron dari awal.',
+    ],
+    'a cursor from before trips joined the sync' => [
+        ['cursor' => base64_encode(json_encode([
+            'server_time' => '2026-10-08 10:00:00.000000',
+            'with_deleted' => false,
             'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null],
         ]))],
         'cursor',
@@ -366,6 +387,7 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
                 'savings_goals' => ['2026-10-08 09:59:55.000000', ''],
                 'savings_entries' => ['2026-10-08 09:59:55.000000', ''],
                 'special_dates' => ['2026-10-08 09:59:55.000000', ''],
+                'trips' => ['2026-10-08 09:59:55.000000', ''],
             ],
         ]))],
         'cursor',

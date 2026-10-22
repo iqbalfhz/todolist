@@ -18,6 +18,7 @@ class StoreTaskListRequest extends ApiRequest
     {
         return [
             'space_id' => ['required', new LowercaseUlid],
+            'trip_id' => ['nullable', new LowercaseUlid],
             'name' => ['required', 'string', 'max:50'],
             'emoji' => ['nullable', 'string', 'max:16'],
             'color' => ['nullable', Rule::enum(ProfileColor::class)],

@@ -7,12 +7,14 @@ use App\Http\Resources\SavingsGoalResource;
 use App\Http\Resources\SpecialDateResource;
 use App\Http\Resources\TaskListResource;
 use App\Http\Resources\TaskResource;
+use App\Http\Resources\TripResource;
 use App\Http\Resources\UserResource;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\SpecialDate;
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\Trip;
 use App\Models\User;
 use App\Rules\LowercaseUlid;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +35,7 @@ class CurrentResourceResolver
         'savings-goals' => [SavingsGoal::class, SavingsGoalResource::class],
         'savings-entries' => [SavingsEntry::class, SavingsEntryResource::class],
         'special-dates' => [SpecialDate::class, SpecialDateResource::class],
+        'trips' => [Trip::class, TripResource::class],
     ];
 
     /**

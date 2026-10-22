@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\DeleteTaskList;
+use App\Actions\FindTripForChecklist;
 use App\Actions\UpdateTaskList;
 use App\Http\Requests\StoreTaskListRequest;
 use App\Http\Requests\UpdateTaskListRequest;
@@ -14,28 +15,35 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class TaskListController extends QueuedResourceController
 {
     /**
-     * Create a task list with the ID the phone chose.
+     * Create a task list with the ID the phone chose, or the checklist of a trip when trip_id is sent.
      */
-    public function store(Request $request, string $id): JsonResponse
+    public function store(Request $request, string $id, FindTripForChecklist $findTripForChecklist): JsonResponse
     {
         $targetSpaceId = is_string($request->input('space_id')) ? $request->input('space_id') : null;
 
-        return $this->createOnce($id, $targetSpaceId, function () use ($request, $id): TaskList {
+        return $this->createOnce($id, $targetSpaceId, function () use ($request, $id, $findTripForChecklist): TaskList {
             $data = resolve(StoreTaskListRequest::class)->validated();
 
             Gate::authorize('contribute', Space::query()->findOrFail($data['space_id']));
 
-            $list = new TaskList(array_filter($data, fn (mixed $value): bool => $value !== null));
-            $list->id = $id;
-            $list->created_by = $request->user()->id;
-            $list->save();
+            return DB::transaction(function () use ($request, $id, $data, $findTripForChecklist): TaskList {
+                if (isset($data['trip_id'])) {
+                    $findTripForChecklist->handle($request->user(), $data['trip_id'], $data['space_id']);
+                }
 
-            return $list;
+                $list = new TaskList(array_filter($data, fn (mixed $value): bool => $value !== null));
+                $list->id = $id;
+                $list->created_by = $request->user()->id;
+                $list->save();
+
+                return $list;
+            });
         });
     }
 

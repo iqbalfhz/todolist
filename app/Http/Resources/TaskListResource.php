@@ -24,6 +24,7 @@ class TaskListResource extends JsonResource
         return [
             'id' => $this->id,
             'space_id' => $this->space_id,
+            'trip_id' => $this->trip_id,
             'name' => $this->name,
             'emoji' => $this->emoji,
             'color' => $this->color,

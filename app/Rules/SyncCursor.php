@@ -15,7 +15,7 @@ class SyncCursor implements ValidationRule
      *
      * @var list<string>
      */
-    public const COLLECTIONS = ['spaces', 'task_lists', 'tasks', 'savings_goals', 'savings_entries', 'special_dates'];
+    public const COLLECTIONS = ['spaces', 'task_lists', 'tasks', 'savings_goals', 'savings_entries', 'special_dates', 'trips'];
 
     /**
      * The format of every time inside a cursor: UTC with microseconds, as MySQL stores it.

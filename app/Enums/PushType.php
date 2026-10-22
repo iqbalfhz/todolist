@@ -11,6 +11,7 @@ enum PushType: string
     case SavingsAchieved = 'savings_achieved';
     case PartnerJoined = 'partner_joined';
     case SpecialDateReminder = 'special_date_reminder';
+    case TripReminder = 'trip_reminder';
 
     /**
      * The notification preference that must be on for this push to be sent,
@@ -24,6 +25,7 @@ enum PushType: string
             self::SavingsDeposit, self::SavingsAchieved => 'savings_activity',
             self::PartnerJoined => null,
             self::SpecialDateReminder => 'special_dates',
+            self::TripReminder => 'trip_reminders',
         };
     }
 
@@ -32,7 +34,7 @@ enum PushType: string
      */
     public function channel(): string
     {
-        return in_array($this, [self::TaskReminder, self::SpecialDateReminder], true) ? 'pengingat' : 'aktivitas';
+        return in_array($this, [self::TaskReminder, self::SpecialDateReminder, self::TripReminder], true) ? 'pengingat' : 'aktivitas';
     }
 
     /**
@@ -41,7 +43,7 @@ enum PushType: string
     public function priority(): string
     {
         return match ($this) {
-            self::TaskReminder, self::TaskAssigned, self::SpecialDateReminder => 'high',
+            self::TaskReminder, self::TaskAssigned, self::SpecialDateReminder, self::TripReminder => 'high',
             default => 'normal',
         };
     }

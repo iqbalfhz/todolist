@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['space_id', 'name', 'emoji', 'color', 'position', 'archived_at', 'created_by'])]
+#[Fillable(['space_id', 'trip_id', 'name', 'emoji', 'color', 'position', 'archived_at', 'created_by'])]
 class TaskList extends Model
 {
     /** @use HasFactory<TaskListFactory> */
@@ -38,6 +38,14 @@ class TaskList extends Model
     }
 
     /**
+     * Get the trip the list is the checklist of, when it is one.
+     */
+    public function trip(): BelongsTo
+    {
+        return $this->belongsTo(Trip::class);
+    }
+
+    /**
      * Get the tasks in the list.
      */
     public function tasks(): HasMany
@@ -52,6 +60,15 @@ class TaskList extends Model
     protected function active(Builder $query): Builder
     {
         return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope the query to ordinary lists, leaving out the checklists of trips.
+     */
+    #[Scope]
+    protected function regular(Builder $query): Builder
+    {
+        return $query->whereNull('trip_id');
     }
 
     /**

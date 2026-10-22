@@ -5,6 +5,7 @@ use App\Jobs\SendPushNotification;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 
@@ -278,6 +279,22 @@ describe('destroy', function () {
         $this->assertSoftDeleted($goal);
         $this->assertSoftDeleted($entry);
         expect($entry->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+    });
+
+    it('unlinks the trips saved up with the goal and bumps their updated_at', function () {
+        $this->travelTo('2026-10-22 10:00:00');
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create();
+        $trip = Trip::factory()->for($user->personalSpace())->create(['savings_goal_id' => $goal->id]);
+        $otherTrip = Trip::factory()->for($user->personalSpace())->create(['savings_goal_id' => SavingsGoal::factory()->for($user->personalSpace())]);
+        $this->travelTo('2026-10-22 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/savings-goals/{$goal->id}");
+
+        expect($trip->fresh())
+            ->savings_goal_id->toBeNull()
+            ->updated_at->toJSON()->toBe('2026-10-22T11:00:00.250000Z');
+        expect($otherTrip->fresh()->savings_goal_id)->not->toBeNull();
     });
 
     it('leaves the entries of other goals alone', function () {

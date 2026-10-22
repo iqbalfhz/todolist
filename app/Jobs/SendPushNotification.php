@@ -41,6 +41,7 @@ class SendPushNotification implements ShouldQueue
         public ?string $savingsGoalId = null,
         public ?string $specialDateId = null,
         public ?string $memberId = null,
+        public ?string $tripId = null,
     ) {}
 
     /**
@@ -92,6 +93,7 @@ class SendPushNotification implements ShouldQueue
                 'savings_goal_id' => $this->savingsGoalId,
                 'special_date_id' => $this->specialDateId,
                 'member_id' => $this->memberId,
+                'trip_id' => $this->tripId,
             ]))
             ->withAndroidConfig(AndroidConfig::fromArray([
                 'priority' => $this->type->priority(),
@@ -113,6 +115,7 @@ class SendPushNotification implements ShouldQueue
             $this->savingsGoalId !== null => "goal-{$this->savingsGoalId}",
             $this->specialDateId !== null => "date-{$this->specialDateId}",
             $this->memberId !== null => "birthday-{$this->memberId}",
+            $this->tripId !== null => "trip-{$this->tripId}",
             default => "space-{$this->spaceId}",
         };
     }
