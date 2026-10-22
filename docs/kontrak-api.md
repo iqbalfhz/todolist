@@ -2,7 +2,7 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 22 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 3 endpoint untuk Tanggal penting.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan.
 
 ## Ringkasan endpoint
 
@@ -38,6 +38,9 @@ Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya tiga yang me
 | Tanggal penting | PUT | `/special-dates/{id}` | Buat tanggal penting (v0.2) |
 | Tanggal penting | PATCH | `/special-dates/{id}` | Ubah tanggal penting (v0.2) |
 | Tanggal penting | DELETE | `/special-dates/{id}` | Hapus tanggal penting (v0.2) |
+| Perjalanan | PUT | `/trips/{id}` | Buat perjalanan (v0.2) |
+| Perjalanan | PATCH | `/trips/{id}` | Ubah perjalanan (v0.2) |
+| Perjalanan | DELETE | `/trips/{id}` | Hapus perjalanan beserta checklistnya (v0.2) |
 
 ## Konvensi
 
@@ -140,6 +143,7 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | 404 | `route_not_found` | Endpoint tidak dikenal, biasanya versi app dan server berbeda | Simpan antrean, coba lagi nanti, tawarkan pembaruan app |
 | 409 | `parent_deleted`, `parent_archived` | Daftar atau target induknya sudah dihapus, atau daftarnya diarsipkan | Tugas: pindahkan ke daftar aktif pertama, lalu kirim ulang. Setoran: buang dan beri tahu |
 | 409 | `last_list`, `id_conflict` | Bentrok dengan aturan; rinciannya di bagian masing-masing | Buang dari antrean, pakai `current`, tampilkan pesan |
+| 409 | `trip_checklist` (v0.2) | Checklist perjalanan dihapus atau diarsipkan sendiri | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
 | 410 | `resource_deleted` | Sudah dihapus, biasanya oleh pasangan | Buang dari antrean, hapus data itu dari cache |
 | 422 | `validation_failed`, `invalid_credentials`, `invitation_invalid` | Isi request tidak valid | Tampilkan pesan; kalau dari antrean, buang dan pakai `current` |
@@ -193,7 +197,8 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
     "task_reminders": true,
     "partner_activity": true,
     "savings_activity": true,
-    "special_dates": true
+    "special_dates": true,
+    "trip_reminders": true
   },
   "avatar_url": null,
   "avatar_version": 0,
@@ -304,6 +309,7 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
 {
   "id": "01m4dh0420zqexwxs1n4yw5jn2",
   "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "trip_id": null,
   "name": "Belanja",
   "emoji": "🛒",
   "color": "toska",
@@ -324,9 +330,10 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
 | `color` | opsional | `mawar`, `ungu`, `toska`, `bata`, `biru`, atau `lavender`; bawaan `mawar` |
 | `position` | wajib | Angka desimal, dihitung app |
 | `archived_at` | – | Hanya lewat PATCH: isi untuk mengarsipkan, `null` untuk mengeluarkan |
+| `trip_id` | opsional | Perjalanan di ruang yang sama; hanya bisa diisi saat daftar dibuat. Terisi berarti daftar ini checklist persiapan (v0.2) |
 
 - `DELETE /lists/{id}` ikut menghapus semua tugas di dalamnya (soft delete) dan memperbarui `updated_at` tugas-tugas itu.
-- Menghapus atau mengarsipkan daftar aktif terakhir di sebuah ruang ditolak 409 `last_list`. Server mengunci baris ruang saat menghitung, supaya dua penghapusan bersamaan tidak sama-sama lolos.
+- Menghapus atau mengarsipkan daftar aktif terakhir di sebuah ruang ditolak 409 `last_list`. Server mengunci baris ruang saat menghitung, supaya dua penghapusan bersamaan tidak sama-sama lolos. Checklist perjalanan tidak dihitung sebagai daftar aktif (v0.2).
 - Tugas di daftar yang diarsipkan tidak tampil di tampilan mana pun dan tidak diingatkan, sampai daftarnya dikeluarkan dari arsip.
 
 ### Sumber tugas
@@ -492,6 +499,62 @@ Tanggal penting adalah acara tahunan: anniversary, ulang tahun orang lain, atau 
 - Judul push "Tanggal penting", isinya "{judul} 7 hari lagi", "{judul} besok", atau "{judul} hari ini". Untuk ulang tahun anggota, `{judul}` berbunyi "Ulang tahun {nama}".
 - Setiap pengingat dikirim paling banyak sekali per tanggal per tahun. Yang telat lebih dari 30 menit dilewati, sama seperti pengingat tugas, termasuk saat tanggalnya baru dibuat atau diubah setelah pukul 08.00.
 
+## Perjalanan dan checklist persiapan (v0.2)
+
+Perjalanan menyimpan rencana liburan: judul, tujuan, tanggal, catatan, dan tautan ke target tabungan. Checklist persiapannya adalah daftar tugas biasa yang ditandai `trip_id`, jadi itemnya tugas biasa yang ikut muncul di Hari Ini kalau bertenggat.
+
+### Sumber perjalanan
+
+```json
+{
+  "id": "01m4dp5r20vbx9k3ws7ty6hn2q",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "title": "Liburan ke Bali",
+  "destination": "Bali",
+  "start_date": "2027-06-20",
+  "end_date": "2027-06-25",
+  "notes": null,
+  "savings_goal_id": "01m4djq1w0ystkpbz7mqd22k3n",
+  "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
+  "created_at": "2026-10-22T10:00:00.000000Z",
+  "updated_at": "2026-10-22T10:00:00.000000Z",
+  "deleted_at": null
+}
+```
+
+| Kolom | Saat PUT | Aturan |
+| --- | --- | --- |
+| `space_id` | wajib | Ruang tempatmu menjadi anggota; tidak bisa diubah |
+| `title` | wajib | 1–50 karakter |
+| `destination` | opsional | Paling banyak 100 karakter |
+| `start_date` | opsional | `YYYY-MM-DD`; kosong berarti tanggalnya belum pasti |
+| `end_date` | opsional | `YYYY-MM-DD`; butuh `start_date` dan tidak boleh lebih awal darinya |
+| `notes` | opsional | Paling banyak 5.000 karakter |
+| `savings_goal_id` | opsional | Target yang belum dihapus di ruang yang sama; `null` melepas tautan |
+
+- Endpoint: `PUT`, `PATCH`, dan `DELETE /trips/{id}`, dengan aturan tulis yang sama seperti sumber lain.
+- `created_by` diisi server. Kedua anggota Ruang Bersama boleh mengubah dan menghapus perjalanan siapa pun.
+- Status dihitung di HP dari tanggal lokal: direncanakan kalau `start_date` kosong atau belum tiba, berlangsung dari `start_date` sampai `end_date` (atau hanya di `start_date` kalau `end_date` kosong), dan selesai sesudahnya.
+- Satu target tabungan boleh ditautkan ke beberapa perjalanan. Kalau targetnya dihapus, server mengosongkan `savings_goal_id` perjalanan yang menautkannya dan memperbarui `updated_at`-nya.
+- `DELETE /trips/{id}` ikut menghapus checklist beserta tugasnya (soft delete) dan memperbarui `updated_at` keduanya.
+
+### Checklist persiapan
+
+- Checklist adalah daftar tugas dengan `trip_id` terisi. App membuatnya sendiri lewat `PUT /lists/{id}`, tepat setelah perjalanannya, supaya bisa langsung diisi walau offline.
+- `trip_id` hanya bisa diisi saat daftar dibuat. Perjalanannya harus di ruang yang sama dengan daftar; perjalanan yang sudah dihapus dibalas 409 `parent_deleted`.
+- Satu perjalanan paling banyak punya satu checklist. Checklist kedua ditolak 422 di kolom `trip_id`.
+- Checklist tidak dihitung sebagai daftar aktif: tidak tampil di daftar biasa, tidak dipakai tambah cepat, dan tidak dihitung untuk `last_list`.
+- Checklist tidak bisa dihapus atau diarsipkan sendiri; percobaannya dibalas 409 `trip_checklist`. Checklist ikut terhapus bersama perjalanannya.
+- Itemnya tugas biasa: punya penanggung jawab, tenggat, dan pengingat. Progres persiapan (item selesai dibagi total) dihitung di HP.
+
+### Pengingat persiapan
+
+- Push `trip_reminder` dikirim H-7 dan H-1 sebelum `start_date`, pukul 08.00 di zona waktu ruangnya. Perjalanan tanpa `start_date` tidak diingatkan.
+- Penerima: kedua anggota untuk perjalanan di Ruang Bersama, pemilik ruang untuk perjalanan di Ruang Pribadi.
+- Hanya dikirim kalau `notification_prefs.trip_reminders` penerima menyala. Kunci ini baru di v0.2 dan bawaannya menyala.
+- Judul push "Perjalanan", isinya "{judul} 7 hari lagi" atau "{judul} besok". Kalau checklist sudah berisi, ditambah "Persiapan {selesai} dari {total} beres."
+- Setiap pengingat dikirim paling banyak sekali per perjalanan per tanggal. Yang telat lebih dari 30 menit dilewati. Kalau `start_date` diubah, pengingat untuk tanggal barunya tetap dikirim.
+
 ## Sinkron
 
 `GET /sync` adalah satu-satunya cara HP membaca data ruang: sekali penuh setelah masuk, lalu hanya yang berubah. Beranda, filter tugas, dan statistik tabungan dihitung dari hasilnya di cache lokal.
@@ -520,7 +583,8 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
     "tasks": [],
     "savings_goals": [],
     "savings_entries": [],
-    "special_dates": []
+    "special_dates": [],
+    "trips": []
   },
   "meta": {
     "server_time": "2026-10-08T11:10:05.123456Z",
@@ -539,7 +603,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
-- Saat koleksi baru ditambahkan (v0.2: `special_dates`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
+- Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
 
 ### Aturan di HP
 
@@ -551,7 +615,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, dan saat push masuk ketika app terbuka.
-- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
+- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`, lalu `trips`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -574,6 +638,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `savings_achieved` | Total pertama kali mencapai target | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 | `partner_joined` | Pasangan memakai kode undangan | Pengundang | Selalu dikirim | `aktivitas` | Normal |
 | `special_date_reminder` | H-7, H-1, dan hari H pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi; hanya pasangan untuk ulang tahun anggota | `special_dates` | `pengingat` | Tinggi |
+| `trip_reminder` | H-7 dan H-1 sebelum `start_date` pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `trip_reminders` | `pengingat` | Tinggi |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -601,6 +666,7 @@ Isi pesan yang diterima app, disederhanakan:
 - Semua nilai di `data` berupa teks, sesuai aturan FCM. Selain `type` dan `space_id`, jenis tugas membawa `task_id` dan jenis tabungan membawa `savings_goal_id`.
 - `tag` dipakai di semua jenis (`task-{id}`, `goal-{id}`, `space-{id}`), supaya notifikasi untuk hal yang sama menimpa yang lama. Notifikasi lokal saat app terbuka memakai id angka dari kunci yang sama.
 - `special_date_reminder` (v0.2) membawa `special_date_id` untuk tanggal penting, atau `member_id` untuk ulang tahun anggota. `tag`-nya `date-{id}` atau `birthday-{member_id}`, dan saat diketuk app membuka Beranda.
+- `trip_reminder` (v0.2) membawa `trip_id`, dengan `tag` `trip-{id}`; saat diketuk app membuka Detail perjalanan.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
@@ -654,3 +720,15 @@ Tujuh butir ini menyesuaikan FR-24, UC-20, UC-21, dan tabel `special_dates` di t
 - [x] Ulang tahun salah satu dari kalian hanya diingatkan ke pasangannya; anniversary ke kalian berdua.
 - [x] Jenis push baru `special_date_reminder` di channel `pengingat`, dengan preferensi sendiri `special_dates`.
 - [x] Teks push "{judul} 7 hari lagi", "{judul} besok", dan "{judul} hari ini".
+
+### Perjalanan (v0.2)
+
+Tujuh butir ini menyesuaikan FR-17, FR-18, UC-14, UC-15, dan tabel `trips`, `task_lists`, dan `activities` di tab utama, dan disetujui pada 22 Oktober 2026.
+
+- [x] Checklist dibuat app sendiri lewat `PUT /lists/{id}` dengan `trip_id`, tepat setelah perjalanannya, supaya bisa diisi saat offline.
+- [x] Checklist tidak dihitung sebagai daftar aktif (`last_list` dan tambah cepat), tidak bisa dihapus atau diarsipkan sendiri (409 `trip_checklist`, kode baru), dan ikut terhapus bersama perjalanannya.
+- [x] Tanggal perjalanan boleh kosong untuk rencana yang belum pasti. Tanpa tanggal, statusnya direncanakan dan tidak ada pengingat.
+- [x] Target tabungan yang ditautkan harus di ruang yang sama, boleh dipakai beberapa perjalanan, dan tautannya dikosongkan otomatis kalau targetnya dihapus.
+- [x] Push baru `trip_reminder` H-7 dan H-1 pukul 08.00 di channel `pengingat`, dengan preferensi sendiri `trip_reminders` dan teks "{judul} 7 hari lagi" atau "{judul} besok", ditambah "Persiapan {selesai} dari {total} beres." kalau checklist berisi.
+- [x] Tabel `activities` (feed aktivitas) ditunda, karena belum ada FR atau layar yang memakainya.
+- [x] Pengingat setor rutin per target (v0.2, Should) dikerjakan terpisah setelah Perjalanan.
