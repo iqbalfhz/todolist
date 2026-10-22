@@ -530,7 +530,7 @@ Perjalanan menyimpan rencana liburan: judul, tujuan, tanggal, catatan, dan tauta
 | `start_date` | opsional | `YYYY-MM-DD`; kosong berarti tanggalnya belum pasti |
 | `end_date` | opsional | `YYYY-MM-DD`; butuh `start_date` dan tidak boleh lebih awal darinya |
 | `notes` | opsional | Paling banyak 5.000 karakter |
-| `savings_goal_id` | opsional | Target yang belum dihapus di ruang yang sama; `null` melepas tautan |
+| `savings_goal_id` | opsional | Target di ruang yang sama; target yang ternyata sudah dihapus disimpan sebagai tanpa tautan, supaya perubahan lainnya tetap masuk; `null` melepas tautan |
 
 - Endpoint: `PUT`, `PATCH`, dan `DELETE /trips/{id}`, dengan aturan tulis yang sama seperti sumber lain.
 - `created_by` diisi server. Kedua anggota Ruang Bersama boleh mengubah dan menghapus perjalanan siapa pun.

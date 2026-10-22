@@ -10,7 +10,7 @@ Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditu
 
 ## Kondisi repo (per 22 Oktober 2026)
 
-Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Perjalanan dan checklist persiapan (v0.2) juga sudah dibangun dan bertes: 3 endpoint `/trips/{id}`, koleksi sync `trips`, checklist sebagai daftar tugas dengan `trip_id`, dan pengingat `trip_reminder`. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
 Belum beres:
 
@@ -30,9 +30,9 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Sync (`GET /sync`) dan push notification
 - Panel admin Filament
 
-Dari v0.2 baru Tanggal penting yang dibangun (kontraknya di bagian "Tanggal penting (v0.2)" pada `docs/kontrak-api.md`).
+Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibangun (kontraknya di bagian "Tanggal penting (v0.2)" dan "Perjalanan dan checklist persiapan (v0.2)" pada `docs/kontrak-api.md`). Sisa v0.2 yang belum: pengingat setor rutin per target. Tabel `activities` di tab utama ditunda.
 
-**Belum dibangun, jangan dibuat dulu:** perjalanan dan checklist persiapan (v0.2), kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
+**Belum dibangun, jangan dibuat dulu:** pengingat setor rutin per target (v0.2), kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
 
 **Sudah disetujui pemilik (11 Oktober 2026):** ke-18 butir "Perubahan dari rancangan awal" dan dua pertanyaan yang dulu ada di "Masih terbuka" pada akhir kontrak (kini "Sudah diputuskan"), yaitu nominal tetap disebut di push setoran, dan lupa kata sandi di v0.1 cukup lewat reset manual oleh admin. Teks push di `lang/id/push.php` juga sudah disahkan sebagai teks final. Atas permintaan pemilik, salinan kontrak di repo sudah dicentang dan dilengkapi dua aturan sync pada tanggal itu, lebih dulu daripada dokumen perencanaan di claude.ai; dokumen itu masih perlu disamakan.
 
@@ -60,6 +60,7 @@ Dari v0.2 baru Tanggal penting yang dibangun (kontraknya di bagian "Tanggal pent
 - `php artisan migrate:fresh --seed` — reset database lokal lalu isi admin dan data contoh (jangan pernah di staging/produksi)
 - `php artisan reminders:send` — kirim pengingat yang jatuh tempo sekarang; di server dijalankan scheduler tiap menit
 - `php artisan special-dates:remind` — kirim pengingat tanggal penting dan ulang tahun anggota; hanya mengirim di ruang yang jam setempatnya 08.00–08.30, dan dijalankan scheduler tiap menit
+- `php artisan trips:remind` — kirim pengingat persiapan perjalanan (H-7 dan H-1), dengan jendela waktu yang sama
 
 ## Konfigurasi (`.env`)
 
@@ -111,7 +112,9 @@ Dari v0.2 baru Tanggal penting yang dibangun (kontraknya di bagian "Tanggal pent
 - Penghapusan berantai (daftar ke tugas, target ke setoran) harus ikut memperbarui `updated_at` anak-anaknya. Pakai query Eloquent, jangan `DB::table()->update()`.
 - Mengubah `assignee_ids` wajib `touch()` tugasnya (pivot tidak punya kursor sendiri).
 - Tulis ke daftar/target yang terhapus: 409 `parent_deleted`; ke daftar yang diarsipkan: 409 `parent_archived`. Validasi induk dengan `whereNull('deleted_at')`, bukan rule `exists` biasa.
-- Daftar aktif terakhir di sebuah ruang tidak boleh dihapus atau diarsipkan: 409 `last_list`. Kunci baris ruang (`lockForUpdate()`) saat menghitung.
+- Daftar aktif terakhir di sebuah ruang tidak boleh dihapus atau diarsipkan: 409 `last_list`. Kunci baris ruang (`lockForUpdate()`) saat menghitung. Checklist perjalanan (daftar dengan `trip_id`, scope `regular()` untuk yang bukan) tidak dihitung.
+- Checklist perjalanan tidak bisa dihapus atau diarsipkan sendiri: 409 `trip_checklist`; ikut terhapus bersama perjalanannya (`DeleteTrip`). Satu perjalanan paling banyak satu checklist; pembuatannya mengunci baris perjalanan.
+- Menghapus target tabungan mengosongkan `savings_goal_id` perjalanan yang menautkannya. Tautan ke target yang ternyata sudah dihapus disimpan sebagai `null`, bukan ditolak.
 - Data di ruang yang bukan ruang user dianggap tidak ada: 404, bukan 403.
 
 ### Error
@@ -124,7 +127,7 @@ Dari v0.2 baru Tanggal penting yang dibangun (kontraknya di bagian "Tanggal pent
 
 ### Sync (`GET /sync`)
 
-- Koleksi: `spaces` (dengan `members`), `task_lists`, `tasks`, `savings_goals`, `savings_entries`, `special_dates`. Menambah koleksi membuat `cursor` lama ditolak sekali (`SyncCursor::COLLECTIONS` dicek persis), dan app versi baru wajib sync penuh sekali.
+- Koleksi: `spaces` (dengan `members`), `task_lists`, `tasks`, `savings_goals`, `savings_entries`, `special_dates`, `trips`. Menambah koleksi membuat `cursor` lama ditolak sekali (`SyncCursor::COLLECTIONS` dicek persis), dan app versi baru wajib sync penuh sekali.
 - Tiap koleksi diurutkan `(updated_at, id)`, paling banyak 500 baris per halaman; `next_cursor` menyimpan posisi tiap koleksi.
 - `server_time` dicatat saat halaman pertama dan sama di semua halaman. Mundur 5 detik dari `since`, sekali, di halaman pertama.
 - Tanpa `since`: hanya data aktif. Dengan `since`: termasuk yang terhapus.
@@ -141,12 +144,13 @@ Dari v0.2 baru Tanggal penting yang dibangun (kontraknya di bagian "Tanggal pent
 ### Notifikasi dan pengingat
 
 - Push dikirim dari job antrean ke semua token penerima, hanya jika `notification_prefs` penerima menyala. Semua nilai `data` FCM berupa string.
-- Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`, `special_date_reminder`. Penerima, channel, dan prioritasnya ada di kontrak.
+- Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`, `special_date_reminder`, `trip_reminder`. Penerima, channel, dan prioritasnya ada di kontrak.
 - `remind_at` (UTC) dihitung dari `due_date` + `due_time` di zona waktu ruang; tanpa jam → 08.00. Diklaim dengan `UPDATE ... WHERE reminder_sent_at IS NULL` tanpa menyentuh `updated_at`. Scheduler pakai `withoutOverlapping()`. Telat lebih dari 30 menit: tandai terkirim tanpa push.
 - Pengingat tugas yang selesai, terhapus, atau ada di daftar arsip dibiarkan terbuka, jadi masih terkirim kalau tugasnya kembali dalam 30 menit itu; setelahnya ikut ditandai terkirim.
 - Token yang ditolak FCM (`UNREGISTERED`) dihapus dari `device_tokens`.
 - `savings_achieved` paling banyak sekali per target (`achieved_notified_at`); total dihitung dalam transaksi yang mengunci baris target.
-- Pengingat tanggal penting: H-7, H-1, dan hari H pukul 08.00 di zona waktu ruang, diklaim dengan baris unik `(reminder_key, remind_on)` di `special_date_reminders` dalam transaksi yang sama dengan push-nya. Ulang tahun anggota diambil dari `birth_date` dan hanya dikirim ke pasangannya; 29 Februari diingatkan 28 Februari di tahun biasa.
+- Pengingat tanggal penting: H-7, H-1, dan hari H pukul 08.00 di zona waktu ruang, diklaim dengan baris unik `(reminder_key, remind_on)` di `daily_reminders` (dulu `special_date_reminders`) lewat `DailyReminderWindow`, dalam transaksi yang sama dengan push-nya. Ulang tahun anggota diambil dari `birth_date` dan hanya dikirim ke pasangannya; 29 Februari diingatkan 28 Februari di tahun biasa.
+- Pengingat perjalanan: H-7 dan H-1 sebelum `start_date` pukul 08.00, kunci `trip:{id}:{start_date}` supaya perjalanan yang dipindah diingatkan lagi untuk tanggal barunya; isinya menyebut progres checklist kalau checklist berisi.
 
 ## Admin (Filament)
 
