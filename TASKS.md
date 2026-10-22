@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Pengingat setor rutin per target (v0.2)** - since 2026-10-22; kontrak ditulis di dokumen perencanaan, lalu dibangun dan bertes di branch `feat/pengingat-setor`; menunggu pemilik mencentang lima butir keputusannya sebelum merge
+
 ## Waiting On
 
 - [ ] **Perjalanan di app Flutter** - oleh pemilik, since 2026-10-22; layar Daftar perjalanan, Detail perjalanan, dan Checklist persiapan; buat checklist lewat `PUT /lists/{id}` dengan `trip_id` tepat setelah perjalanannya; sembunyikan checklist dari daftar biasa dan tambah cepat; koleksi sync `trips` dengan sync penuh sekali; progres persiapan di Beranda; switch `trip_reminders`; push `trip_reminder` (ketuk membuka Detail perjalanan); tangani 409 `trip_checklist`
