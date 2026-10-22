@@ -28,6 +28,7 @@ describe('show', function () {
                     'savings_activity' => true,
                     'special_dates' => true,
                     'trip_reminders' => true,
+                    'savings_reminders' => true,
                 ],
                 'avatar_url' => null,
                 'avatar_version' => 0,
@@ -114,6 +115,7 @@ describe('update', function () {
             'savings_activity' => true,
             'special_dates' => true,
             'trip_reminders' => true,
+            'savings_reminders' => true,
         ]);
     });
 
@@ -123,7 +125,7 @@ describe('update', function () {
         $response = $this->patchJson('/api/v1/me', ['notification_prefs' => [$preference => false]]);
 
         $response->assertOk()->assertJsonPath("data.notification_prefs.{$preference}", false);
-    })->with(['special_dates', 'trip_reminders']);
+    })->with(['special_dates', 'trip_reminders', 'savings_reminders']);
 
     it('ignores read-only and unknown fields', function () {
         $user = actingAsApiUser();

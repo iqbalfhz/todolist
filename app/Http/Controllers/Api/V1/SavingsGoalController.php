@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\DeleteSavingsGoal;
+use App\Actions\NormalizeSavingsReminder;
 use App\Actions\UpdateSavingsGoal;
 use App\Http\Requests\StoreSavingsGoalRequest;
 use App\Http\Requests\UpdateSavingsGoalRequest;
@@ -21,14 +22,16 @@ class SavingsGoalController extends QueuedResourceController
     /**
      * Create a savings goal with the ID the phone chose.
      */
-    public function store(Request $request, string $id): JsonResponse
+    public function store(Request $request, string $id, NormalizeSavingsReminder $normalizeSavingsReminder): JsonResponse
     {
         $targetSpaceId = is_string($request->input('space_id')) ? $request->input('space_id') : null;
 
-        return $this->createOnce($id, $targetSpaceId, function () use ($request, $id): SavingsGoal {
+        return $this->createOnce($id, $targetSpaceId, function () use ($request, $id, $normalizeSavingsReminder): SavingsGoal {
             $data = resolve(StoreSavingsGoalRequest::class)->validated();
 
             Gate::authorize('contribute', Space::query()->findOrFail($data['space_id']));
+
+            $data = [...$data, ...$normalizeSavingsReminder->handle($data['reminder_frequency'] ?? null, $data['reminder_day'] ?? null)];
 
             $goal = new SavingsGoal(array_filter($data, fn (mixed $value): bool => $value !== null));
             $goal->id = $id;

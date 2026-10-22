@@ -26,6 +26,8 @@ class SavingsGoalResource extends JsonResource
             'target_amount' => $this->target_amount,
             'currency' => $this->currency,
             'target_date' => $this->target_date,
+            'reminder_frequency' => $this->reminder_frequency,
+            'reminder_day' => $this->reminder_day,
             'achieved_at' => $this->achieved_at,
             'archived_at' => $this->archived_at,
             'created_by' => $this->created_by,

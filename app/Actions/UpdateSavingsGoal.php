@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateSavingsGoal
 {
-    public function __construct(private RefreshSavingsProgress $refreshSavingsProgress) {}
+    public function __construct(
+        private RefreshSavingsProgress $refreshSavingsProgress,
+        private NormalizeSavingsReminder $normalizeSavingsReminder,
+    ) {}
 
     /**
      * Apply the given changes to the goal.
@@ -23,6 +26,14 @@ class UpdateSavingsGoal
 
             if (isset($changes['archived_at'])) {
                 $changes['archived_at'] = Iso8601WithOffset::toServerTime($changes['archived_at']);
+            }
+
+            // A change to either reminder field is checked together with the one already stored.
+            if (array_key_exists('reminder_frequency', $changes) || array_key_exists('reminder_day', $changes)) {
+                $changes = [...$changes, ...$this->normalizeSavingsReminder->handle(
+                    array_key_exists('reminder_frequency', $changes) ? $changes['reminder_frequency'] : $goal->reminder_frequency?->value,
+                    array_key_exists('reminder_day', $changes) ? $changes['reminder_day'] : $goal->reminder_day,
+                )];
             }
 
             $goal->fill($changes);

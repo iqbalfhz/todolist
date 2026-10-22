@@ -23,6 +23,8 @@ describe('store', function () {
             'target_amount' => 10000000,
             'currency' => 'IDR',
             'target_date' => '2027-06-30',
+            'reminder_frequency' => 'weekly',
+            'reminder_day' => 5,
         ]);
 
         $response->assertCreated()->assertExactJson([
@@ -34,6 +36,8 @@ describe('store', function () {
                 'target_amount' => 10000000,
                 'currency' => 'IDR',
                 'target_date' => '2027-06-30',
+                'reminder_frequency' => 'weekly',
+                'reminder_day' => 5,
                 'achieved_at' => null,
                 'archived_at' => null,
                 'created_by' => $user->id,
@@ -148,6 +152,10 @@ describe('store', function () {
         'no currency' => [['currency' => null], 'currency'],
         'a currency outside the table' => [['currency' => 'GBP'], 'currency'],
         'a target date that is not on the calendar' => [['target_date' => '2027-02-30'], 'target_date'],
+        'a reminder frequency outside the list' => [['reminder_frequency' => 'daily', 'reminder_day' => 1], 'reminder_frequency'],
+        'a reminder frequency without a day' => [['reminder_frequency' => 'weekly'], 'reminder_day'],
+        'a weekly reminder on day 8' => [['reminder_frequency' => 'weekly', 'reminder_day' => 8], 'reminder_day'],
+        'a monthly reminder on day 29' => [['reminder_frequency' => 'monthly', 'reminder_day' => 29], 'reminder_day'],
     ]);
 
     it('returns 401 when no token is sent', function () {
@@ -168,6 +176,32 @@ describe('update', function () {
             ->assertJsonPath('data.name', 'Liburan ke Jepang')
             ->assertJsonPath('data.target_date', '2027-06-30')
             ->assertJsonPath('data.target_amount', 1_000_000);
+    });
+
+    it('checks a new reminder day against the frequency already stored', function (array $stored, array $payload, int $status, ?int $day) {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create($stored);
+
+        $response = $this->patchJson("/api/v1/savings-goals/{$goal->id}", $payload);
+
+        $response->assertStatus($status);
+        expect($goal->fresh()->reminder_day)->toBe($day);
+    })->with([
+        'a weekly goal moved to day 9' => [['reminder_frequency' => 'weekly', 'reminder_day' => 5], ['reminder_day' => 9], 422, 5],
+        'a weekly goal moved to day 2' => [['reminder_frequency' => 'weekly', 'reminder_day' => 5], ['reminder_day' => 2], 200, 2],
+        'a monthly goal moved to the 25th' => [['reminder_frequency' => 'monthly', 'reminder_day' => 1], ['reminder_day' => 25], 200, 25],
+        'a weekly goal switched to monthly on day 9' => [['reminder_frequency' => 'weekly', 'reminder_day' => 5], ['reminder_frequency' => 'monthly', 'reminder_day' => 9], 200, 9],
+    ]);
+
+    it('clears the reminder day when the frequency is cleared', function () {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create(['reminder_frequency' => 'weekly', 'reminder_day' => 5]);
+
+        $response = $this->patchJson("/api/v1/savings-goals/{$goal->id}", ['reminder_frequency' => null]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.reminder_frequency', null)
+            ->assertJsonPath('data.reminder_day', null);
     });
 
     it('keeps the currency the goal was created with', function () {

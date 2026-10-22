@@ -105,6 +105,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['tripId' => 'id-perjalanan'],
         ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'trip-id-perjalanan']],
     ],
+    'a deposit reminder, hidden on the lock screen' => [
+        PushType::SavingsReminder,
+        ['savingsGoalId' => 'id-target'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
+    ],
 ]);
 
 it('sends the special date or the member a reminder is about in the data', function (array $ids, array $data) {
@@ -146,6 +151,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'achieved goals' => [PushType::SavingsAchieved, 'savings_activity'],
     'special dates' => [PushType::SpecialDateReminder, 'special_dates'],
     'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
+    'deposit reminders' => [PushType::SavingsReminder, 'savings_reminders'],
 ]);
 
 it('sends partner_joined even when every preference is off', function () {

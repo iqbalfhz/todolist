@@ -10,7 +10,8 @@ return [
     | The texts of the six push notifications. The reminder and the
     | partner_joined texts come from the API contract. The owner approved
     | the others as they are written here on 11 October 2026, and the
-    | special_date_reminder and trip_reminder texts on 22 October 2026.
+    | special_date_reminder and trip_reminder texts on 22 October 2026. The
+    | savings_reminder text still waits for the owner's approval.
     |
     */
 
@@ -52,6 +53,10 @@ return [
         'in_a_week' => ':title 7 hari lagi',
         'tomorrow' => ':title besok',
         'with_progress' => ':reminder. Persiapan :done dari :total beres.',
+    ],
+
+    'savings_reminder' => [
+        'body' => 'Waktunya menabung. Terkumpul :percent% dari target.',
     ],
 
 ];

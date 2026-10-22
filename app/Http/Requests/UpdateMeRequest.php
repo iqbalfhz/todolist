@@ -28,6 +28,7 @@ class UpdateMeRequest extends ApiRequest
             'notification_prefs.savings_activity' => ['sometimes', 'required', 'boolean'],
             'notification_prefs.special_dates' => ['sometimes', 'required', 'boolean'],
             'notification_prefs.trip_reminders' => ['sometimes', 'required', 'boolean'],
+            'notification_prefs.savings_reminders' => ['sometimes', 'required', 'boolean'],
         ];
     }
 }

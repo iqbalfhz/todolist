@@ -60,6 +60,9 @@ return [
         'savings_goal_different_space' => 'Target tabungan harus berada di ruang yang sama dengan perjalanannya.',
         'trip_different_space' => 'Perjalanan harus berada di ruang yang sama dengan daftarnya.',
         'trip_has_checklist' => 'Perjalanan ini sudah punya checklist.',
+        'reminder_day_needed' => 'Hari setor wajib diisi kalau pengingat setor dinyalakan.',
+        'reminder_day_weekly' => 'Hari setor mingguan harus antara 1 (Senin) dan 7 (Minggu).',
+        'reminder_day_monthly' => 'Tanggal setor bulanan harus antara 1 dan 28.',
     ],
 
     /*
@@ -87,6 +90,7 @@ return [
         'notification_prefs.savings_activity' => 'aktivitas tabungan',
         'notification_prefs.special_dates' => 'pengingat tanggal penting',
         'notification_prefs.trip_reminders' => 'pengingat perjalanan',
+        'notification_prefs.savings_reminders' => 'pengingat setor tabungan',
         'photo' => 'foto',
         'token' => 'token',
         'fcm_token' => 'token FCM',
@@ -119,6 +123,8 @@ return [
         'start_date' => 'tanggal mulai',
         'end_date' => 'tanggal selesai',
         'trip_id' => 'perjalanan',
+        'reminder_frequency' => 'pengingat setor',
+        'reminder_day' => 'hari setor',
         'since' => 'since',
         'cursor' => 'cursor',
     ],

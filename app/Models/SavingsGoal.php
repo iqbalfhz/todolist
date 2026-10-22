@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SavingsReminderFrequency;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use Database\Factories\SavingsGoalFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +20,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'target_amount',
     'currency',
     'target_date',
+    'reminder_frequency',
+    'reminder_day',
     'achieved_at',
     'achieved_notified_at',
     'archived_at',
@@ -54,6 +57,8 @@ class SavingsGoal extends Model
     {
         return [
             'target_amount' => 'integer',
+            'reminder_frequency' => SavingsReminderFrequency::class,
+            'reminder_day' => 'integer',
             'achieved_at' => 'datetime',
             'achieved_notified_at' => 'datetime',
             'archived_at' => 'datetime',

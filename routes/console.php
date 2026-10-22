@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\SendDueReminders;
+use App\Actions\SendSavingsReminders;
 use App\Actions\SendSpecialDateReminders;
 use App\Actions\SendTripReminders;
 use Illuminate\Foundation\Inspiring;
@@ -37,5 +38,15 @@ Artisan::command('trips:remind', function (SendTripReminders $sendTripReminders)
 
     $this->info("Trip reminders sent: {$sent}.");
 })->purpose('Send the push reminders of the trips that start in 7 days or tomorrow')
+    ->everyMinute()
+    ->withoutOverlapping(5);
+
+// Runs every minute, but sends only in spaces where it is between 08.00 and
+// 08.30, and only once per goal per day.
+Artisan::command('savings:remind', function (SendSavingsReminders $sendSavingsReminders) {
+    $sent = $sendSavingsReminders->handle();
+
+    $this->info("Savings reminders sent: {$sent}.");
+})->purpose('Send the deposit reminders of the savings goals whose day is today')
     ->everyMinute()
     ->withoutOverlapping(5);

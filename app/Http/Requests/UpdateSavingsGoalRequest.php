@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\SavingsReminderFrequency;
 use App\Rules\Iso8601WithOffset;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\Rule;
 
 class UpdateSavingsGoalRequest extends ApiRequest
 {
@@ -21,6 +23,8 @@ class UpdateSavingsGoalRequest extends ApiRequest
             'emoji' => ['sometimes', 'nullable', 'string', 'max:16'],
             'target_amount' => ['sometimes', 'required', 'integer', 'min:1', 'max:'.config('currencies.max_amount')],
             'target_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'reminder_frequency' => ['sometimes', 'nullable', Rule::enum(SavingsReminderFrequency::class)],
+            'reminder_day' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:28'],
             'archived_at' => ['sometimes', 'nullable', new Iso8601WithOffset],
         ];
     }
