@@ -1,8 +1,8 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 9 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 22 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 3 endpoint untuk Tanggal penting.
 
 ## Ringkasan endpoint
 
@@ -35,6 +35,9 @@ Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya tiga yang me
 | Tabungan | PUT | `/savings-entries/{id}` | Catat setoran |
 | Tabungan | PATCH | `/savings-entries/{id}` | Ubah setoran |
 | Tabungan | DELETE | `/savings-entries/{id}` | Hapus setoran |
+| Tanggal penting | PUT | `/special-dates/{id}` | Buat tanggal penting (v0.2) |
+| Tanggal penting | PATCH | `/special-dates/{id}` | Ubah tanggal penting (v0.2) |
+| Tanggal penting | DELETE | `/special-dates/{id}` | Hapus tanggal penting (v0.2) |
 
 ## Konvensi
 
@@ -189,7 +192,8 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
   "notification_prefs": {
     "task_reminders": true,
     "partner_activity": true,
-    "savings_activity": true
+    "savings_activity": true,
+    "special_dates": true
   },
   "avatar_url": null,
   "avatar_version": 0,
@@ -248,6 +252,7 @@ Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu se
       "color": "mawar",
       "avatar_url": null,
       "avatar_version": 0,
+      "birth_date": "--03-02",
       "role": "owner",
       "joined_at": "2026-10-08T10:20:00.000000Z"
     },
@@ -257,6 +262,7 @@ Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu se
       "color": "ungu",
       "avatar_url": null,
       "avatar_version": 0,
+      "birth_date": null,
       "role": "member",
       "joined_at": "2026-10-08T10:20:00.000000Z"
     }
@@ -268,7 +274,7 @@ Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu se
 ```
 
 - `type` berisi `personal` atau `shared`. Ruang Pribadi mengikuti zona waktu pemiliknya; Ruang Bersama memakai zona waktu pengundang dan tidak berubah di v0.1.
-- Perubahan nama, warna, atau foto seorang anggota ikut memperbarui `updated_at` ruangnya, supaya sampai ke HP pasangan lewat sync.
+- Perubahan nama, warna, foto, atau tanggal lahir (v0.2) seorang anggota ikut memperbarui `updated_at` ruangnya, supaya sampai ke HP pasangan lewat sync.
 - `GET /spaces` membalas semua ruang tempatmu menjadi anggota (1 atau 2), tanpa paginasi.
 
 ### Endpoint undangan
@@ -440,6 +446,52 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 - Push `savings_achieved` dikirim paling banyak sekali per target, dicatat di `achieved_notified_at`. Kalau push itu terkirim karena sebuah setoran, push `savings_deposit` untuk setoran yang sama tidak dikirim.
 - `DELETE /savings-goals/{id}` ikut menghapus semua setorannya dan memperbarui `updated_at` setoran itu. Setoran ke target yang sudah dihapus dibalas 409 `parent_deleted`; setoran ke target yang diarsipkan tetap diterima.
 
+## Tanggal penting (v0.2)
+
+Tanggal penting adalah acara tahunan: anniversary, ulang tahun orang lain, atau tanggal lain yang kalian pilih. Ulang tahun kalian berdua tidak dicatat di sini, tetapi diambil dari `birth_date` di profil.
+
+### Sumber tanggal penting
+
+```json
+{
+  "id": "01m4dm2k70z5bq7rn3xw8c4v1e",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "type": "anniversary",
+  "title": "Hari jadi kita",
+  "date": "2023-10-29",
+  "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
+  "created_at": "2026-10-22T09:00:00.000000Z",
+  "updated_at": "2026-10-22T09:00:00.000000Z",
+  "deleted_at": null
+}
+```
+
+| Kolom | Saat PUT | Aturan |
+| --- | --- | --- |
+| `space_id` | wajib | Ruang tempatmu menjadi anggota; tidak bisa diubah |
+| `type` | wajib | `birthday`, `anniversary`, atau `other` (Lainnya) |
+| `title` | wajib | 1–50 karakter, misalnya "Hari jadi kita" atau "Ulang tahun Ibu" |
+| `date` | wajib | `YYYY-MM-DD`, atau `--MM-DD` kalau tahunnya tidak diketahui; dicek dengan pola dan kalender seperti `birth_date` (`--02-30` ditolak, `--02-29` boleh) |
+
+- Endpoint: `PUT`, `PATCH`, dan `DELETE /special-dates/{id}`, dengan aturan tulis yang sama seperti sumber lain. `PUT` hanya membuat, `PATCH` hanya mengubah kolom yang dikirim, dan `DELETE` menghapus lunak (204).
+- `created_by` diisi server. Kedua anggota Ruang Bersama boleh mengubah dan menghapus tanggal penting siapa pun.
+- Tanggal di Ruang Pribadi tidak pernah terlihat pasangan, jadi bisa dipakai untuk kejutan.
+- Hitung mundur di Beranda dan kartu ucapan hari H dihitung di HP dari hasil sync. Angka seperti "ke-3" hanya tampil kalau tahunnya diisi.
+- 29 Februari diingatkan dan dirayakan pada 28 Februari di tahun biasa.
+
+### Ulang tahun anggota
+
+- Ulang tahun kalian berdua diambil dari `birth_date` di profil. Setiap anggota di sumber ruang ikut membawa `birth_date`, supaya HP pasangan bisa menghitung mundur.
+- Pengingatnya hanya dikirim ke pasangan, memakai zona waktu Ruang Bersama. Akun yang belum punya Ruang Bersama, atau yang `birth_date`-nya kosong, tidak diingatkan.
+
+### Pengingat tanggal penting
+
+- Push `special_date_reminder` dikirim H-7, H-1, dan hari H pukul 08.00 di zona waktu ruangnya. Jadwal ini tetap di v0.2 dan tidak bisa diatur.
+- Penerima: kedua anggota untuk tanggal di Ruang Bersama, pemilik ruang untuk tanggal di Ruang Pribadi, dan hanya pasangan untuk ulang tahun anggota.
+- Hanya dikirim kalau `notification_prefs.special_dates` penerima menyala. Kunci ini baru di v0.2 dan bawaannya menyala.
+- Judul push "Tanggal penting", isinya "{judul} 7 hari lagi", "{judul} besok", atau "{judul} hari ini". Untuk ulang tahun anggota, `{judul}` berbunyi "Ulang tahun {nama}".
+- Setiap pengingat dikirim paling banyak sekali per tanggal per tahun. Yang telat lebih dari 30 menit dilewati, sama seperti pengingat tugas, termasuk saat tanggalnya baru dibuat atau diubah setelah pukul 08.00.
+
 ## Sinkron
 
 `GET /sync` adalah satu-satunya cara HP membaca data ruang: sekali penuh setelah masuk, lalu hanya yang berubah. Beranda, filter tugas, dan statistik tabungan dihitung dari hasilnya di cache lokal.
@@ -467,7 +519,8 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
     "task_lists": [],
     "tasks": [],
     "savings_goals": [],
-    "savings_entries": []
+    "savings_entries": [],
+    "special_dates": []
   },
   "meta": {
     "server_time": "2026-10-08T11:10:05.123456Z",
@@ -486,6 +539,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
+- Saat koleksi baru ditambahkan (v0.2: `special_dates`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
 
 ### Aturan di HP
 
@@ -497,6 +551,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, dan saat push masuk ketika app terbuka.
+- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -518,6 +573,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `savings_deposit` | Setoran baru dicatat | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 | `savings_achieved` | Total pertama kali mencapai target | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 | `partner_joined` | Pasangan memakai kode undangan | Pengundang | Selalu dikirim | `aktivitas` | Normal |
+| `special_date_reminder` | H-7, H-1, dan hari H pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi; hanya pasangan untuk ulang tahun anggota | `special_dates` | `pengingat` | Tinggi |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -544,6 +600,7 @@ Isi pesan yang diterima app, disederhanakan:
 
 - Semua nilai di `data` berupa teks, sesuai aturan FCM. Selain `type` dan `space_id`, jenis tugas membawa `task_id` dan jenis tabungan membawa `savings_goal_id`.
 - `tag` dipakai di semua jenis (`task-{id}`, `goal-{id}`, `space-{id}`), supaya notifikasi untuk hal yang sama menimpa yang lama. Notifikasi lokal saat app terbuka memakai id angka dari kunci yang sama.
+- `special_date_reminder` (v0.2) membawa `special_date_id` untuk tanggal penting, atau `member_id` untuk ulang tahun anggota. `tag`-nya `date-{id}` atau `birthday-{member_id}`, dan saat diketuk app membuka Beranda.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
@@ -585,3 +642,15 @@ Dua pertanyaan yang sebelumnya terbuka, diputuskan pada 11 Oktober 2026:
 
 - Teks notifikasi setoran tetap menyebut nominal ("menabung Rp200.000"). Judul tugas pun lewat jalur yang sama, dan nominalnya disembunyikan di layar kunci.
 - Lupa kata sandi belum ada di v0.1. Reset dilakukan manual lewat panel admin (sekaligus mencabut semua token akun itu), lalu versi di app dibuat sebelum rilis publik.
+
+### Tanggal penting (v0.2)
+
+Tujuh butir ini menyesuaikan FR-24, UC-20, UC-21, dan tabel `special_dates` di tab utama, dan disetujui pada 22 Oktober 2026.
+
+- [x] Ulang tahun kalian berdua diambil dari `birth_date` di profil, dan setiap anggota di sumber ruang membawa `birth_date`. Tanggal penting manual dipakai untuk anniversary, ulang tahun orang lain, dan tanggal lain, jadi kolom `user_id` tidak dipakai.
+- [x] Jenis "Lainnya" (`other`) ikut ditawarkan selain Ulang tahun dan Anniversary.
+- [x] Jadwal pengingat tetap H-7, H-1, dan hari H, jadi kolom `remind_days` belum disimpan.
+- [x] Tahun boleh kosong, dengan format yang sama seperti `birth_date`.
+- [x] Ulang tahun salah satu dari kalian hanya diingatkan ke pasangannya; anniversary ke kalian berdua.
+- [x] Jenis push baru `special_date_reminder` di channel `pengingat`, dengan preferensi sendiri `special_dates`.
+- [x] Teks push "{judul} 7 hari lagi", "{judul} besok", dan "{judul} hari ini".
