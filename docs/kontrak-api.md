@@ -198,7 +198,8 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
     "partner_activity": true,
     "savings_activity": true,
     "special_dates": true,
-    "trip_reminders": true
+    "trip_reminders": true,
+    "savings_reminders": true
   },
   "avatar_url": null,
   "avatar_version": 0,
@@ -403,6 +404,8 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
   "target_amount": 10000000,
   "currency": "IDR",
   "target_date": "2027-06-30",
+  "reminder_frequency": "weekly",
+  "reminder_day": 5,
   "achieved_at": null,
   "archived_at": null,
   "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
@@ -421,6 +424,8 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 | `currency` | wajib | Kode di tabel Uang; app mengisinya dari `default_currency`. Hanya bisa diisi saat target dibuat |
 | `target_date` | opsional | Dipakai untuk menghitung setoran per minggu yang dibutuhkan (FR-14) |
 | `archived_at` | – | Hanya lewat PATCH |
+| `reminder_frequency` | opsional | `weekly`, `monthly`, atau `null` (tanpa pengingat, bawaan) (v0.2) |
+| `reminder_day` | opsional | Wajib kalau `reminder_frequency` terisi: 1–7 untuk mingguan (1 = Senin, 7 = Minggu), 1–28 untuk bulanan (v0.2) |
 
 ### Sumber setoran
 
@@ -452,6 +457,17 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 - Setiap kali setoran dibuat, diubah, atau dihapus, atau `target_amount` berubah, server menghitung ulang total dalam transaksi yang mengunci baris target. Total mencapai target: `achieved_at` diisi. Total turun lagi di bawah target: `achieved_at` kembali `null`.
 - Push `savings_achieved` dikirim paling banyak sekali per target, dicatat di `achieved_notified_at`. Kalau push itu terkirim karena sebuah setoran, push `savings_deposit` untuk setoran yang sama tidak dikirim.
 - `DELETE /savings-goals/{id}` ikut menghapus semua setorannya dan memperbarui `updated_at` setoran itu. Setoran ke target yang sudah dihapus dibalas 409 `parent_deleted`; setoran ke target yang diarsipkan tetap diterima.
+
+### Pengingat setor rutin (v0.2)
+
+- Jadwalnya disimpan di target: `reminder_frequency` (`weekly` atau `monthly`) dan `reminder_day`. Tanpa `reminder_frequency`, target tidak diingatkan.
+- Push `savings_reminder` dikirim pukul 08.00 di zona waktu ruangnya: tiap minggu pada hari `reminder_day` (1 = Senin, 7 = Minggu), atau tiap bulan pada tanggal `reminder_day`. Tanggal bulanan dibatasi 1–28, supaya ada di setiap bulan.
+- Mengosongkan `reminder_frequency` ikut mengosongkan `reminder_day`. Mengubah salah satunya lewat PATCH dicek bersama yang sudah tersimpan.
+- Penerima: kedua anggota untuk target di Ruang Bersama, pemilik ruang untuk target di Ruang Pribadi.
+- Target yang sudah tercapai, diarsipkan, atau dihapus tidak diingatkan. Setoran yang sudah masuk minggu atau bulan itu tidak membatalkan pengingat.
+- Hanya dikirim kalau `notification_prefs.savings_reminders` penerima menyala. Kunci ini baru di v0.2 dan bawaannya menyala.
+- Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target." Persen dibulatkan ke bawah.
+- Paling banyak sekali per target per hari. Yang telat lebih dari 30 menit dilewati.
 
 ## Tanggal penting (v0.2)
 
@@ -639,6 +655,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `partner_joined` | Pasangan memakai kode undangan | Pengundang | Selalu dikirim | `aktivitas` | Normal |
 | `special_date_reminder` | H-7, H-1, dan hari H pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi; hanya pasangan untuk ulang tahun anggota | `special_dates` | `pengingat` | Tinggi |
 | `trip_reminder` | H-7 dan H-1 sebelum `start_date` pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `trip_reminders` | `pengingat` | Tinggi |
+| `savings_reminder` | Hari setor yang dipilih di target, pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `savings_reminders` | `pengingat` | Tinggi |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -667,6 +684,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `tag` dipakai di semua jenis (`task-{id}`, `goal-{id}`, `space-{id}`), supaya notifikasi untuk hal yang sama menimpa yang lama. Notifikasi lokal saat app terbuka memakai id angka dari kunci yang sama.
 - `special_date_reminder` (v0.2) membawa `special_date_id` untuk tanggal penting, atau `member_id` untuk ulang tahun anggota. `tag`-nya `date-{id}` atau `birthday-{member_id}`, dan saat diketuk app membuka Beranda.
 - `trip_reminder` (v0.2) membawa `trip_id`, dengan `tag` `trip-{id}`; saat diketuk app membuka Detail perjalanan.
+- `savings_reminder` (v0.2) membawa `savings_goal_id`, dengan `tag` `goal-{id}` dan `visibility` `PRIVATE` seperti push tabungan lain; saat diketuk app membuka Detail target.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
@@ -732,3 +750,13 @@ Tujuh butir ini menyesuaikan FR-17, FR-18, UC-14, UC-15, dan tabel `trips`, `tas
 - [x] Push baru `trip_reminder` H-7 dan H-1 pukul 08.00 di channel `pengingat`, dengan preferensi sendiri `trip_reminders` dan teks "{judul} 7 hari lagi" atau "{judul} besok", ditambah "Persiapan {selesai} dari {total} beres." kalau checklist berisi.
 - [x] Tabel `activities` (feed aktivitas) ditunda, karena belum ada FR atau layar yang memakainya.
 - [x] Pengingat setor rutin per target (v0.2, Should) dikerjakan terpisah setelah Perjalanan.
+
+### Pengingat setor rutin (v0.2)
+
+Lima butir ini merancang usulan "Pengingat setor rutin per target" di lingkup fitur tab utama, yang belum punya FR. Centang yang kamu setujui; yang belum, beri komentar di barisnya.
+
+- [ ] Jadwal disimpan per target: mingguan (pilih hari) atau bulanan (pilih tanggal 1–28), pukul 08.00 di zona waktu ruang. Tanpa jadwal, target tidak diingatkan.
+- [ ] Penerimanya kedua anggota untuk target di Ruang Bersama, dan pemilik untuk target di Ruang Pribadi.
+- [ ] Target yang tercapai, diarsipkan, atau dihapus tidak diingatkan. Pengingat tetap dikirim walau sudah ada setoran minggu atau bulan itu.
+- [ ] Push baru `savings_reminder` di channel `pengingat`, dengan preferensi sendiri `savings_reminders`.
+- [ ] Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target.", dan disembunyikan di layar kunci seperti push tabungan lain.
