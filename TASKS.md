@@ -2,10 +2,9 @@
 
 ## Active
 
-- [ ] **Pengingat setor rutin per target (v0.2)** - since 2026-10-22; kontrak ditulis di dokumen perencanaan, lalu dibangun dan bertes di branch `feat/pengingat-setor`; menunggu pemilik mencentang lima butir keputusannya sebelum merge
-
 ## Waiting On
 
+- [ ] **Pengingat setor di app Flutter** - oleh pemilik, since 2026-10-22; pilihan jadwal di detail target (mingguan hari 1–7, bulanan tanggal 1–31), kolom `reminder_frequency` dan `reminder_day`, switch `savings_reminders`, dan push `savings_reminder` (ketuk membuka Detail target)
 - [ ] **Perjalanan di app Flutter** - oleh pemilik, since 2026-10-22; layar Daftar perjalanan, Detail perjalanan, dan Checklist persiapan; buat checklist lewat `PUT /lists/{id}` dengan `trip_id` tepat setelah perjalanannya; sembunyikan checklist dari daftar biasa dan tambah cepat; koleksi sync `trips` dengan sync penuh sekali; progres persiapan di Beranda; switch `trip_reminders`; push `trip_reminder` (ketuk membuka Detail perjalanan); tangani 409 `trip_checklist`
 - [ ] **Bukti push `special_date_reminder` di HP** - oleh pemilik, since 2026-10-22; tanggal uji 30 Oktober memicu pengingat H-7 pada 23 Oktober pukul 08.00 WIB; pastikan notifikasinya muncul dan membuka Beranda saat diketuk. HP pasangan juga belum memakai APK baru
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
@@ -14,7 +13,6 @@
 
 ## Someday
 
-- [ ] **v0.2** - perjalanan, checklist persiapan, tanggal penting
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
@@ -90,3 +88,4 @@
 - [x] ~~Tanggal penting di app Flutter (repo mobile `da4046c`): layar Pengaturan > Tanggal penting, koleksi sync `special_dates` dengan sync penuh sekali, hitung mundur dan kartu ucapan di Beranda, `birth_date` anggota, switch `special_dates`, dan push yang membuka Beranda; uji lewat layar dan uji dua HP lulus terhadap API `e866b4e`~~ (2026-10-22)
 - [x] ~~Kontrak Perjalanan dan checklist persiapan disetujui pemilik dan disalin ke `docs/kontrak-api.md`~~ (2026-10-22)
 - [x] ~~Perjalanan (v0.2) di API: `PUT`, `PATCH`, `DELETE /trips/{id}`, checklist sebagai daftar dengan `trip_id` (tidak dihitung `last_list`, 409 `trip_checklist`), tautan target yang dilepas saat target dihapus, koleksi sync `trips`, preferensi `trip_reminders`, dan pengingat `trips:remind` (H-7 dan H-1 pukul 08.00, dengan progres checklist)~~ (2026-10-22)
+- [x] ~~Pengingat setor rutin per target (v0.2): kontrak disetujui pemilik (tanggal bulanan 1–31, jatuh ke hari terakhir bulan yang lebih pendek), kolom `reminder_frequency` dan `reminder_day`, preferensi `savings_reminders`, dan perintah `savings:remind`; seluruh cakupan v0.2 di server selesai~~ (2026-10-22)

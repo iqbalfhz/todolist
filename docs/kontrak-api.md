@@ -425,7 +425,7 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 | `target_date` | opsional | Dipakai untuk menghitung setoran per minggu yang dibutuhkan (FR-14) |
 | `archived_at` | – | Hanya lewat PATCH |
 | `reminder_frequency` | opsional | `weekly`, `monthly`, atau `null` (tanpa pengingat, bawaan) (v0.2) |
-| `reminder_day` | opsional | Wajib kalau `reminder_frequency` terisi: 1–7 untuk mingguan (1 = Senin, 7 = Minggu), 1–28 untuk bulanan (v0.2) |
+| `reminder_day` | opsional | Wajib kalau `reminder_frequency` terisi: 1–7 untuk mingguan (1 = Senin, 7 = Minggu), 1–31 untuk bulanan (v0.2); di bulan yang lebih pendek, jatuh ke hari terakhir bulan itu |
 
 ### Sumber setoran
 
@@ -461,7 +461,7 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 ### Pengingat setor rutin (v0.2)
 
 - Jadwalnya disimpan di target: `reminder_frequency` (`weekly` atau `monthly`) dan `reminder_day`. Tanpa `reminder_frequency`, target tidak diingatkan.
-- Push `savings_reminder` dikirim pukul 08.00 di zona waktu ruangnya: tiap minggu pada hari `reminder_day` (1 = Senin, 7 = Minggu), atau tiap bulan pada tanggal `reminder_day`. Tanggal bulanan dibatasi 1–28, supaya ada di setiap bulan.
+- Push `savings_reminder` dikirim pukul 08.00 di zona waktu ruangnya: tiap minggu pada hari `reminder_day` (1 = Senin, 7 = Minggu), atau tiap bulan pada tanggal `reminder_day`. Tanggal bulanan boleh 1–31. Kalau bulan itu lebih pendek (mis. tanggal 31 di April, atau 29–31 di Februari), push dikirim di hari terakhir bulan itu.
 - Mengosongkan `reminder_frequency` ikut mengosongkan `reminder_day`. Mengubah salah satunya lewat PATCH dicek bersama yang sudah tersimpan.
 - Penerima: kedua anggota untuk target di Ruang Bersama, pemilik ruang untuk target di Ruang Pribadi.
 - Target yang sudah tercapai, diarsipkan, atau dihapus tidak diingatkan. Setoran yang sudah masuk minggu atau bulan itu tidak membatalkan pengingat.
@@ -753,10 +753,10 @@ Tujuh butir ini menyesuaikan FR-17, FR-18, UC-14, UC-15, dan tabel `trips`, `tas
 
 ### Pengingat setor rutin (v0.2)
 
-Lima butir ini merancang usulan "Pengingat setor rutin per target" di lingkup fitur tab utama, yang belum punya FR. Centang yang kamu setujui; yang belum, beri komentar di barisnya.
+Lima butir ini merancang usulan "Pengingat setor rutin per target" di lingkup fitur tab utama, yang belum punya FR, dan disetujui pada 22 Oktober 2026.
 
-- [ ] Jadwal disimpan per target: mingguan (pilih hari) atau bulanan (pilih tanggal 1–28), pukul 08.00 di zona waktu ruang. Tanpa jadwal, target tidak diingatkan.
-- [ ] Penerimanya kedua anggota untuk target di Ruang Bersama, dan pemilik untuk target di Ruang Pribadi.
-- [ ] Target yang tercapai, diarsipkan, atau dihapus tidak diingatkan. Pengingat tetap dikirim walau sudah ada setoran minggu atau bulan itu.
-- [ ] Push baru `savings_reminder` di channel `pengingat`, dengan preferensi sendiri `savings_reminders`.
-- [ ] Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target.", dan disembunyikan di layar kunci seperti push tabungan lain.
+- [x] Jadwal disimpan per target: mingguan (pilih hari) atau bulanan (pilih tanggal 1–31; di bulan yang lebih pendek, jatuh ke hari terakhir bulan itu), pukul 08.00 di zona waktu ruang. Tanpa jadwal, target tidak diingatkan.
+- [x] Penerimanya kedua anggota untuk target di Ruang Bersama, dan pemilik untuk target di Ruang Pribadi.
+- [x] Target yang tercapai, diarsipkan, atau dihapus tidak diingatkan. Pengingat tetap dikirim walau sudah ada setoran minggu atau bulan itu.
+- [x] Push baru `savings_reminder` di channel `pengingat`, dengan preferensi sendiri `savings_reminders`.
+- [x] Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target.", dan disembunyikan di layar kunci seperti push tabungan lain.
