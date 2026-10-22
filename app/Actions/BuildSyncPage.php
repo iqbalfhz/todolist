@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
+use App\Models\SpecialDate;
 use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
@@ -134,6 +135,7 @@ class BuildSyncPage
             'tasks' => Task::query()->whereIn('space_id', $spaceIds)->with('assignees:id'),
             'savings_goals' => SavingsGoal::query()->whereIn('space_id', $spaceIds),
             'savings_entries' => SavingsEntry::query()->whereIn('space_id', $spaceIds),
+            'special_dates' => SpecialDate::query()->whereIn('space_id', $spaceIds),
         };
 
         if ($withDeleted) {

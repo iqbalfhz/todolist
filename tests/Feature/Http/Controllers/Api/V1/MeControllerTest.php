@@ -26,6 +26,7 @@ describe('show', function () {
                     'task_reminders' => true,
                     'partner_activity' => true,
                     'savings_activity' => true,
+                    'special_dates' => true,
                 ],
                 'avatar_url' => null,
                 'avatar_version' => 0,
@@ -110,7 +111,16 @@ describe('update', function () {
             'task_reminders' => true,
             'partner_activity' => false,
             'savings_activity' => true,
+            'special_dates' => true,
         ]);
+    });
+
+    it('turns the special date reminders off', function () {
+        actingAsApiUser();
+
+        $response = $this->patchJson('/api/v1/me', ['notification_prefs' => ['special_dates' => false]]);
+
+        $response->assertOk()->assertJsonPath('data.notification_prefs.special_dates', false);
     });
 
     it('ignores read-only and unknown fields', function () {
@@ -181,7 +191,7 @@ describe('update', function () {
         $this->assertDatabaseHas('spaces', ['id' => $sharedSpace->id, 'timezone' => 'Asia/Jakarta']);
     });
 
-    it('bumps every space of the user when the name or color changes, so the partner syncs it', function (array $payload) {
+    it('bumps every space of the user when the name, color, or birth date changes, so the partner syncs it', function (array $payload) {
         $this->travelTo('2026-10-08 10:00:00');
         $user = actingAsApiUser();
         $sharedSpace = sharedSpaceBetween($user, User::factory()->create());
@@ -194,6 +204,7 @@ describe('update', function () {
     })->with([
         'the name' => [['name' => 'Iqbal']],
         'the color' => [['color' => 'ungu']],
+        'the birth date' => [['birth_date' => '--03-02']],
     ]);
 
     it('does not bump the spaces when only private fields change', function () {

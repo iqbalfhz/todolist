@@ -9,7 +9,8 @@ return [
     |
     | The texts of the six push notifications. The reminder and the
     | partner_joined texts come from the API contract. The owner approved
-    | the others as they are written here on 11 October 2026.
+    | the others as they are written here on 11 October 2026, and the
+    | special_date_reminder texts on 22 October 2026.
     |
     */
 
@@ -36,6 +37,14 @@ return [
 
     'partner_joined' => [
         'body' => ':name sudah bergabung. Ruang Bersama kalian siap.',
+    ],
+
+    'special_date_reminder' => [
+        'title' => 'Tanggal penting',
+        'in_a_week' => ':title 7 hari lagi',
+        'tomorrow' => ':title besok',
+        'today' => ':title hari ini',
+        'birthday' => 'Ulang tahun :name',
     ],
 
 ];

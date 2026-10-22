@@ -4,6 +4,7 @@ use App\Actions\UpdateProfile;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
+use App\Models\SpecialDate;
 use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
@@ -14,6 +15,7 @@ dataset('content rows', [
     'a task' => ['tasks', fn (Space $space) => Task::factory()->for(TaskList::factory()->for($space))->create()],
     'a goal' => ['savings_goals', fn (Space $space) => SavingsGoal::factory()->for($space)->create()],
     'a deposit' => ['savings_entries', fn (Space $space) => SavingsEntry::factory()->for(SavingsGoal::factory()->for($space))->create()],
+    'a special date' => ['special_dates', fn (Space $space) => SpecialDate::factory()->for($space)->create()],
 ]);
 
 it('returns everything a new account has in the shape of the contract', function () {
@@ -40,6 +42,7 @@ it('returns everything a new account has in the shape of the contract', function
                             'color' => 'mawar',
                             'avatar_url' => null,
                             'avatar_version' => 0,
+                            'birth_date' => null,
                             'role' => 'owner',
                             'joined_at' => '2026-10-08T11:10:05.123456Z',
                         ],
@@ -67,6 +70,7 @@ it('returns everything a new account has in the shape of the contract', function
             'tasks' => [],
             'savings_goals' => [],
             'savings_entries' => [],
+            'special_dates' => [],
         ],
         'meta' => [
             'server_time' => '2026-10-08T11:10:05.123456Z',
@@ -97,13 +101,20 @@ it('returns each row exactly as its own endpoint returned it', function () {
         'amount' => 200000,
         'entry_date' => '2026-10-08',
     ])->json('data');
+    $specialDate = $this->putJson('/api/v1/special-dates/'.newId(), [
+        'space_id' => $space->id,
+        'type' => 'birthday',
+        'title' => 'Ulang tahun Ibu',
+        'date' => '--03-02',
+    ])->json('data');
 
     $response = $this->getJson('/api/v1/sync');
 
     $response->assertOk()
         ->assertJsonPath('data.tasks', [$task])
         ->assertJsonPath('data.savings_goals', [$goal])
-        ->assertJsonPath('data.savings_entries', [$entry]);
+        ->assertJsonPath('data.savings_entries', [$entry])
+        ->assertJsonPath('data.special_dates', [$specialDate]);
 });
 
 it('orders each collection by updated_at and then by ID', function () {
@@ -223,6 +234,7 @@ it('never sends the content of the personal space of the partner', function (arr
     $privateSpace = $partner->personalSpace();
     Task::factory()->for($privateSpace->taskLists()->sole())->create();
     SavingsEntry::factory()->for(SavingsGoal::factory()->for($privateSpace))->create();
+    SpecialDate::factory()->for($privateSpace)->create();
 
     $response = $this->getJson('/api/v1/sync?'.http_build_query($query));
 
@@ -329,6 +341,15 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
         ['cursor' => base64_encode(json_encode([
             'server_time' => '2026-02-30 10:00:00.000000',
             'with_deleted' => false,
+            'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null],
+        ]))],
+        'cursor',
+        'Cursor tidak berlaku, mulai sinkron dari awal.',
+    ],
+    'a cursor from before special dates joined the sync' => [
+        ['cursor' => base64_encode(json_encode([
+            'server_time' => '2026-10-08 10:00:00.000000',
+            'with_deleted' => false,
             'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null],
         ]))],
         'cursor',
@@ -344,6 +365,7 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
                 'tasks' => ['2026-10-08 10:00:00.000000', '01M4DG5JEGV6SP4XAV8EFQZCQE'],
                 'savings_goals' => ['2026-10-08 09:59:55.000000', ''],
                 'savings_entries' => ['2026-10-08 09:59:55.000000', ''],
+                'special_dates' => ['2026-10-08 09:59:55.000000', ''],
             ],
         ]))],
         'cursor',

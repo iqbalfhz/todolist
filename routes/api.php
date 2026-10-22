@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SavingsEntryController;
 use App\Http\Controllers\Api\V1\SavingsGoalController;
 use App\Http\Controllers\Api\V1\SpaceController;
+use App\Http\Controllers\Api\V1\SpecialDateController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TaskListController;
@@ -58,5 +59,9 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/savings-entries/{id}', [SavingsEntryController::class, 'store'])->name('savings-entries.store');
         Route::patch('/savings-entries/{id}', [SavingsEntryController::class, 'update'])->name('savings-entries.update');
         Route::delete('/savings-entries/{id}', [SavingsEntryController::class, 'destroy'])->name('savings-entries.destroy');
+
+        Route::put('/special-dates/{id}', [SpecialDateController::class, 'store'])->name('special-dates.store');
+        Route::patch('/special-dates/{id}', [SpecialDateController::class, 'update'])->name('special-dates.update');
+        Route::delete('/special-dates/{id}', [SpecialDateController::class, 'destroy'])->name('special-dates.destroy');
     });
 });

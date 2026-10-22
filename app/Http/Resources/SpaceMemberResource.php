@@ -27,6 +27,7 @@ class SpaceMemberResource extends JsonResource
             'color' => $this->color,
             'avatar_url' => $this->avatarUrl(),
             'avatar_version' => $this->avatar_version,
+            'birth_date' => $this->birth_date,
             'role' => $this->pivot->role,
             'joined_at' => Carbon::parse($this->pivot->joined_at),
         ];

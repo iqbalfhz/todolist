@@ -43,6 +43,7 @@ class User extends Authenticatable implements FilamentUser
         'task_reminders' => true,
         'partner_activity' => true,
         'savings_activity' => true,
+        'special_dates' => true,
     ];
 
     /**

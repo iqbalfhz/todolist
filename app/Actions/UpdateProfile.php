@@ -26,7 +26,7 @@ class UpdateProfile
             $user->fill($changes);
 
             $timezoneChanged = $user->isDirty('timezone');
-            $partnerSeesChange = $user->isDirty(['name', 'color']);
+            $partnerSeesChange = $user->isDirty(['name', 'color', 'birth_date']);
 
             $user->save();
 

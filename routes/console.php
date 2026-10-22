@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\SendDueReminders;
+use App\Actions\SendSpecialDateReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -15,5 +16,15 @@ Artisan::command('reminders:send', function (SendDueReminders $sendDueReminders)
 
     $this->info("Reminders sent: {$sent}. Too late to send: {$late}.");
 })->purpose('Send the push reminders of the tasks that are due')
+    ->everyMinute()
+    ->withoutOverlapping(5);
+
+// Runs every minute, but sends only in spaces where it is between 08.00 and
+// 08.30, and only once per reminder.
+Artisan::command('special-dates:remind', function (SendSpecialDateReminders $sendSpecialDateReminders) {
+    $sent = $sendSpecialDateReminders->handle();
+
+    $this->info("Special date reminders sent: {$sent}.");
+})->purpose('Send the push reminders of the special dates and birthdays that are coming up')
     ->everyMinute()
     ->withoutOverlapping(5);

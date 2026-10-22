@@ -24,6 +24,7 @@ it('lists the personal space with every field of the contract', function () {
                         'color' => 'mawar',
                         'avatar_url' => null,
                         'avatar_version' => 0,
+                        'birth_date' => null,
                         'role' => 'owner',
                         'joined_at' => '2026-10-08T10:20:00.123456Z',
                     ],
@@ -38,7 +39,7 @@ it('lists the personal space with every field of the contract', function () {
 
 it('lists the shared space with both members, the owner first', function () {
     $user = actingAsApiUser();
-    $partner = User::factory()->create(['name' => 'Pasangan', 'color' => 'ungu']);
+    $partner = User::factory()->create(['name' => 'Pasangan', 'color' => 'ungu', 'birth_date' => '--03-02']);
     $sharedSpace = sharedSpaceBetween($partner, $user);
 
     $response = $this->getJson('/api/v1/spaces');
@@ -50,6 +51,7 @@ it('lists the shared space with both members, the owner first', function () {
         ->assertJsonPath('data.1.members.0.id', $partner->id)
         ->assertJsonPath('data.1.members.0.role', 'owner')
         ->assertJsonPath('data.1.members.0.color', 'ungu')
+        ->assertJsonPath('data.1.members.0.birth_date', '--03-02')
         ->assertJsonPath('data.1.members.1.id', $user->id)
         ->assertJsonPath('data.1.members.1.role', 'member');
 });

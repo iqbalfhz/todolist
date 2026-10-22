@@ -28,6 +28,7 @@ class SyncResource extends JsonResource
             'tasks' => TaskResource::collection($changes['tasks']),
             'savings_goals' => SavingsGoalResource::collection($changes['savings_goals']),
             'savings_entries' => SavingsEntryResource::collection($changes['savings_entries']),
+            'special_dates' => SpecialDateResource::collection($changes['special_dates']),
         ];
     }
 

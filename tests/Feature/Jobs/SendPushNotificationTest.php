@@ -90,6 +90,30 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         [],
         ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'space-id-ruang']],
     ],
+    'a special date reminder' => [
+        PushType::SpecialDateReminder,
+        ['specialDateId' => 'id-tanggal'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'date-id-tanggal']],
+    ],
+    'a member birthday reminder' => [
+        PushType::SpecialDateReminder,
+        ['memberId' => 'id-anggota'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'birthday-id-anggota']],
+    ],
+]);
+
+it('sends the special date or the member a reminder is about in the data', function (array $ids, array $data) {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, PushType::SpecialDateReminder, 'Tanggal penting', 'Hari jadi kita besok', 'id-ruang', ...$ids);
+
+    expect($sent->message['data'])->toBe($data);
+})->with([
+    'a special date' => [['specialDateId' => 'id-tanggal'], ['type' => 'special_date_reminder', 'space_id' => 'id-ruang', 'special_date_id' => 'id-tanggal']],
+    'a member birthday' => [['memberId' => 'id-anggota'], ['type' => 'special_date_reminder', 'space_id' => 'id-ruang', 'member_id' => 'id-anggota']],
 ]);
 
 it('sends nothing when the recipient turned that kind of push off', function (PushType $type, string $preference) {
@@ -104,6 +128,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'completed tasks' => [PushType::TaskCompleted, 'partner_activity'],
     'deposits' => [PushType::SavingsDeposit, 'savings_activity'],
     'achieved goals' => [PushType::SavingsAchieved, 'savings_activity'],
+    'special dates' => [PushType::SpecialDateReminder, 'special_dates'],
 ]);
 
 it('sends partner_joined even when every preference is off', function () {
