@@ -4,8 +4,6 @@
 
 ## Waiting On
 
-- [ ] **Pastikan server memakai PHP 8.4.27** - oleh pemilik, since 2026-10-22; setelah deploy, jalankan `php -v` di Terminal Coolify
-
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -18,7 +16,7 @@
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
-- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
+- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
 
@@ -81,3 +79,4 @@
 - [x] ~~Perbaikan IP klien ter-deploy dan dicek di server: tiga login gagal dengan email yang sama, dua dengan `X-Forwarded-For` palsu, memberi `X-RateLimit-Remaining` 4, 3, 2, dan link admin tetap HTTPS~~ (2026-10-14)
 - [x] ~~Setelah perbaikan, IP di tabel `sessions` dicek ulang dan tetap IP publik pemilik~~ (2026-10-14)
 - [x] ~~php2shell (CVE-2026-109618, CVE-2026-109619, RCE tanpa login, sudah dieksploitasi): image dikunci ke `dunglas/frankenphp:1.13.2-php8.4.27`, versi yang sudah ditambal; header bertitik seperti `X.Forwarded.For` sudah dicek tidak bisa memalsukan IP di server~~ (2026-10-22)
+- [x] ~~Server memakai PHP 8.4.27 (`php -v` di Terminal Coolify), dan scheduler jalan di container baru (`reminders:send` tiap menit di log)~~ (2026-10-22)
