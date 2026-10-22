@@ -1,6 +1,8 @@
 # The image of the API on Coolify. FrankenPHP serves HTTP, and supervisor runs
 # the queue worker and the scheduler next to it, all from this one image.
-FROM dunglas/frankenphp:1-php8.4
+# The tag is pinned so that a rebuild cannot reuse an older base image cached
+# on the server. Raise it whenever PHP or FrankenPHP ships a security release.
+FROM dunglas/frankenphp:1.13.2-php8.4.27
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 

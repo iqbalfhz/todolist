@@ -45,7 +45,7 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan. Disk ini tidak melempar error, tetapi melaporkannya ke log (`report`), jadi penyebab kegagalan unggah bisa dilihat di log server
 - Intervention Image untuk mengolah foto
 - Scramble untuk dokumentasi API di `/docs/api`
-- Deploy: Coolify dengan build pack Dockerfile, otomatis saat merge ke `main`. Image-nya `dunglas/frankenphp` (mode klasik, tanpa Octane), dan satu container menjalankan tiga proses lewat supervisor: FrankenPHP untuk web, `php artisan queue:work`, dan `php artisan schedule:work`
+- Deploy: Coolify dengan build pack Dockerfile, otomatis saat merge ke `main`. Image-nya `dunglas/frankenphp` dengan tag yang dikunci ke versi pasti (sekarang `1.13.2-php8.4.27`, mode klasik, tanpa Octane), supaya build ulang tidak memakai image lama yang tersimpan di server; naikkan tag-nya setiap ada rilis keamanan PHP atau FrankenPHP. Satu container menjalankan tiga proses lewat supervisor: FrankenPHP untuk web, `php artisan queue:work`, dan `php artisan schedule:work`
 
 ## Perintah
 

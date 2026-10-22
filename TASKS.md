@@ -4,6 +4,8 @@
 
 ## Waiting On
 
+- [ ] **Pastikan server memakai PHP 8.4.27** - oleh pemilik, since 2026-10-22; setelah deploy, jalankan `php -v` di Terminal Coolify
+
 - [ ] **Samakan dokumen perencanaan di claude.ai dengan salinan kontrak** - oleh pemilik, since 2026-10-11; salinan di repo sudah dicentang, dua pertanyaan terbukanya dijawab, dan dua aturan sync ditambahkan, sedangkan dokumen aslinya belum
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
@@ -78,3 +80,4 @@
 - [x] ~~Batas request tidak bisa lagi diakali dengan `X-Forwarded-For` palsu: Laravel hanya memercayai pemanggil langsung (`trustProxies(at: 'REMOTE_ADDR')`), bukan semua IP~~ (2026-10-14)
 - [x] ~~Perbaikan IP klien ter-deploy dan dicek di server: tiga login gagal dengan email yang sama, dua dengan `X-Forwarded-For` palsu, memberi `X-RateLimit-Remaining` 4, 3, 2, dan link admin tetap HTTPS~~ (2026-10-14)
 - [x] ~~Setelah perbaikan, IP di tabel `sessions` dicek ulang dan tetap IP publik pemilik~~ (2026-10-14)
+- [x] ~~php2shell (CVE-2026-109618, CVE-2026-109619, RCE tanpa login, sudah dieksploitasi): image dikunci ke `dunglas/frankenphp:1.13.2-php8.4.27`, versi yang sudah ditambal; header bertitik seperti `X.Forwarded.For` sudah dicek tidak bisa memalsukan IP di server~~ (2026-10-22)
