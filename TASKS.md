@@ -2,10 +2,9 @@
 
 ## Active
 
-- [ ] **Tanggal penting (v0.2)** - since 2026-10-22; kontrak ditulis di tab "Kontrak API v0.1" dokumen perencanaan dan menunggu diperiksa pemilik; setelah itu disalin ke `docs/kontrak-api.md` dan dibangun
-
 ## Waiting On
 
+- [ ] **Tanggal penting di app Flutter** - oleh pemilik, since 2026-10-22; layar Pengaturan > Tanggal penting, koleksi sync `special_dates` beserta sync penuh sekali, hitung mundur di Beranda, `birth_date` anggota, switch `special_dates` di pengaturan notifikasi, dan push `special_date_reminder` (ketuk membuka Beranda)
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 - [ ] **Uji push ke HP sungguhan** - menunggu app Flutter, since 2026-10-11; daftarkan perangkat lewat `POST /devices`, lalu picu satu push dan pastikan notifikasinya muncul
 
@@ -83,3 +82,5 @@
 - [x] ~~Server memakai PHP 8.4.27 (`php -v` di Terminal Coolify), dan scheduler jalan di container baru (`reminders:send` tiap menit di log)~~ (2026-10-22)
 - [x] ~~Dokumen perencanaan disamakan dengan salinan kontrak di repo (centang 18 butir, "Sudah diputuskan", dua aturan sync)~~ (2026-10-22)
 - [x] ~~Tujuh keputusan Tanggal penting disetujui pemilik: ulang tahun anggota dari profil, jenis Lainnya, jadwal tetap H-7/H-1/hari H, tahun boleh kosong, ulang tahun hanya diingatkan ke pasangan, push `special_date_reminder` dengan preferensi `special_dates`, dan teks push~~ (2026-10-22)
+- [x] ~~Kontrak Tanggal penting disetujui pemilik dan disalin ke `docs/kontrak-api.md`~~ (2026-10-22)
+- [x] ~~Tanggal penting (v0.2) di API: `PUT`, `PATCH`, `DELETE /special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, preferensi `special_dates`, dan pengingat `special-dates:remind` (H-7, H-1, hari H pukul 08.00)~~ (2026-10-22)
