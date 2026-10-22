@@ -4,7 +4,7 @@
 
 ## Waiting On
 
-- [ ] **Tanggal penting di app Flutter** - oleh pemilik, since 2026-10-22; layar Pengaturan > Tanggal penting, koleksi sync `special_dates` beserta sync penuh sekali, hitung mundur di Beranda, `birth_date` anggota, switch `special_dates` di pengaturan notifikasi, dan push `special_date_reminder` (ketuk membuka Beranda)
+- [ ] **Bukti push `special_date_reminder` di HP** - oleh pemilik, since 2026-10-22; tanggal uji 30 Oktober memicu pengingat H-7 pada 23 Oktober pukul 08.00 WIB; pastikan notifikasinya muncul dan membuka Beranda saat diketuk. HP pasangan juga belum memakai APK baru
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 
 ## Backlog v0.1
@@ -15,7 +15,7 @@
 - [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
-- [ ] **Sebelum rilis publik** - jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
+- [ ] **Sebelum rilis publik** - pasang lagi "Application restrictions" (Android apps) pada API key Android Firebase, yang dilepas ke None pada 22 Oktober 2026 karena membuat pendaftaran token FCM gagal (pembatasan per API tetap), jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
 
@@ -84,3 +84,4 @@
 - [x] ~~Kontrak Tanggal penting disetujui pemilik dan disalin ke `docs/kontrak-api.md`~~ (2026-10-22)
 - [x] ~~Tanggal penting (v0.2) di API: `PUT`, `PATCH`, `DELETE /special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, preferensi `special_dates`, dan pengingat `special-dates:remind` (H-7, H-1, hari H pukul 08.00)~~ (2026-10-22)
 - [x] ~~Push sampai ke HP sungguhan: `task_completed` dan `savings_deposit` dalam uji kalian berdua, dan `partner_joined` uji dari server~~ (2026-10-22)
+- [x] ~~Tanggal penting di app Flutter (repo mobile `da4046c`): layar Pengaturan > Tanggal penting, koleksi sync `special_dates` dengan sync penuh sekali, hitung mundur dan kartu ucapan di Beranda, `birth_date` anggota, switch `special_dates`, dan push yang membuka Beranda; uji lewat layar dan uji dua HP lulus terhadap API `e866b4e`~~ (2026-10-22)
