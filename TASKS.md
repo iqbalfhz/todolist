@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Perjalanan dan checklist persiapan (v0.2)** - since 2026-10-22; kontrak ditulis di tab "Kontrak API v0.1" dokumen perencanaan; tujuh butir keputusannya menunggu dicentang pemilik, lalu disalin ke `docs/kontrak-api.md` dan dibangun
+
 ## Waiting On
 
 - [ ] **Bukti push `special_date_reminder` di HP** - oleh pemilik, since 2026-10-22; tanggal uji 30 Oktober memicu pengingat H-7 pada 23 Oktober pukul 08.00 WIB; pastikan notifikasinya muncul dan membuka Beranda saat diketuk. HP pasangan juga belum memakai APK baru
