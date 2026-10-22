@@ -53,6 +53,23 @@ it('sends on the chosen day of the month', function (string $now, int $expected)
     'the 24th' => ['2026-10-24 01:00:00', 0],
 ]);
 
+it('reminds a day the month does not have on its last day', function (int $day, string $now, int $expected) {
+    Queue::fake([SendPushNotification::class]);
+    SavingsGoal::factory()->create(['reminder_frequency' => 'monthly', 'reminder_day' => $day]);
+    $this->travelTo($now);
+
+    $sent = app(SendSavingsReminders::class)->handle();
+
+    expect($sent)->toBe($expected);
+})->with([
+    'day 31 on 30 November' => [31, '2026-11-30 01:00:00', 1],
+    'day 31 on 30 October, a day before the real one' => [31, '2026-10-30 01:00:00', 0],
+    'day 30 on 28 February 2027' => [30, '2027-02-28 01:00:00', 1],
+    'day 30 on 28 February 2028, a leap year' => [30, '2028-02-28 01:00:00', 0],
+    'day 30 on 29 February 2028' => [30, '2028-02-29 01:00:00', 1],
+    'day 15 on 30 November' => [15, '2026-11-30 01:00:00', 0],
+]);
+
 it('sends nothing on another weekday or for a goal without a schedule', function (array $schedule) {
     Queue::fake([SendPushNotification::class]);
     SavingsGoal::factory()->create($schedule);

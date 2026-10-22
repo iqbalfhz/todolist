@@ -155,7 +155,7 @@ describe('store', function () {
         'a reminder frequency outside the list' => [['reminder_frequency' => 'daily', 'reminder_day' => 1], 'reminder_frequency'],
         'a reminder frequency without a day' => [['reminder_frequency' => 'weekly'], 'reminder_day'],
         'a weekly reminder on day 8' => [['reminder_frequency' => 'weekly', 'reminder_day' => 8], 'reminder_day'],
-        'a monthly reminder on day 29' => [['reminder_frequency' => 'monthly', 'reminder_day' => 29], 'reminder_day'],
+        'a monthly reminder on day 32' => [['reminder_frequency' => 'monthly', 'reminder_day' => 32], 'reminder_day'],
     ]);
 
     it('returns 401 when no token is sent', function () {

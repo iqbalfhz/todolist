@@ -18,6 +18,8 @@ class SendSavingsReminders
     /**
      * Push the deposit reminders of the goals whose weekday or day of the month is today.
      *
+     * On the last day of a month, the monthly goals set to a later day are
+     * reminded too, so day 31 falls on 30 April and on 28 or 29 February.
      * Goals that were achieved, archived, or deleted are not reminded.
      *
      * @return int The reminders sent.
@@ -40,7 +42,7 @@ class SendSavingsReminders
                         ->where('reminder_day', $today->dayOfWeekIso))
                     ->orWhere(fn (Builder $monthly) => $monthly
                         ->where('reminder_frequency', SavingsReminderFrequency::Monthly)
-                        ->where('reminder_day', $today->day)))
+                        ->where('reminder_day', $today->isLastOfMonth() ? '>=' : '=', $today->day)))
                 ->withSum('entries', 'amount')
                 ->get()
                 ->filter(fn (SavingsGoal $goal): bool => $this->window->send(

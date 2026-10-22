@@ -24,7 +24,7 @@ class StoreSavingsGoalRequest extends ApiRequest
             'currency' => ['required', Rule::in(array_keys(config('currencies.decimals')))],
             'target_date' => ['nullable', 'date_format:Y-m-d'],
             'reminder_frequency' => ['nullable', Rule::enum(SavingsReminderFrequency::class)],
-            'reminder_day' => ['nullable', 'integer', 'min:1', 'max:28'],
+            'reminder_day' => ['nullable', 'integer', 'min:1', 'max:31'],
         ];
     }
 }

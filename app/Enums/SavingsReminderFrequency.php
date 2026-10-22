@@ -10,13 +10,13 @@ enum SavingsReminderFrequency: string
     /**
      * The highest reminder_day this frequency accepts.
      *
-     * Monthly stops at 28, so the day exists in every month.
+     * Monthly goes up to 31; a shorter month is reminded on its last day.
      */
     public function lastDay(): int
     {
         return match ($this) {
             self::Weekly => 7,
-            self::Monthly => 28,
+            self::Monthly => 31,
         };
     }
 }

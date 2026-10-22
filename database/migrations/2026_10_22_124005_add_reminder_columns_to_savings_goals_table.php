@@ -10,7 +10,8 @@ return new class extends Migration
      * Run the migrations.
      *
      * A goal with a frequency is reminded every week on the ISO weekday in
-     * reminder_day (1 = Monday), or every month on that day of the month.
+     * reminder_day (1 = Monday), or every month on that day of the month,
+     * falling back to the last day of a shorter month.
      */
     public function up(): void
     {

@@ -24,7 +24,7 @@ class UpdateSavingsGoalRequest extends ApiRequest
             'target_amount' => ['sometimes', 'required', 'integer', 'min:1', 'max:'.config('currencies.max_amount')],
             'target_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'reminder_frequency' => ['sometimes', 'nullable', Rule::enum(SavingsReminderFrequency::class)],
-            'reminder_day' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:28'],
+            'reminder_day' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:31'],
             'archived_at' => ['sometimes', 'nullable', new Iso8601WithOffset],
         ];
     }

@@ -62,7 +62,7 @@ return [
         'trip_has_checklist' => 'Perjalanan ini sudah punya checklist.',
         'reminder_day_needed' => 'Hari setor wajib diisi kalau pengingat setor dinyalakan.',
         'reminder_day_weekly' => 'Hari setor mingguan harus antara 1 (Senin) dan 7 (Minggu).',
-        'reminder_day_monthly' => 'Tanggal setor bulanan harus antara 1 dan 28.',
+        'reminder_day_monthly' => 'Tanggal setor bulanan harus antara 1 dan 31.',
     ],
 
     /*

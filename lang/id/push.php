@@ -10,8 +10,8 @@ return [
     | The texts of the six push notifications. The reminder and the
     | partner_joined texts come from the API contract. The owner approved
     | the others as they are written here on 11 October 2026, and the
-    | special_date_reminder and trip_reminder texts on 22 October 2026. The
-    | savings_reminder text still waits for the owner's approval.
+    | special_date_reminder, trip_reminder, and savings_reminder texts on
+    | 22 October 2026.
     |
     */
 
