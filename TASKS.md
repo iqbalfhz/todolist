@@ -4,9 +4,9 @@
 
 ## Waiting On
 
-- [ ] **Pengingat setor di app Flutter** - oleh pemilik, since 2026-10-22; pilihan jadwal di detail target (mingguan hari 1–7, bulanan tanggal 1–31), kolom `reminder_frequency` dan `reminder_day`, switch `savings_reminders`, dan push `savings_reminder` (ketuk membuka Detail target)
-- [ ] **Perjalanan di app Flutter** - oleh pemilik, since 2026-10-22; layar Daftar perjalanan, Detail perjalanan, dan Checklist persiapan; buat checklist lewat `PUT /lists/{id}` dengan `trip_id` tepat setelah perjalanannya; sembunyikan checklist dari daftar biasa dan tambah cepat; koleksi sync `trips` dengan sync penuh sekali; progres persiapan di Beranda; switch `trip_reminders`; push `trip_reminder` (ketuk membuka Detail perjalanan); tangani 409 `trip_checklist`
-- [ ] **Bukti push `special_date_reminder` di HP** - oleh pemilik, since 2026-10-22; tanggal uji 30 Oktober memicu pengingat H-7 pada 23 Oktober pukul 08.00 WIB; pastikan notifikasinya muncul dan membuka Beranda saat diketuk. HP pasangan juga belum memakai APK baru
+- [ ] **Bukti push pengingat v0.2 di HP sungguhan** - oleh pemilik, since 2026-10-22; `special_date_reminder` (tanggal uji 30 Oktober memicu H-7 pada 23 Oktober pukul 08.00 WIB), `trip_reminder`, dan `savings_reminder`; pastikan notifikasinya muncul dan membuka layar yang benar saat diketuk
+- [ ] **Uji notifikasi setelah app ditutup di HP Xiaomi** - oleh pemilik, since 2026-10-23; kalau tertahan, app menambah tombol di Pengaturan > Notifikasi yang memunculkan pilihan Izinkan/Tolak dari Android (bukan panduan manual)
+- [ ] **APK baru untuk HP pasangan** - oleh pemilik, since 2026-10-23; HP pasangan belum memakai app dengan fitur v0.2
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 
 ## Backlog v0.1
@@ -89,3 +89,5 @@
 - [x] ~~Kontrak Perjalanan dan checklist persiapan disetujui pemilik dan disalin ke `docs/kontrak-api.md`~~ (2026-10-22)
 - [x] ~~Perjalanan (v0.2) di API: `PUT`, `PATCH`, `DELETE /trips/{id}`, checklist sebagai daftar dengan `trip_id` (tidak dihitung `last_list`, 409 `trip_checklist`), tautan target yang dilepas saat target dihapus, koleksi sync `trips`, preferensi `trip_reminders`, dan pengingat `trips:remind` (H-7 dan H-1 pukul 08.00, dengan progres checklist)~~ (2026-10-22)
 - [x] ~~Pengingat setor rutin per target (v0.2): kontrak disetujui pemilik (tanggal bulanan 1–31, jatuh ke hari terakhir bulan yang lebih pendek), kolom `reminder_frequency` dan `reminder_day`, preferensi `savings_reminders`, dan perintah `savings:remind`; seluruh cakupan v0.2 di server selesai~~ (2026-10-22)
+- [x] ~~Perjalanan dan pengingat setor di app Flutter (repo mobile `190de05`): tab Liburan dengan checklist persiapan, kartu Persiapan liburan di Beranda, jadwal setor di Detail target, switch `trip_reminders` dan `savings_reminders`, dan sync penuh sekali untuk `trips`; uji lewat layar dan uji dua HP lulus terhadap API `463522a`~~ (2026-10-23)
+- [x] ~~Dokumen perencanaan: panduan mematikan optimasi baterai dihapus dari mitigasi risiko notifikasi, sesuai keputusan pemilik; gantinya push prioritas tinggi dan, kalau perlu, tombol izin dari Android di Pengaturan > Notifikasi~~ (2026-10-23)
