@@ -4,7 +4,7 @@
 
 ## Waiting On
 
-- [ ] **Bukti push pengingat v0.2 di HP sungguhan** - oleh pemilik, since 2026-10-22; `special_date_reminder` (tanggal uji 30 Oktober memicu H-7 pada 23 Oktober pukul 08.00 WIB), `trip_reminder`, dan `savings_reminder`; pastikan notifikasinya muncul dan membuka layar yang benar saat diketuk
+- [ ] **Uji penjadwal pengingat v0.2 di HP** - oleh pemilik, since 2026-10-22; uji kirim manual sudah lulus (23 Oktober), tinggal bukti dari penjadwal: Sabtu 24 Oktober pukul 08.00–08.30 WIB, dengan tanggal penting 24 Oktober, perjalanan mulai 25 Oktober, dan target berjadwal mingguan hari Sabtu di Ruang Bersama; cek juga tabel `daily_reminders`
 - [ ] **Uji notifikasi setelah app ditutup di HP Xiaomi** - oleh pemilik, since 2026-10-23; kalau tertahan, app menambah tombol di Pengaturan > Notifikasi yang memunculkan pilihan Izinkan/Tolak dari Android (bukan panduan manual)
 - [ ] **APK baru untuk HP pasangan** - oleh pemilik, since 2026-10-23; HP pasangan belum memakai app dengan fitur v0.2
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
@@ -91,3 +91,4 @@
 - [x] ~~Pengingat setor rutin per target (v0.2): kontrak disetujui pemilik (tanggal bulanan 1–31, jatuh ke hari terakhir bulan yang lebih pendek), kolom `reminder_frequency` dan `reminder_day`, preferensi `savings_reminders`, dan perintah `savings:remind`; seluruh cakupan v0.2 di server selesai~~ (2026-10-22)
 - [x] ~~Perjalanan dan pengingat setor di app Flutter (repo mobile `190de05`): tab Liburan dengan checklist persiapan, kartu Persiapan liburan di Beranda, jadwal setor di Detail target, switch `trip_reminders` dan `savings_reminders`, dan sync penuh sekali untuk `trips`; uji lewat layar dan uji dua HP lulus terhadap API `463522a`~~ (2026-10-23)
 - [x] ~~Dokumen perencanaan: panduan mematikan optimasi baterai dihapus dari mitigasi risiko notifikasi, sesuai keputusan pemilik; gantinya push prioritas tinggi dan, kalau perlu, tombol izin dari Android di Pengaturan > Notifikasi~~ (2026-10-23)
+- [x] ~~Push pengingat v0.2 (`special_date_reminder`, `trip_reminder`, `savings_reminder`) dikirim manual dari server: ketiganya sampai di HP pemilik dan membuka Beranda, Detail perjalanan, dan Detail target saat diketuk~~ (2026-10-23)

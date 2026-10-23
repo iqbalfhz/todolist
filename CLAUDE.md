@@ -14,7 +14,7 @@ Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlyday
 
 Belum beres:
 
-- Push sudah sampai ke HP sungguhan: dalam uji pemilik dan pasangannya (15 Oktober 2026), `task_completed` dan `savings_deposit` muncul di HP, dan `partner_joined` uji dari server muncul di HP pemilik (22 Oktober 2026). Saat app terbuka, notifikasi channel `aktivitas` tampil tanpa banner, jadi mudah terlewat. Pengingat v0.2 (`special_date_reminder`, `trip_reminder`, `savings_reminder`) belum terbukti sampai di HP sungguhan.
+- Push sudah sampai ke HP sungguhan: dalam uji pemilik dan pasangannya (15 Oktober 2026), `task_completed` dan `savings_deposit` muncul di HP, dan `partner_joined` uji dari server muncul di HP pemilik (22 Oktober 2026). Saat app terbuka, notifikasi channel `aktivitas` tampil tanpa banner, jadi mudah terlewat. Pengingat v0.2 (`special_date_reminder`, `trip_reminder`, `savings_reminder`) yang dikirim manual dari server sampai di HP dan membuka layar yang benar (23 Oktober 2026); kiriman dari penjadwal pukul 08.00 belum terbukti di HP.
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
