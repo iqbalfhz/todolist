@@ -8,14 +8,15 @@ API untuk Denly Days, aplikasi to-do berdua (tugas, tabungan, liburan, kenangan)
 
 Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditulis ulang oleh `php artisan boost:update` (jalan otomatis setelah `composer update`), jadi jangan diedit; aturan proyek ditulis di luar blok itu, dan tag pembuka blok jangan pernah ditulis ulang di bagian proyek. Kalau keduanya bertentangan, aturan proyek yang berlaku. Contoh: deploy proyek ini lewat Coolify, bukan Laravel Cloud.
 
-## Kondisi repo (per 22 Oktober 2026)
+## Kondisi repo (per 23 Oktober 2026)
 
-Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Perjalanan dan checklist persiapan (v0.2) juga sudah dibangun dan bertes: 3 endpoint `/trips/{id}`, koleksi sync `trips`, checklist sebagai daftar tugas dengan `trip_id`, dan pengingat `trip_reminder`. Pengingat setor rutin per target (v0.2) juga sudah dibangun dan bertes: kolom `reminder_frequency` dan `reminder_day` di target, dan pengingat `savings_reminder`. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Perjalanan dan checklist persiapan (v0.2) juga sudah dibangun dan bertes: 3 endpoint `/trips/{id}`, koleksi sync `trips`, checklist sebagai daftar tugas dengan `trip_id`, dan pengingat `trip_reminder`. Pengingat setor rutin per target (v0.2) juga sudah dibangun dan bertes: kolom `reminder_frequency` dan `reminder_day` di target, dan pengingat `savings_reminder`. Kenangan dan foto (v0.3) juga sudah dibangun dan bertes: 7 endpoint (`/memories/{id}`, `/memories/{id}/photos`, dan `/memory-photos/{id}`), koleksi sync `memories` dan `memory_photos`, foto di R2 folder `memories/`, dan push `memory_created`. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
 Belum beres:
 
 - Push sudah sampai ke HP sungguhan: dalam uji pemilik dan pasangannya (15 Oktober 2026), `task_completed` dan `savings_deposit` muncul di HP, dan `partner_joined` uji dari server muncul di HP pemilik (22 Oktober 2026). Saat app terbuka, notifikasi channel `aktivitas` tampil tanpa banner, jadi mudah terlewat. Pengingat v0.2 (`special_date_reminder`, `trip_reminder`, `savings_reminder`) yang dikirim manual dari server sampai di HP dan membuka layar yang benar (23 Oktober 2026); kiriman dari penjadwal pukul 08.00 belum terbukti di HP.
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana.
+- Unggah foto kenangan ke R2 belum diuji di server. Batas unggah PHP yang dinaikkan untuk foto kenangan (`upload_max_filesize` 12M, `post_max_size` 16M di `docker/php.ini`) baru berlaku setelah deploy.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 
@@ -30,9 +31,9 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Sync (`GET /sync`) dan push notification
 - Panel admin Filament
 
-Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibangun (kontraknya di bagian "Tanggal penting (v0.2)" dan "Perjalanan dan checklist persiapan (v0.2)" pada `docs/kontrak-api.md`). Pengingat setor rutin per target juga sudah dibangun, jadi seluruh cakupan v0.2 di server selesai. Tabel `activities` di tab utama ditunda.
+Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibangun (kontraknya di bagian "Tanggal penting (v0.2)" dan "Perjalanan dan checklist persiapan (v0.2)" pada `docs/kontrak-api.md`). Pengingat setor rutin per target juga sudah dibangun, jadi seluruh cakupan v0.2 di server selesai. Tabel `activities` di tab utama ditunda. Kenangan dan foto (v0.3) juga sudah dibangun (kontraknya di bagian "Kenangan dan foto (v0.3)").
 
-**Belum dibangun, jangan dibuat dulu:** kenangan dan foto (v0.3), ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), realtime (v1.x).
+**Belum dibangun, jangan dibuat dulu:** ekspor data dan hapus akun (v1.0), tugas berulang (v1.0), penarikan tabungan (v1.x), pin lokasi dan peta kenangan (v1.x), realtime (v1.x).
 
 **Sudah disetujui pemilik (11 Oktober 2026):** ke-18 butir "Perubahan dari rancangan awal" dan dua pertanyaan yang dulu ada di "Masih terbuka" pada akhir kontrak (kini "Sudah diputuskan"), yaitu nominal tetap disebut di push setoran, dan lupa kata sandi di v0.1 cukup lewat reset manual oleh admin. Teks push di `lang/id/push.php` juga sudah disahkan sebagai teks final. Atas permintaan pemilik, salinan kontrak di repo sudah dicentang dan dilengkapi dua aturan sync pada tanggal itu, lebih dulu daripada dokumen perencanaan di claude.ai; dokumen itu masih perlu disamakan.
 
@@ -80,7 +81,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Output: API Resource di `app/Http/Resources/`
 - Akses: Policy per model di `app/Policies/` (cek keanggotaan ruang)
 - Logika bersama (sync, undangan, pengingat, total tabungan): `app/Actions/`. Action yang butuh pelaku menerima `User $actor` dan memeriksa aksesnya dengan `Gate::forUser($actor)`, bukan user yang sedang login, supaya bisa dipanggil dari seeder dan job.
-- Job antrean (push, hitung ulang pengingat): `app/Jobs/`. Foto profil diolah langsung di request, sesuai kontrak.
+- Job antrean (push, hitung ulang pengingat, hapus file R2): `app/Jobs/`. Foto profil dan foto kenangan diolah langsung di request, sesuai kontrak.
 - Perintah terjadwal: `routes/console.php`
 - Deploy: `Dockerfile`, `.dockerignore`, dan folder `docker/` (pengaturan PHP produksi, konfigurasi supervisor, skrip start)
 - Enum: `app/Enums/`; aturan validasi sendiri: `app/Rules/`; pembentuk error: `app/Exceptions/`
@@ -116,19 +117,22 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Daftar aktif terakhir di sebuah ruang tidak boleh dihapus atau diarsipkan: 409 `last_list`. Kunci baris ruang (`lockForUpdate()`) saat menghitung. Checklist perjalanan (daftar dengan `trip_id`, scope `regular()` untuk yang bukan) tidak dihitung.
 - Checklist perjalanan tidak bisa dihapus atau diarsipkan sendiri: 409 `trip_checklist`; ikut terhapus bersama perjalanannya (`DeleteTrip`). Satu perjalanan paling banyak satu checklist; pembuatannya mengunci baris perjalanan.
 - Menghapus target tabungan mengosongkan `savings_goal_id` perjalanan yang menautkannya. Tautan ke target yang ternyata sudah dihapus disimpan sebagai `null`, bukan ditolak.
+- Menghapus perjalanan mengosongkan `trip_id` kenangan yang menautkannya; kenangannya tetap ada. Tautan kenangan ke perjalanan yang ternyata sudah dihapus juga disimpan sebagai `null`.
+- Foto kenangan diunggah lewat `POST /memory-photos/{id}` (PHP tidak membaca multipart pada PUT), tetapi dijawab seperti PUT lewat `createOnce`. Path filenya ditentukan dari ID (`MemoryPhoto::pathFor()`), jadi kiriman ulang menimpa file yang sama. Kenangan diperiksa dulu sebelum foto diolah, lalu dikunci (`lockForUpdate()`) saat file disimpan dan baris ditulis; satu kenangan paling banyak 50 foto yang belum dihapus.
+- Server menyimpan ulang foto kenangan sebagai JPEG tanpa metadata (`EncodeMemoryPhoto`): versi penuh paling besar 2560 px dan thumbnail 800 px, tanpa memperbesar. Menghapus foto atau kenangan berfoto mengirim job `DeleteStoredFiles` untuk membuang filenya dari R2.
 - Data di ruang yang bukan ruang user dianggap tidak ada: 404, bukan 403.
 
 ### Error
 
 - Bentuk JSON: `message`, `code`, `errors` (validasi), dan `current` (endpoint yang lewat antrean HP). Dibuat terpusat di `bootstrap/app.php` lewat `withExceptions()`, plus `shouldRenderJsonWhen()` untuk `api/*`.
-- `current` = resource di URL request (route model, atau user untuk `/me`); `null` kalau ID itu belum ada.
+- `current` = resource di URL request (route model, atau user untuk `/me`); `null` kalau ID itu belum ada. Hanya endpoint tulis yang membawanya; `GET /memories/{id}/photos` tidak.
 - `not_found` hanya untuk `ModelNotFoundException`. Route yang tidak ada: 404 `route_not_found`.
 - Salah email/kata sandi: 422 `invalid_credentials`, bukan 401. 401 hanya untuk token tidak berlaku.
 - Pesan berbahasa Indonesia dari paket `laravel-lang`. Daftar lengkap `code` ada di bagian Error pada kontrak; jangan menambah kode baru tanpa memperbarui kontrak.
 
 ### Sync (`GET /sync`)
 
-- Koleksi: `spaces` (dengan `members`), `task_lists`, `tasks`, `savings_goals`, `savings_entries`, `special_dates`, `trips`. Menambah koleksi membuat `cursor` lama ditolak sekali (`SyncCursor::COLLECTIONS` dicek persis), dan app versi baru wajib sync penuh sekali.
+- Koleksi: `spaces` (dengan `members`), `task_lists`, `tasks`, `savings_goals`, `savings_entries`, `special_dates`, `trips`, `memories`, `memory_photos`. Menambah koleksi membuat `cursor` lama ditolak sekali (`SyncCursor::COLLECTIONS` dicek persis), dan app versi baru wajib sync penuh sekali.
 - Tiap koleksi diurutkan `(updated_at, id)`, paling banyak 500 baris per halaman; `next_cursor` menyimpan posisi tiap koleksi.
 - `server_time` dicatat saat halaman pertama dan sama di semua halaman. Mundur 5 detik dari `since`, sekali, di halaman pertama.
 - Tanpa `since`: hanya data aktif. Dengan `since`: termasuk yang terhapus.
@@ -145,7 +149,8 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 ### Notifikasi dan pengingat
 
 - Push dikirim dari job antrean ke semua token penerima, hanya jika `notification_prefs` penerima menyala. Semua nilai `data` FCM berupa string.
-- Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`, `special_date_reminder`, `trip_reminder`, `savings_reminder`. Penerima, channel, dan prioritasnya ada di kontrak.
+- Tipe: `task_reminder`, `task_assigned`, `task_completed`, `savings_deposit`, `savings_achieved`, `partner_joined`, `special_date_reminder`, `trip_reminder`, `savings_reminder`, `memory_created`. Penerima, channel, dan prioritasnya ada di kontrak.
+- `memory_created` dikirim job `NotifyMemoryCreated` 2 menit setelah kenangan dibuat di ruang yang punya anggota lain, supaya fotonya sempat terunggah. Job itu membaca kenangan saat jalan, jadi batal kalau kenangannya sudah dihapus dan memakai judul terbarunya.
 - `remind_at` (UTC) dihitung dari `due_date` + `due_time` di zona waktu ruang; tanpa jam → 08.00. Diklaim dengan `UPDATE ... WHERE reminder_sent_at IS NULL` tanpa menyentuh `updated_at`. Scheduler pakai `withoutOverlapping()`. Telat lebih dari 30 menit: tandai terkirim tanpa push.
 - Pengingat tugas yang selesai, terhapus, atau ada di daftar arsip dibiarkan terbuka, jadi masih terkirim kalau tugasnya kembali dalam 30 menit itu; setelahnya ikut ditandai terkirim.
 - Token yang ditolak FCM (`UNREGISTERED`) dihapus dari `device_tokens`.
@@ -172,6 +177,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Tes memakai MySQL (database `*_testing` di `phpunit.xml`), bukan SQLite, supaya perilaku waktu dan JSON sama dengan produksi. Database `todolist` dan `todolist_testing` harus sudah dibuat di MySQL lokal.
 - Ekspektasi Pest `toBeUlid()` hanya menerima huruf besar. Untuk ULID proyek ini pakai `toMatch('/^[0-7][0-9a-hjkmnp-tv-z]{25}$/')`.
 - Tes tidak boleh menyentuh FCM asli: `tests/Pest.php` membuat `Messaging` melempar error saat dibuat. Tes yang memicu push ke penerima yang punya perangkat memakai `Queue::fake([SendPushNotification::class])` atau mock `Messaging`.
+- Tes yang menyimpan foto atau membuat URL foto memakai `Storage::fake('r2')`. `Storage::fake` tidak dipasang untuk semua tes, karena `tests/Feature/Config/FilesystemsTest.php` menguji disk `r2` yang asli. Helper `jpegWithExif()` dan `jpegWithOrientation()` untuk foto uji ada di `tests/Pest.php`.
 
 ## Git dan deploy
 
