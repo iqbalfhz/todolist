@@ -1,12 +1,12 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 22 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 23 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya.
 
 ## Ringkasan endpoint
 
-Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya tiga yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`); sisanya menulis.
+Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya empat yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, dan `GET /memories/{id}/photos` sejak v0.3); sisanya menulis.
 
 | Modul | Method | Endpoint | Fungsi |
 | --- | --- | --- | --- |
@@ -41,6 +41,13 @@ Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya tiga yang me
 | Perjalanan | PUT | `/trips/{id}` | Buat perjalanan (v0.2) |
 | Perjalanan | PATCH | `/trips/{id}` | Ubah perjalanan (v0.2) |
 | Perjalanan | DELETE | `/trips/{id}` | Hapus perjalanan beserta checklistnya (v0.2) |
+| Kenangan | PUT | `/memories/{id}` | Buat kenangan (v0.3) |
+| Kenangan | PATCH | `/memories/{id}` | Ubah kenangan (v0.3) |
+| Kenangan | DELETE | `/memories/{id}` | Hapus kenangan beserta fotonya (v0.3) |
+| Kenangan | GET | `/memories/{id}/photos` | Foto kenangan dengan URL baru (v0.3) |
+| Kenangan | POST | `/memory-photos/{id}` | Unggah foto kenangan (v0.3) |
+| Kenangan | PATCH | `/memory-photos/{id}` | Ubah urutan foto (v0.3) |
+| Kenangan | DELETE | `/memory-photos/{id}` | Hapus foto (v0.3) |
 
 ## Konvensi
 
@@ -52,7 +59,7 @@ Semua request dan balasan memakai JSON dengan nama kolom `snake_case`, sama deng
 | --- | --- | --- |
 | `Accept` | `application/json` | Selalu |
 | `Authorization` | `Bearer <token>` | Semua endpoint kecuali daftar dan masuk |
-| `Content-Type` | `application/json` | Request yang punya body; `multipart/form-data` untuk foto profil |
+| `Content-Type` | `application/json` | Request yang punya body; `multipart/form-data` untuk foto profil dan foto kenangan |
 
 Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket laravel-lang). Semua route `api/*` dibalas JSON walau header `Accept` terlewat, lewat `shouldRenderJsonWhen()` di `bootstrap/app.php`.
 
@@ -66,7 +73,7 @@ Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket l
 ### ID
 
 - Semua ID berupa ULID 26 karakter huruf kecil, contoh `01m4dg5jegv6sp4xav8efqzcqe`.
-- ID daftar, tugas, target, dan setoran dibuat di HP; ID akun, ruang, dan undangan dibuat server.
+- ID daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, dan foto kenangan dibuat di HP; ID akun, ruang, dan undangan dibuat server.
 - ULID huruf besar ditolak 422. HP membuat huruf kecil sejak awal, supaya kunci di SQLite sama dengan di server.
 
 ### Waktu, tanggal, dan teks
@@ -103,9 +110,9 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 - **Ubah:** `PATCH` hanya berisi kolom yang berubah; `null` untuk mengosongkan. Kolom hanya-baca dan kolom tak dikenal diabaikan. Kolom yang berpasangan dikirim bersama, misalnya `due_date` dengan `due_time`.
 - **Bentrok:** kalau dua HP mengubah kolom yang sama, yang terakhir **sampai di server** yang menang, termasuk perubahan offline yang baru terkirim belakangan. Kolom berbeda tidak saling menimpa.
 - **Hapus:** `DELETE` mengisi `deleted_at` (soft delete) dan membalas 204, termasuk saat diulang. Penghapusan berantai (daftar ke tugas, target ke setoran) ikut memperbarui `updated_at` anak-anaknya, supaya ikut tersinkron.
-- **Induk terhapus atau diarsipkan:** tugas ke daftar yang sudah dihapus dibalas 409 `parent_deleted`, dan ke daftar yang diarsipkan 409 `parent_archived`, baik saat dibuat maupun dipindah. Setoran ke target yang sudah dihapus juga dibalas 409 `parent_deleted`.
+- **Induk terhapus atau diarsipkan:** tugas ke daftar yang sudah dihapus dibalas 409 `parent_deleted`, dan ke daftar yang diarsipkan 409 `parent_archived`, baik saat dibuat maupun dipindah. Setoran ke target yang sudah dihapus, dan foto ke kenangan yang sudah dihapus, juga dibalas 409 `parent_deleted`.
 - **Akses:** data di ruang yang bukan ruangmu dianggap tidak ada (404, bukan 403).
-- **Lewat antrean:** hanya PUT, PATCH, dan DELETE untuk daftar, tugas, target, dan setoran, ditambah `PATCH /me`. Endpoint lain dipanggil langsung dan butuh koneksi.
+- **Lewat antrean:** hanya PUT, PATCH, dan DELETE untuk daftar, tugas, target, setoran, tanggal penting, perjalanan, dan kenangan; POST, PATCH, dan DELETE untuk foto kenangan; ditambah `PATCH /me`. Endpoint lain dipanggil langsung dan butuh koneksi.
 
 ### Batas request
 
@@ -141,7 +148,7 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | 403 | `forbidden` | Tidak boleh melakukan ini | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 404 | `not_found` | Data tidak ada, atau bukan di ruangmu | Buang dari antrean, hapus data itu dari cache |
 | 404 | `route_not_found` | Endpoint tidak dikenal, biasanya versi app dan server berbeda | Simpan antrean, coba lagi nanti, tawarkan pembaruan app |
-| 409 | `parent_deleted`, `parent_archived` | Daftar atau target induknya sudah dihapus, atau daftarnya diarsipkan | Tugas: pindahkan ke daftar aktif pertama, lalu kirim ulang. Setoran: buang dan beri tahu |
+| 409 | `parent_deleted`, `parent_archived` | Daftar, target, atau kenangan induknya sudah dihapus, atau daftarnya diarsipkan | Tugas: pindahkan ke daftar aktif pertama, lalu kirim ulang. Setoran dan foto kenangan: buang dan beri tahu |
 | 409 | `last_list`, `id_conflict` | Bentrok dengan aturan; rinciannya di bagian masing-masing | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `trip_checklist` (v0.2) | Checklist perjalanan dihapus atau diarsipkan sendiri | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
@@ -571,6 +578,95 @@ Perjalanan menyimpan rencana liburan: judul, tujuan, tanggal, catatan, dan tauta
 - Judul push "Perjalanan", isinya "{judul} 7 hari lagi" atau "{judul} besok". Kalau checklist sudah berisi, ditambah "Persiapan {selesai} dari {total} beres."
 - Setiap pengingat dikirim paling banyak sekali per perjalanan per tanggal. Yang telat lebih dari 30 menit dilewati. Kalau `start_date` diubah, pengingat untuk tanggal barunya tetap dikirim.
 
+## Kenangan dan foto (v0.3)
+
+Kenangan menyimpan tempat yang pernah kalian datangi: judul, nama tempat, tanggal, cerita, dan paling banyak 50 foto. Foto diunggah satu per satu dengan ID dari HP, jadi bisa ditambahkan saat offline dan aman dikirim ulang.
+
+### Sumber kenangan
+
+```json
+{
+  "id": "01m4dr8c50jk2mt7xw3pq9vb6e",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "trip_id": "01m4dp5r20vbx9k3ws7ty6hn2q",
+  "title": "Liburan ke Bali",
+  "place_name": "Ubud, Bali",
+  "visited_on": "2027-06-20",
+  "story": "Hari pertama hujan, tapi sawahnya tetap hijau.",
+  "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
+  "created_at": "2027-06-26T09:00:00.000000Z",
+  "updated_at": "2027-06-26T09:00:00.000000Z",
+  "deleted_at": null
+}
+```
+
+| Kolom | Saat PUT | Aturan |
+| --- | --- | --- |
+| `space_id` | wajib | Ruang tempatmu menjadi anggota; tidak bisa diubah |
+| `title` | wajib | 1–50 karakter |
+| `place_name` | opsional | Nama tempat, paling banyak 100 karakter |
+| `visited_on` | wajib | `YYYY-MM-DD`; tanggal kenangan di linimasa |
+| `story` | opsional | Paling banyak 10.000 karakter |
+| `trip_id` | opsional | Perjalanan di ruang yang sama; perjalanan yang ternyata sudah dihapus disimpan sebagai tanpa tautan; `null` melepas tautan |
+
+- Endpoint: `PUT`, `PATCH`, dan `DELETE /memories/{id}`, dengan aturan tulis yang sama seperti sumber lain.
+- `created_by` diisi server. Kedua anggota Ruang Bersama boleh mengubah dan menghapus kenangan dan foto siapa pun.
+- Linimasa dikelompokkan per tahun dan bulan dari `visited_on`, dihitung di HP dari hasil sync. Foto sampul adalah foto dengan `position` terkecil; kenangan tanpa foto tampil tanpa sampul.
+- "Simpan jadi kenangan" (UC-17) tampil di kartu perjalanan yang sudah selesai. App mengisi `title` dari judul perjalanan, `place_name` dari tujuannya, `visited_on` dari `start_date`, dan `trip_id`, lalu membuat kenangan dengan `PUT` biasa. Satu perjalanan boleh punya beberapa kenangan.
+- Kalau perjalanannya dihapus, server mengosongkan `trip_id` kenangannya dan memperbarui `updated_at`-nya; kenangannya tetap ada.
+- `DELETE /memories/{id}` ikut menghapus semua fotonya (soft delete) dan memperbarui `updated_at` foto itu. Kalau kenangannya berfoto, app meminta konfirmasi dulu.
+
+### Foto kenangan
+
+```json
+{
+  "id": "01m4drb7k0qz3n8st5vw2hx4cy",
+  "memory_id": "01m4dr8c50jk2mt7xw3pq9vb6e",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "uploaded_by": "01m4dg5jegv6sp4xav8efqzcqe",
+  "position": 1024,
+  "width": 2560,
+  "height": 1920,
+  "taken_at": "2027-06-20T03:12:45.000000Z",
+  "url": "https://….r2.cloudflarestorage.com/…?X-Amz-Expires=604800&…",
+  "thumb_url": "https://….r2.cloudflarestorage.com/…?X-Amz-Expires=604800&…",
+  "created_at": "2027-06-26T09:00:05.000000Z",
+  "updated_at": "2027-06-26T09:00:05.000000Z",
+  "deleted_at": null
+}
+```
+
+Foto diunggah lewat `POST /memory-photos/{id}` dengan `multipart/form-data`:
+
+| Kolom | Saat unggah | Aturan |
+| --- | --- | --- |
+| `memory_id` | wajib | Kenangan di ruangmu yang belum dihapus; tidak bisa diubah. `space_id` ikut dari kenangannya |
+| `photo` | wajib | JPEG, PNG, atau WebP, paling besar 10 MB dan 4096 px per sisi |
+| `position` | wajib | Angka, boleh desimal seperti `position` daftar; yang terkecil jadi sampul |
+| `taken_at` | opsional | Waktu foto diambil menurut HP, dengan `Z` atau offset |
+
+- Balasannya mengikuti aturan `PUT`: 201 kalau baru; 200 dengan data tersimpan kalau ID itu sudah ada di ruang yang sama, dan file kiriman ulangnya diabaikan; 410 kalau foto itu sudah dihapus; 409 `id_conflict` kalau ID dipakai di ruang lain. Methodnya `POST` karena PHP tidak membaca multipart pada `PUT`.
+- Foto ke kenangan yang sudah dihapus dibalas 409 `parent_deleted`. Foto ke-51 di satu kenangan ditolak 422 di kolom `photo`.
+- App mengecilkan foto ke sisi terpanjang 2560 px dan mengompresnya sebagai JPEG sebelum unggah, jadi biasanya di bawah 1,5 MB. `taken_at` dibaca dari EXIF file asli sebelum dikompres.
+- Server menyimpan ulang dua versi JPEG tanpa metadata, sehingga lokasi di EXIF terbuang: versi penuh dengan sisi terpanjang paling besar 2560 px, dan thumbnail 800 px untuk linimasa dan galeri. Foto yang lebih kecil tidak diperbesar. `width` dan `height` adalah ukuran versi penuh, dan `uploaded_by` diisi server.
+- `PATCH /memory-photos/{id}` hanya mengubah `position`, misalnya untuk "Jadikan sampul" (lebih kecil dari foto pertama).
+- `DELETE /memory-photos/{id}` → 204. App memakai jeda Urungkan 5 detik seperti hapus tugas.
+- File foto yang dihapus, termasuk karena kenangannya dihapus, ikut dihapus dari R2 lewat job antrean dan tidak bisa dipulihkan.
+
+### URL foto
+
+- `url` (versi penuh) dan `thumb_url` adalah URL R2 bertanda tangan yang berlaku 7 hari, seperti `avatar_url`. Foto yang sudah dihapus membawa `null`.
+- App menyimpan gambar di cache dengan kunci `photo-{id}` dan `photo-{id}-thumb`, bukan URL-nya. Thumbnail diunduh tepat setelah sync supaya linimasa dan galeri tetap tampil saat offline; versi penuh diunduh saat foto dibuka.
+- Kalau URL sudah berumur 7 hari atau R2 membalas 403, app mengambil URL baru lewat `GET /memories/{id}/photos`. Balasannya semua foto kenangan itu yang belum dihapus, urut `position`, dalam bentuk sumber foto di atas. Kenangan yang sudah dihapus dibalas 410, dan yang bukan di ruangmu 404.
+- Foto yang diunggah dari HP ini langsung dipakai sebagai cache versi penuhnya, jadi tidak diunduh lagi.
+
+### Notifikasi kenangan baru
+
+- Push `memory_created` dikirim ke anggota lain saat kenangan baru dibuat di Ruang Bersama, termasuk lewat "Simpan jadi kenangan". Menambah foto ke kenangan lama tidak mengirim push.
+- Push dikirim 2 menit setelah kenangan dibuat, supaya fotonya sempat terunggah, dan batal kalau kenangannya sudah dihapus.
+- Hanya dikirim kalau `notification_prefs.partner_activity` penerima menyala, tanpa kunci baru.
+- Judul push adalah judul kenangan, isinya "{nama} menyimpan kenangan baru".
+
 ## Sinkron
 
 `GET /sync` adalah satu-satunya cara HP membaca data ruang: sekali penuh setelah masuk, lalu hanya yang berubah. Beranda, filter tugas, dan statistik tabungan dihitung dari hasilnya di cache lokal.
@@ -600,7 +696,9 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
     "savings_goals": [],
     "savings_entries": [],
     "special_dates": [],
-    "trips": []
+    "trips": [],
+    "memories": [],
+    "memory_photos": []
   },
   "meta": {
     "server_time": "2026-10-08T11:10:05.123456Z",
@@ -619,7 +717,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
-- Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
+- Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
 
 ### Aturan di HP
 
@@ -631,7 +729,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, dan saat push masuk ketika app terbuka.
-- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`, lalu `trips`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
+- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -640,6 +738,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Kalau `PUT` dibalas 200 (sudah tersimpan dari kiriman sebelumnya), balasannya diterapkan seperti baris sync, dengan kolom di antrean tetap dilindungi. Tidak ada operasi tambahan.
 - Selesai dan hapus tugas masuk antrean sebagai operasi tersendiri dengan jeda kirim 5 detik selama tombol Urungkan tampil (FR-08). Urungkan hanya menghapus operasi itu, jadi pasangan tidak menerima notifikasi yang dibatalkan.
 - Di layar detail, perubahan dikirim 1 detik setelah berhenti mengetik, dan langsung ditulis ke antrean saat app masuk ke latar belakang.
+- Unggah foto kenangan (v0.3) masuk antrean setelah `PUT` kenangannya. File yang sudah dikompres disimpan di HP sampai server membalas, lalu dipakai sebagai cache versi penuhnya.
 
 ## Notifikasi push
 
@@ -656,6 +755,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `special_date_reminder` | H-7, H-1, dan hari H pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi; hanya pasangan untuk ulang tahun anggota | `special_dates` | `pengingat` | Tinggi |
 | `trip_reminder` | H-7 dan H-1 sebelum `start_date` pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `trip_reminders` | `pengingat` | Tinggi |
 | `savings_reminder` | Hari setor yang dipilih di target, pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `savings_reminders` | `pengingat` | Tinggi |
+| `memory_created` | Kenangan baru dibuat, dikirim 2 menit kemudian (v0.3) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -685,6 +785,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `special_date_reminder` (v0.2) membawa `special_date_id` untuk tanggal penting, atau `member_id` untuk ulang tahun anggota. `tag`-nya `date-{id}` atau `birthday-{member_id}`, dan saat diketuk app membuka Beranda.
 - `trip_reminder` (v0.2) membawa `trip_id`, dengan `tag` `trip-{id}`; saat diketuk app membuka Detail perjalanan.
 - `savings_reminder` (v0.2) membawa `savings_goal_id`, dengan `tag` `goal-{id}` dan `visibility` `PRIVATE` seperti push tabungan lain; saat diketuk app membuka Detail target.
+- `memory_created` (v0.3) membawa `memory_id`, dengan `tag` `memory-{id}`; saat diketuk app membuka Detail kenangan. Judulnya judul kenangan, isinya "{nama} menyimpan kenangan baru".
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
@@ -760,3 +861,18 @@ Lima butir ini merancang usulan "Pengingat setor rutin per target" di lingkup fi
 - [x] Target yang tercapai, diarsipkan, atau dihapus tidak diingatkan. Pengingat tetap dikirim walau sudah ada setoran minggu atau bulan itu.
 - [x] Push baru `savings_reminder` di channel `pengingat`, dengan preferensi sendiri `savings_reminders`.
 - [x] Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target.", dan disembunyikan di layar kunci seperti push tabungan lain.
+
+### Kenangan dan foto (v0.3)
+
+Sepuluh butir ini menyesuaikan FR-19, FR-20, FR-21, UC-16, UC-17, tabel `memories` dan `memory_photos`, serta baris API dan notifikasi Kenangan di tab utama, dan disetujui pada 23 Oktober 2026. Butir pertama menjawab pertanyaan terbuka soal pin lokasi.
+
+- [x] Pin lokasi di peta belum ada di v0.3. Kenangan cukup menyimpan nama tempat, jadi `latitude` dan `longitude` belum dibuat; pin dan Peta kenangan menyusul bersama di v1.x.
+- [x] Foto diunggah satu per satu ke `POST /memory-photos/{id}` dengan ID dari HP, bukan `POST /memories/{id}/photos`, supaya kiriman ulang dari antrean aman dan foto bisa ditambahkan saat offline. "Beberapa sekaligus" (FR-20) dikerjakan app dengan mengirimnya berurutan.
+- [x] App mengecilkan foto ke sisi terpanjang 2560 px sebelum unggah. Server menyimpan ulang sebagai JPEG tanpa metadata dan membuat thumbnail 800 px. Batasnya 10 MB per file dan 50 foto per kenangan.
+- [x] URL foto berlaku 7 hari seperti foto profil. URL baru diambil lewat endpoint baca baru `GET /memories/{id}/photos`.
+- [x] Urutan foto memakai `position` seperti daftar, dan foto sampul adalah yang terkecil. "Jadikan sampul" cukup mengubah `position`.
+- [x] Satu perjalanan boleh punya beberapa kenangan. Menghapus perjalanan hanya melepas tautan kenangannya, tidak ikut menghapusnya.
+- [x] Menghapus foto atau kenangan langsung menghapus filenya dari R2, jadi tidak bisa dipulihkan dari server. Di app, hapus foto memakai Urungkan 5 detik, dan hapus kenangan berfoto memakai konfirmasi.
+- [x] Push baru `memory_created` ke anggota lain di channel `aktivitas`, dengan preferensi `partner_activity` yang sudah ada. Dikirim 2 menit setelah kenangan dibuat supaya fotonya sempat terunggah, dengan judul kenangan sebagai judul dan isi "{nama} menyimpan kenangan baru". Menambah foto ke kenangan lama tidak mengirim push.
+- [x] Tabel `memory_photos` tanpa `disk` dan `mime`, karena semua foto berupa JPEG di R2, dan ditambah `space_id` (disalin dari kenangannya) supaya foto yang terhapus ikut tersinkron.
+- [x] Foto disimpan di bucket R2 yang sudah dipakai foto profil, di folder `memories/`, jadi tidak perlu bucket atau kunci baru.
