@@ -35,6 +35,7 @@ return [
         'task_list' => 'Daftar ini sudah dihapus.',
         'savings_goal' => 'Target ini sudah dihapus.',
         'trip' => 'Perjalanan ini sudah dihapus.',
+        'memory' => 'Kenangan ini sudah dihapus.',
     ],
 
     /*
@@ -63,6 +64,8 @@ return [
         'reminder_day_needed' => 'Hari setor wajib diisi kalau pengingat setor dinyalakan.',
         'reminder_day_weekly' => 'Hari setor mingguan harus antara 1 (Senin) dan 7 (Minggu).',
         'reminder_day_monthly' => 'Tanggal setor bulanan harus antara 1 dan 31.',
+        'memory_trip_different_space' => 'Perjalanan harus berada di ruang yang sama dengan kenangannya.',
+        'memory_photo_limit' => 'Satu kenangan paling banyak :max foto.',
     ],
 
     /*
@@ -125,6 +128,11 @@ return [
         'trip_id' => 'perjalanan',
         'reminder_frequency' => 'pengingat setor',
         'reminder_day' => 'hari setor',
+        'place_name' => 'nama tempat',
+        'visited_on' => 'tanggal',
+        'story' => 'cerita',
+        'memory_id' => 'kenangan',
+        'taken_at' => 'waktu foto',
         'since' => 'since',
         'cursor' => 'cursor',
     ],

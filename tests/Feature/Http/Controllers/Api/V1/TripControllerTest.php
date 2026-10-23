@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Memory;
 use App\Models\SavingsGoal;
 use App\Models\Space;
 use App\Models\Task;
@@ -273,6 +274,21 @@ describe('destroy', function () {
         $this->assertSoftDeleted($task);
         expect($checklist->fresh()->updated_at->toJSON())->toBe('2026-10-22T11:00:00.250000Z')
             ->and($task->fresh()->updated_at->toJSON())->toBe('2026-10-22T11:00:00.250000Z');
+    });
+
+    it('keeps the memories saved from the trip, unlinks them, and bumps their updated_at', function () {
+        $this->travelTo('2026-10-23 10:00:00');
+        $user = actingAsApiUser();
+        $trip = Trip::factory()->for($user->personalSpace())->create();
+        $memory = Memory::factory()->for($user->personalSpace())->create(['trip_id' => $trip->id]);
+        $this->travelTo('2026-10-23 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/trips/{$trip->id}");
+
+        $this->assertNotSoftDeleted($memory);
+        expect($memory->fresh())
+            ->trip_id->toBeNull()
+            ->updated_at->toJSON()->toBe('2026-10-23T11:00:00.250000Z');
     });
 
     it('leaves the ordinary lists of the space alone', function () {

@@ -4,26 +4,6 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * Build a small JPEG that carries the given text in its EXIF "Make" tag.
- */
-function jpegWithExif(string $make): string
-{
-    ob_start();
-    imagejpeg(imagecreatetruecolor(64, 48));
-    $jpeg = ob_get_clean();
-
-    $value = $make."\0";
-    $tiff = "II*\0".pack('V', 8)
-        .pack('v', 1)
-        .pack('vvVV', 0x010F, 2, strlen($value), 26)
-        .pack('V', 0)
-        .$value;
-    $payload = "Exif\0\0".$tiff;
-
-    return substr($jpeg, 0, 2)."\xFF\xE1".pack('n', strlen($payload) + 2).$payload.substr($jpeg, 2);
-}
-
 describe('store', function () {
     it('stores the photo as a 512 by 512 JPEG and returns the profile', function (string $filename) {
         Storage::fake('r2');

@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Models\Memory;
 use App\Models\TaskList;
 use App\Models\Trip;
 use Illuminate\Support\Facades\DB;
@@ -9,16 +10,19 @@ use Illuminate\Support\Facades\DB;
 class DeleteTrip
 {
     /**
-     * Soft delete the trip together with its checklist and the checklist's tasks.
+     * Soft delete the trip together with its checklist and the checklist's
+     * tasks, and unlink the memories saved from it, which stay.
      *
-     * Everything is deleted through Eloquent, which also bumps updated_at, so
-     * the deletions reach the other phone through sync.
+     * Everything is changed through Eloquent, which also bumps updated_at, so
+     * the changes reach the other phone through sync.
      */
     public function handle(Trip $trip): void
     {
         DB::transaction(function () use ($trip): void {
-            // Wait for a checklist that is being created for this trip, so it is deleted too.
+            // Wait for a checklist or a memory that is being linked to this trip, so it is handled too.
             Trip::query()->whereKey($trip->id)->lockForUpdate()->first();
+
+            Memory::query()->where('trip_id', $trip->id)->update(['trip_id' => null]);
 
             $checklist = $trip->checklist()->first();
 

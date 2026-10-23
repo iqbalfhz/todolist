@@ -115,3 +115,38 @@ function sharedSpaceBetween(User $owner, User $partner): Space
 {
     return Space::factory()->for($owner, 'owner')->sharedWith($partner)->create();
 }
+
+/**
+ * Build a 64 by 48 JPEG that carries the given text in its EXIF "Make" tag.
+ */
+function jpegWithExif(string $make): string
+{
+    $value = $make."\0";
+
+    return jpegWithExifEntry(pack('vvVV', 0x010F, 2, strlen($value), 26), $value);
+}
+
+/**
+ * Build a 64 by 48 JPEG whose EXIF tells viewers to turn it, as a phone held upright writes it.
+ *
+ * Orientation 6 means the picture must be turned 90 degrees clockwise.
+ */
+function jpegWithOrientation(int $orientation): string
+{
+    return jpegWithExifEntry(pack('vvVvv', 0x0112, 3, 1, $orientation, 0));
+}
+
+/**
+ * Build a 64 by 48 JPEG with one EXIF entry, followed by the data the entry points to.
+ */
+function jpegWithExifEntry(string $entry, string $data = ''): string
+{
+    ob_start();
+    imagejpeg(imagecreatetruecolor(64, 48));
+    $jpeg = ob_get_clean();
+
+    $tiff = "II*\0".pack('V', 8).pack('v', 1).$entry.pack('V', 0).$data;
+    $payload = "Exif\0\0".$tiff;
+
+    return substr($jpeg, 0, 2)."\xFF\xE1".pack('n', strlen($payload) + 2).$payload.substr($jpeg, 2);
+}

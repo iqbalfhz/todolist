@@ -1,6 +1,8 @@
 <?php
 
 use App\Actions\UpdateProfile;
+use App\Models\Memory;
+use App\Models\MemoryPhoto;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
@@ -10,6 +12,8 @@ use App\Models\TaskList;
 use App\Models\Trip;
 use App\Models\User;
 use App\Rules\SyncCursor;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 dataset('content rows', [
     'a list' => ['task_lists', fn (Space $space) => TaskList::factory()->for($space)->create()],
@@ -18,6 +22,8 @@ dataset('content rows', [
     'a deposit' => ['savings_entries', fn (Space $space) => SavingsEntry::factory()->for(SavingsGoal::factory()->for($space))->create()],
     'a special date' => ['special_dates', fn (Space $space) => SpecialDate::factory()->for($space)->create()],
     'a trip' => ['trips', fn (Space $space) => Trip::factory()->for($space)->create()],
+    'a memory' => ['memories', fn (Space $space) => Memory::factory()->for($space)->create()],
+    'a memory photo' => ['memory_photos', fn (Space $space) => MemoryPhoto::factory()->for(Memory::factory()->for($space))->create()],
 ]);
 
 it('returns everything a new account has in the shape of the contract', function () {
@@ -75,6 +81,8 @@ it('returns everything a new account has in the shape of the contract', function
             'savings_entries' => [],
             'special_dates' => [],
             'trips' => [],
+            'memories' => [],
+            'memory_photos' => [],
         ],
         'meta' => [
             'server_time' => '2026-10-08T11:10:05.123456Z',
@@ -85,6 +93,8 @@ it('returns everything a new account has in the shape of the contract', function
 });
 
 it('returns each row exactly as its own endpoint returned it', function () {
+    Storage::fake('r2');
+    $this->travelTo('2026-10-23 10:00:00');
     $user = actingAsApiUser();
     $space = $user->personalSpace();
     $task = $this->putJson('/api/v1/tasks/'.newId(), [
@@ -117,6 +127,17 @@ it('returns each row exactly as its own endpoint returned it', function () {
         'start_date' => '2027-06-20',
         'savings_goal_id' => $goal['id'],
     ])->json('data');
+    $memory = $this->putJson('/api/v1/memories/'.newId(), [
+        'space_id' => $space->id,
+        'trip_id' => $trip['id'],
+        'title' => 'Liburan ke Bali',
+        'visited_on' => '2027-06-20',
+    ])->json('data');
+    $photo = $this->post('/api/v1/memory-photos/'.newId(), [
+        'memory_id' => $memory['id'],
+        'photo' => UploadedFile::fake()->image('foto.jpg', 640, 480),
+        'position' => 1024,
+    ])->json('data');
 
     $response = $this->getJson('/api/v1/sync');
 
@@ -125,7 +146,9 @@ it('returns each row exactly as its own endpoint returned it', function () {
         ->assertJsonPath('data.savings_goals', [$goal])
         ->assertJsonPath('data.savings_entries', [$entry])
         ->assertJsonPath('data.special_dates', [$specialDate])
-        ->assertJsonPath('data.trips', [$trip]);
+        ->assertJsonPath('data.trips', [$trip])
+        ->assertJsonPath('data.memories', [$memory])
+        ->assertJsonPath('data.memory_photos', [$photo]);
 });
 
 it('orders each collection by updated_at and then by ID', function () {
@@ -181,6 +204,21 @@ it('returns rows deleted since the last sync with deleted_at filled', function (
         ->assertJsonPath("data.{$collection}.0.id", $deleted->id)
         ->assertJsonPath("data.{$collection}.0.deleted_at", '2026-10-08T11:00:00.250000Z');
 })->with('content rows');
+
+it('sends a deleted photo without URLs, because its files are gone', function () {
+    Storage::fake('r2');
+    $this->travelTo('2026-10-08 10:00:00');
+    $user = actingAsApiUser();
+    $photo = MemoryPhoto::factory()->for(Memory::factory()->for($user->personalSpace()))->create();
+    $photo->delete();
+
+    $response = $this->getJson('/api/v1/sync?'.http_build_query(['since' => '2026-10-08T09:00:00Z']));
+
+    $response->assertOk()
+        ->assertJsonPath('data.memory_photos.0.id', $photo->id)
+        ->assertJsonPath('data.memory_photos.0.url', null)
+        ->assertJsonPath('data.memory_photos.0.thumb_url', null);
+});
 
 it('returns only what changed in the shared space since the last sync', function () {
     $this->travelTo('2026-10-08 10:00:00');
@@ -240,6 +278,7 @@ it('returns every row for a since older than the oldest row', function (string $
 ]);
 
 it('never sends the content of the personal space of the partner', function (array $query) {
+    Storage::fake('r2');
     $this->travelTo('2026-10-08 10:00:00');
     [, $partner, $sharedSpace] = actingAsPartnered();
     $privateSpace = $partner->personalSpace();
@@ -247,6 +286,7 @@ it('never sends the content of the personal space of the partner', function (arr
     SavingsEntry::factory()->for(SavingsGoal::factory()->for($privateSpace))->create();
     SpecialDate::factory()->for($privateSpace)->create();
     Trip::factory()->for($privateSpace)->create();
+    MemoryPhoto::factory()->for(Memory::factory()->for($privateSpace))->create();
 
     $response = $this->getJson('/api/v1/sync?'.http_build_query($query));
 
@@ -353,6 +393,15 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
         ['cursor' => base64_encode(json_encode([
             'server_time' => '2026-02-30 10:00:00.000000',
             'with_deleted' => false,
+            'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null, 'trips' => null, 'memories' => null, 'memory_photos' => null],
+        ]))],
+        'cursor',
+        'Cursor tidak berlaku, mulai sinkron dari awal.',
+    ],
+    'a cursor from before memories joined the sync' => [
+        ['cursor' => base64_encode(json_encode([
+            'server_time' => '2026-10-08 10:00:00.000000',
+            'with_deleted' => false,
             'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null, 'trips' => null],
         ]))],
         'cursor',
@@ -388,6 +437,8 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
                 'savings_entries' => ['2026-10-08 09:59:55.000000', ''],
                 'special_dates' => ['2026-10-08 09:59:55.000000', ''],
                 'trips' => ['2026-10-08 09:59:55.000000', ''],
+                'memories' => ['2026-10-08 09:59:55.000000', ''],
+                'memory_photos' => ['2026-10-08 09:59:55.000000', ''],
             ],
         ]))],
         'cursor',

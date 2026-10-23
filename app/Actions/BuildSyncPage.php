@@ -2,6 +2,8 @@
 
 namespace App\Actions;
 
+use App\Models\Memory;
+use App\Models\MemoryPhoto;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
@@ -138,6 +140,8 @@ class BuildSyncPage
             'savings_entries' => SavingsEntry::query()->whereIn('space_id', $spaceIds),
             'special_dates' => SpecialDate::query()->whereIn('space_id', $spaceIds),
             'trips' => Trip::query()->whereIn('space_id', $spaceIds),
+            'memories' => Memory::query()->whereIn('space_id', $spaceIds),
+            'memory_photos' => MemoryPhoto::query()->whereIn('space_id', $spaceIds),
         };
 
         if ($withDeleted) {

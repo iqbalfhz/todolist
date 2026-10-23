@@ -30,6 +30,8 @@ class SyncResource extends JsonResource
             'savings_entries' => SavingsEntryResource::collection($changes['savings_entries']),
             'special_dates' => SpecialDateResource::collection($changes['special_dates']),
             'trips' => TripResource::collection($changes['trips']),
+            'memories' => MemoryResource::collection($changes['memories']),
+            'memory_photos' => MemoryPhotoResource::collection($changes['memory_photos']),
         ];
     }
 

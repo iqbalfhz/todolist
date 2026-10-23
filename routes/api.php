@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\V1\AvatarController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\MemoryController;
+use App\Http\Controllers\Api\V1\MemoryPhotoController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SavingsEntryController;
 use App\Http\Controllers\Api\V1\SavingsGoalController;
@@ -68,5 +70,14 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/trips/{id}', [TripController::class, 'store'])->name('trips.store');
         Route::patch('/trips/{id}', [TripController::class, 'update'])->name('trips.update');
         Route::delete('/trips/{id}', [TripController::class, 'destroy'])->name('trips.destroy');
+
+        Route::put('/memories/{id}', [MemoryController::class, 'store'])->name('memories.store');
+        Route::patch('/memories/{id}', [MemoryController::class, 'update'])->name('memories.update');
+        Route::delete('/memories/{id}', [MemoryController::class, 'destroy'])->name('memories.destroy');
+        Route::get('/memories/{id}/photos', [MemoryController::class, 'photos'])->name('memories.photos');
+
+        Route::post('/memory-photos/{id}', [MemoryPhotoController::class, 'store'])->name('memory-photos.store');
+        Route::patch('/memory-photos/{id}', [MemoryPhotoController::class, 'update'])->name('memory-photos.update');
+        Route::delete('/memory-photos/{id}', [MemoryPhotoController::class, 'destroy'])->name('memory-photos.destroy');
     });
 });

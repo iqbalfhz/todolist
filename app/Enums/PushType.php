@@ -13,6 +13,7 @@ enum PushType: string
     case SpecialDateReminder = 'special_date_reminder';
     case TripReminder = 'trip_reminder';
     case SavingsReminder = 'savings_reminder';
+    case MemoryCreated = 'memory_created';
 
     /**
      * The notification preference that must be on for this push to be sent,
@@ -22,7 +23,7 @@ enum PushType: string
     {
         return match ($this) {
             self::TaskReminder => 'task_reminders',
-            self::TaskAssigned, self::TaskCompleted => 'partner_activity',
+            self::TaskAssigned, self::TaskCompleted, self::MemoryCreated => 'partner_activity',
             self::SavingsDeposit, self::SavingsAchieved => 'savings_activity',
             self::PartnerJoined => null,
             self::SpecialDateReminder => 'special_dates',

@@ -2,6 +2,8 @@
 
 namespace App\Exceptions;
 
+use App\Http\Resources\MemoryPhotoResource;
+use App\Http\Resources\MemoryResource;
 use App\Http\Resources\SavingsEntryResource;
 use App\Http\Resources\SavingsGoalResource;
 use App\Http\Resources\SpecialDateResource;
@@ -9,6 +11,8 @@ use App\Http\Resources\TaskListResource;
 use App\Http\Resources\TaskResource;
 use App\Http\Resources\TripResource;
 use App\Http\Resources\UserResource;
+use App\Models\Memory;
+use App\Models\MemoryPhoto;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\SpecialDate;
@@ -36,13 +40,21 @@ class CurrentResourceResolver
         'savings-entries' => [SavingsEntry::class, SavingsEntryResource::class],
         'special-dates' => [SpecialDate::class, SpecialDateResource::class],
         'trips' => [Trip::class, TripResource::class],
+        'memories' => [Memory::class, MemoryResource::class],
+        'memory-photos' => [MemoryPhoto::class, MemoryPhotoResource::class],
     ];
 
     /**
      * Determine whether the request went to an endpoint the app sends from its offline queue.
+     *
+     * The queue only holds writes, so a read such as the photos of a memory never applies.
      */
     public function appliesTo(Request $request): bool
     {
+        if ($request->isMethod('GET')) {
+            return false;
+        }
+
         return $request->routeIs('me.update') || $this->queuedResourceFor($request) !== null;
     }
 

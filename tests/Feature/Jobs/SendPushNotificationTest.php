@@ -110,6 +110,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['savingsGoalId' => 'id-target'],
         ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
     ],
+    'a new memory' => [
+        PushType::MemoryCreated,
+        ['memoryId' => 'id-kenangan'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'memory-id-kenangan']],
+    ],
 ]);
 
 it('sends the special date or the member a reminder is about in the data', function (array $ids, array $data) {
@@ -137,6 +142,17 @@ it('sends the trip a reminder is about in the data', function () {
     expect($sent->message['data'])->toBe(['type' => 'trip_reminder', 'space_id' => 'id-ruang', 'trip_id' => 'id-perjalanan']);
 });
 
+it('sends the memory a push is about in the data', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, PushType::MemoryCreated, 'Liburan ke Bali', 'Chika menyimpan kenangan baru', 'id-ruang', memoryId: 'id-kenangan');
+
+    expect($sent->message['data'])->toBe(['type' => 'memory_created', 'space_id' => 'id-ruang', 'memory_id' => 'id-kenangan']);
+});
+
 it('sends nothing when the recipient turned that kind of push off', function (PushType $type, string $preference) {
     $this->mock(Messaging::class)->shouldNotReceive('sendMulticast');
     $user = User::factory()->create(['notification_prefs' => [$preference => false]]);
@@ -152,6 +168,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'special dates' => [PushType::SpecialDateReminder, 'special_dates'],
     'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
     'deposit reminders' => [PushType::SavingsReminder, 'savings_reminders'],
+    'new memories' => [PushType::MemoryCreated, 'partner_activity'],
 ]);
 
 it('sends partner_joined even when every preference is off', function () {

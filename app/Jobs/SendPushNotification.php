@@ -42,6 +42,7 @@ class SendPushNotification implements ShouldQueue
         public ?string $specialDateId = null,
         public ?string $memberId = null,
         public ?string $tripId = null,
+        public ?string $memoryId = null,
     ) {}
 
     /**
@@ -94,6 +95,7 @@ class SendPushNotification implements ShouldQueue
                 'special_date_id' => $this->specialDateId,
                 'member_id' => $this->memberId,
                 'trip_id' => $this->tripId,
+                'memory_id' => $this->memoryId,
             ]))
             ->withAndroidConfig(AndroidConfig::fromArray([
                 'priority' => $this->type->priority(),
@@ -116,6 +118,7 @@ class SendPushNotification implements ShouldQueue
             $this->specialDateId !== null => "date-{$this->specialDateId}",
             $this->memberId !== null => "birthday-{$this->memberId}",
             $this->tripId !== null => "trip-{$this->tripId}",
+            $this->memoryId !== null => "memory-{$this->memoryId}",
             default => "space-{$this->spaceId}",
         };
     }
