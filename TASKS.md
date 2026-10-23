@@ -4,6 +4,7 @@
 
 ## Waiting On
 
+- [ ] **Persetujuan kontrak v0.3 Kenangan dan foto** - oleh pemilik, since 2026-10-23; draf ada di dokumen perencanaan, tab Kontrak API v0.1, bagian "Kenangan dan foto (v0.3)"; 10 butir di "Perubahan dari rancangan awal" menunggu dicentang atau dikomentari, termasuk jawaban soal pin lokasi. Baru dibangun setelah disetujui
 - [ ] **Uji penjadwal pengingat v0.2 di HP** - oleh pemilik, since 2026-10-22; uji kirim manual sudah lulus (23 Oktober), tinggal bukti dari penjadwal: Sabtu 24 Oktober pukul 08.00–08.30 WIB, dengan tanggal penting 24 Oktober, perjalanan mulai 25 Oktober, dan target berjadwal mingguan hari Sabtu di Ruang Bersama; cek juga tabel `daily_reminders`
 - [ ] **Uji notifikasi setelah app ditutup di HP Xiaomi** - oleh pemilik, since 2026-10-23; kalau tertahan, app menambah tombol di Pengaturan > Notifikasi yang memunculkan pilihan Izinkan/Tolak dari Android (bukan panduan manual)
 - [ ] **APK baru untuk HP pasangan** - oleh pemilik, since 2026-10-23; HP pasangan belum memakai app dengan fitur v0.2
@@ -13,7 +14,6 @@
 
 ## Someday
 
-- [ ] **v0.3** - kenangan dan foto
 - [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
 - [ ] **v1.x** - penarikan tabungan, realtime
 - [ ] **Sebelum rilis publik** - pasang lagi "Application restrictions" (Android apps) pada API key Android Firebase, yang dilepas ke None pada 22 Oktober 2026 karena membuat pendaftaran token FCM gagal (pembatasan per API tetap), jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
