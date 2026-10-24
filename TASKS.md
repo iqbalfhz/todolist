@@ -4,11 +4,11 @@
 
 ## Waiting On
 
-- [ ] **Kenangan dan foto di app Flutter** - oleh sesi Flutter, since 2026-10-23; kontraknya di bagian "Kenangan dan foto (v0.3)" pada `docs/kontrak-api.md`: tab Kenangan (linimasa per tahun dan bulan), Detail kenangan, galeri, "Simpan jadi kenangan" di kartu perjalanan, unggah foto lewat antrean, dan sync penuh sekali untuk `memories` dan `memory_photos`
+- [ ] **Persetujuan kontrak v1.0 Tugas berulang** - oleh pemilik, since 2026-10-24; draf ada di dokumen perencanaan, tab Kontrak API v0.1, bagian "Tugas berulang (v1.0)" di Daftar dan tugas; 10 butir di "Perubahan dari rancangan awal" menunggu dicentang atau dikomentari, termasuk "setiap N" dan mingguan di beberapa hari. Baru dibangun setelah disetujui
 - [ ] **Uji unggah foto kenangan di server** - oleh pemilik, since 2026-10-23; setelah app punya v0.3: unggah beberapa foto ke kenangan di Ruang Bersama, pastikan foto tampil di HP pasangan dan push "menyimpan kenangan baru" datang sekitar 2 menit kemudian, lalu hapus satu foto
-- [ ] **Uji penjadwal pengingat v0.2 di HP** - oleh pemilik, since 2026-10-22; uji kirim manual sudah lulus (23 Oktober), tinggal bukti dari penjadwal: Sabtu 24 Oktober pukul 08.00–08.30 WIB, dengan tanggal penting 24 Oktober, perjalanan mulai 25 Oktober, dan target berjadwal mingguan hari Sabtu di Ruang Bersama; cek juga tabel `daily_reminders`
+- [ ] **Cari tahu kenapa `savings_reminder` 24 Oktober tidak terlihat** - oleh pemilik, since 2026-10-24; `trip_reminder` dan `special_date_reminder` dari penjadwal sampai di HP pukul 08.00, tetapi pengingat setor untuk target mingguan hari Sabtu tidak terlihat. Pemilik menjalankan perintah cek `daily_reminders`, target berjadwal, dan preferensi `savings_reminders` di Terminal Coolify
 - [ ] **Uji notifikasi setelah app ditutup di HP Xiaomi** - oleh pemilik, since 2026-10-23; kalau tertahan, app menambah tombol di Pengaturan > Notifikasi yang memunculkan pilihan Izinkan/Tolak dari Android (bukan panduan manual)
-- [ ] **APK baru untuk HP pasangan** - oleh pemilik, since 2026-10-23; HP pasangan belum memakai app dengan fitur v0.2
+- [ ] **APK baru untuk HP pasangan** - oleh pemilik, since 2026-10-23; APK dengan fitur v0.3 sudah siap (24 Oktober), tinggal dipasang di HP pasangan
 - [ ] **Coba pulihkan satu backup** - oleh pemilik, since 2026-10-11; pulihkan ke database sementara di Coolify untuk memastikan backup-nya benar-benar bisa dipakai
 
 ## Backlog v0.1
@@ -94,3 +94,5 @@
 - [x] ~~Dokumen perencanaan: panduan mematikan optimasi baterai dihapus dari mitigasi risiko notifikasi, sesuai keputusan pemilik; gantinya push prioritas tinggi dan, kalau perlu, tombol izin dari Android di Pengaturan > Notifikasi~~ (2026-10-23)
 - [x] ~~Push pengingat v0.2 (`special_date_reminder`, `trip_reminder`, `savings_reminder`) dikirim manual dari server: ketiganya sampai di HP pemilik dan membuka Beranda, Detail perjalanan, dan Detail target saat diketuk~~ (2026-10-23)
 - [x] ~~Kenangan dan foto (v0.3) di API: kontrak disetujui pemilik (10 butir, termasuk pin lokasi menyusul di v1.x), `PUT`, `PATCH`, `DELETE /memories/{id}`, `GET /memories/{id}/photos` untuk URL baru, unggah `POST /memory-photos/{id}` (JPEG tanpa metadata, versi penuh 2560 px dan thumbnail 800 px, paling banyak 50 foto per kenangan), `PATCH` dan `DELETE /memory-photos/{id}`, file dibuang dari R2 lewat job, koleksi sync `memories` dan `memory_photos`, dan push `memory_created` 2 menit setelah kenangan dibuat~~ (2026-10-23)
+- [x] ~~Kenangan dan foto (v0.3) di app Flutter (repo mobile `main`): tab Kenangan, Detail kenangan, galeri, "Simpan jadi kenangan", dan unggah foto lewat antrean; build rilis terpasang di HP pemilik, dan uji ujung ke ujung terhadap API lokal lulus (unggah foto sungguhan menunggu uji di server)~~ (2026-10-24)
+- [x] ~~Penjadwal pengingat v0.2 di HP: `trip_reminder` dan `special_date_reminder` (H-1 dan hari H) sampai di HP pemilik pada Sabtu 24 Oktober pukul 08.00~~ (2026-10-24)
