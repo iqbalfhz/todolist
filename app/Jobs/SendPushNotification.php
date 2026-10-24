@@ -7,10 +7,13 @@ use App\Models\DeviceToken;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Messaging;
 use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\MulticastSendReport;
 use Kreait\Firebase\Messaging\Notification;
+use Kreait\Firebase\Messaging\SendReport;
 
 class SendPushNotification implements ShouldQueue
 {
@@ -66,8 +69,37 @@ class SendPushNotification implements ShouldQueue
         // someone without a device does not need Firebase credentials.
         $report = resolve(Messaging::class)->sendMulticast($this->message(), $tokens);
 
-        // FCM answers UNREGISTERED for a token whose app was uninstalled or signed out.
-        DeviceToken::query()->whereIn('token', $report->unknownTokens())->delete();
+        // FCM answers UNREGISTERED for a token whose app was uninstalled or
+        // signed out, and rejects a malformed token; neither will ever work.
+        DeviceToken::query()->whereIn('token', [...$report->unknownTokens(), ...$report->invalidTokens()])->delete();
+
+        $this->logOtherFailures($report);
+    }
+
+    /**
+     * Log the failures that are not about a dead token, such as an outage or
+     * a credentials problem, which would otherwise go unnoticed.
+     *
+     * The tokens themselves stay out of the log.
+     */
+    private function logOtherFailures(MulticastSendReport $report): void
+    {
+        $failures = $report->failures()->filter(
+            fn (SendReport $item): bool => ! $item->messageWasSentToUnknownToken() && ! $item->messageTargetWasInvalid(),
+        );
+
+        if ($failures->count() === 0) {
+            return;
+        }
+
+        Log::warning('FCM did not deliver a push.', [
+            'type' => $this->type->value,
+            'user_id' => $this->userId,
+            'failed_devices' => $failures->count(),
+            'errors' => array_values(array_unique($failures->map(
+                fn (SendReport $item): string => $item->error()?->getMessage() ?? 'unknown',
+            ))),
+        ]);
     }
 
     /**

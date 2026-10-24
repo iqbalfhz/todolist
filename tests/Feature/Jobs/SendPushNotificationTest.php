@@ -4,8 +4,12 @@ use App\Enums\PushType;
 use App\Jobs\SendPushNotification;
 use App\Models\DeviceToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Messaging;
+use Kreait\Firebase\Exception\Messaging\InvalidMessage;
 use Kreait\Firebase\Exception\Messaging\NotFound;
+use Kreait\Firebase\Exception\Messaging\ServerUnavailable;
+use Kreait\Firebase\Exception\MessagingException;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\MessageTarget;
 use Kreait\Firebase\Messaging\MulticastSendReport;
@@ -16,10 +20,11 @@ use Mockery\MockInterface;
  * Replace FCM with a double that records the one multicast it is asked to send.
  *
  * @param  list<string>  $unregisteredTokens
+ * @param  array<string, MessagingException>  $failures  Other failures, by token.
  */
-function fakeFcm(object $sent, array $unregisteredTokens = []): void
+function fakeFcm(object $sent, array $unregisteredTokens = [], array $failures = []): void
 {
-    test()->mock(Messaging::class, function (MockInterface $messaging) use ($sent, $unregisteredTokens): void {
+    test()->mock(Messaging::class, function (MockInterface $messaging) use ($sent, $unregisteredTokens, $failures): void {
         $messaging->shouldReceive('sendMulticast')
             ->once()
             ->withArgs(function (CloudMessage $message, array $tokens) use ($sent): bool {
@@ -28,10 +33,17 @@ function fakeFcm(object $sent, array $unregisteredTokens = []): void
 
                 return true;
             })
-            ->andReturn(MulticastSendReport::withItems(array_map(
-                fn (string $token) => SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, $token), new NotFound('Unregistered')),
-                $unregisteredTokens,
-            )));
+            ->andReturn(MulticastSendReport::withItems([
+                ...array_map(
+                    fn (string $token) => SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, $token), new NotFound('Unregistered')),
+                    $unregisteredTokens,
+                ),
+                ...array_map(
+                    fn (string $token, MessagingException $error) => SendReport::failure(MessageTarget::with(MessageTarget::TOKEN, $token), $error),
+                    array_keys($failures),
+                    $failures,
+                ),
+            ]));
     });
 }
 
@@ -210,4 +222,47 @@ it('removes the tokens FCM reports as unregistered', function () {
 
     $this->assertDatabaseMissing('device_tokens', ['token' => 'fcm-sudah-dicopot']);
     $this->assertDatabaseHas('device_tokens', ['token' => 'fcm-masih-aktif']);
+});
+
+it('removes the tokens FCM rejects as malformed', function () {
+    fakeFcm(new stdClass, failures: ['fcm-rusak' => new InvalidMessage('The registration token is not a valid FCM registration token')]);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-rusak']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+
+    $this->assertDatabaseMissing('device_tokens', ['token' => 'fcm-rusak']);
+});
+
+it('logs a failure that is not about a dead token, without the token, and keeps the device', function () {
+    Log::spy();
+    fakeFcm(new stdClass, failures: ['fcm-hp' => new ServerUnavailable('FCM sedang tidak tersedia')]);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-hp']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+
+    Log::shouldHaveReceived('warning')->once()->with('FCM did not deliver a push.', [
+        'type' => 'task_reminder',
+        'user_id' => $user->id,
+        'failed_devices' => 1,
+        'errors' => ['FCM sedang tidak tersedia'],
+    ]);
+    $this->assertDatabaseHas('device_tokens', ['token' => 'fcm-hp']);
+});
+
+it('logs nothing when every failure is about a dead token', function () {
+    Log::spy();
+    fakeFcm(
+        new stdClass,
+        unregisteredTokens: ['fcm-sudah-dicopot'],
+        failures: ['fcm-rusak' => new InvalidMessage('The registration token is not a valid FCM registration token')],
+    );
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-sudah-dicopot']);
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-rusak']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::TaskReminder, 'Judul', 'Isi', 'id-ruang');
+
+    Log::shouldNotHaveReceived('warning');
 });
