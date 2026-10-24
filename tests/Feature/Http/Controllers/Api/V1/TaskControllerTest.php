@@ -231,6 +231,7 @@ describe('store', function () {
         'a due time without a due date' => [['due_time' => '17:00'], 'due_date'],
         'a priority above 3' => [['priority' => 4], 'priority'],
         'no position' => [['position' => null], 'position'],
+        'a position too far from zero to store' => [['position' => '1e400'], 'position'],
         'an empty list of assignees' => [['assignee_ids' => []], 'assignee_ids'],
         'null as assignees' => [['assignee_ids' => null], 'assignee_ids'],
         'a completion time without an offset' => [['completed_at' => '2026-10-08T10:15:30'], 'completed_at'],
@@ -634,6 +635,7 @@ describe('update', function () {
     })->with([
         'an empty title' => [['title' => ''], 'title'],
         'a priority above 3' => [['priority' => 4], 'priority'],
+        'a position too far from zero to store' => [['position' => '1e400'], 'position'],
         'a due date in another format' => [['due_date' => '09-10-2026'], 'due_date'],
         'a completion time without an offset' => [['completed_at' => '2026-10-08T10:15:30'], 'completed_at'],
     ]);

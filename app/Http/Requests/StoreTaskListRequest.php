@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\ProfileColor;
 use App\Rules\LowercaseUlid;
+use App\Rules\Position;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +23,7 @@ class StoreTaskListRequest extends ApiRequest
             'name' => ['required', 'string', 'max:50'],
             'emoji' => ['nullable', 'string', 'max:16'],
             'color' => ['nullable', Rule::enum(ProfileColor::class)],
-            'position' => ['required', 'numeric'],
+            'position' => ['required', 'numeric', new Position],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\Position;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 class UpdateMemoryPhotoRequest extends ApiRequest
@@ -16,7 +17,7 @@ class UpdateMemoryPhotoRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'position' => ['sometimes', 'required', 'numeric'],
+            'position' => ['sometimes', 'required', 'numeric', new Position],
         ];
     }
 }

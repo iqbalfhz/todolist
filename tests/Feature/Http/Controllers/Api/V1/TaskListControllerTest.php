@@ -169,6 +169,7 @@ describe('store', function () {
         'a color outside the palette' => [['color' => 'hijau'], 'color'],
         'no position' => [['position' => null], 'position'],
         'a position that is not a number' => [['position' => 'atas'], 'position'],
+        'a position too far from zero to store' => [['position' => '1e400'], 'position'],
     ]);
 
     it('returns 422 on the id field when the ULID in the URL is in uppercase', function () {
@@ -397,6 +398,7 @@ describe('update', function () {
         'an empty name' => [['name' => ''], 'name'],
         'a color outside the palette' => [['color' => 'hijau'], 'color'],
         'a position that is not a number' => [['position' => 'atas'], 'position'],
+        'a position too far from zero to store' => [['position' => '-1e400'], 'position'],
         'an archive time without an offset' => [['archived_at' => '2026-10-08T10:30:00'], 'archived_at'],
     ]);
 

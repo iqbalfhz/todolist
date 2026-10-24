@@ -276,6 +276,7 @@ describe('store', function () {
         'a photo wider than 4096 px' => [['photo' => UploadedFile::fake()->image('lebar.jpg', 4097, 10)], 'photo'],
         'no position' => [['position' => null], 'position'],
         'a position that is not a number' => [['position' => 'pertama'], 'position'],
+        'a position too far from zero to store' => [['position' => '1e400'], 'position'],
         'a time without Z or an offset' => [['taken_at' => '2026-10-20T10:12:45'], 'taken_at'],
     ]);
 
@@ -318,17 +319,17 @@ describe('update', function () {
         expect($photo->fresh()->position)->toBe(512.5);
     });
 
-    it('returns 422 with the stored photo for a position that is not a number', function () {
+    it('returns 422 with the stored photo for a position that is not a number it can store', function (string $position) {
         Storage::fake('r2');
         $user = actingAsApiUser();
         $photo = MemoryPhoto::factory()->for(Memory::factory()->for($user->personalSpace()))->create(['position' => 2048]);
 
-        $response = $this->patchJson("/api/v1/memory-photos/{$photo->id}", ['position' => 'pertama']);
+        $response = $this->patchJson("/api/v1/memory-photos/{$photo->id}", ['position' => $position]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['position'])
             ->assertJsonPath('current.position', 2048);
-    });
+    })->with(['a word' => ['pertama'], 'a number too far from zero' => ['1e400']]);
 
     it('returns 404 with the not_found code for a photo the user cannot reach', function (Closure $id) {
         [$user, $partner] = actingAsPartnered();

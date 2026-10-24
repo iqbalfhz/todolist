@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\RepeatFrequency;
 use App\Rules\Iso8601WithOffset;
 use App\Rules\LowercaseUlid;
+use App\Rules\Position;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class StoreTaskRequest extends ApiRequest
             'repeat_frequency' => ['nullable', Rule::enum(RepeatFrequency::class)],
             'repeat_interval' => ['nullable', 'integer', 'between:1,99'],
             'priority' => ['nullable', 'integer', 'between:0,3'],
-            'position' => ['required', 'numeric'],
+            'position' => ['required', 'numeric', new Position],
             'assignee_ids' => ['sometimes', 'required', 'array', 'max:2'],
             'assignee_ids.*' => ['distinct', new LowercaseUlid],
             'completed_at' => ['nullable', new Iso8601WithOffset],

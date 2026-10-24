@@ -68,6 +68,7 @@ return [
         'memory_photo_limit' => 'Satu kenangan paling banyak :max foto.',
         'repeat_needs_due_date' => 'Tugas berulang butuh tanggal tenggat.',
         'repeat_in_trip_checklist' => 'Checklist perjalanan tidak bisa berulang.',
+        'position' => ':Attribute harus berupa angka antara -10^15 dan 10^15.',
     ],
 
     /*

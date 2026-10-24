@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Rules\Iso8601WithOffset;
 use App\Rules\LowercaseUlid;
+use App\Rules\Position;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class StoreMemoryPhotoRequest extends ApiRequest
                 'max:10240',
                 Rule::dimensions()->maxWidth(4096)->maxHeight(4096),
             ],
-            'position' => ['required', 'numeric'],
+            'position' => ['required', 'numeric', new Position],
             'taken_at' => ['nullable', new Iso8601WithOffset],
         ];
     }
