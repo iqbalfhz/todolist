@@ -1,8 +1,8 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 23 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 24 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru.
 
 ## Ringkasan endpoint
 
@@ -65,7 +65,7 @@ Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket l
 
 ### Bentuk balasan
 
-- Satu data: `{"data": {...}}`. Sinkron: `{"data": {...}, "meta": {...}}`.
+- Satu data: `{"data": {...}}`. Tugas (v1.0): `{"data": {...}, "next_task": {...}}`. Sinkron: `{"data": {...}, "meta": {...}}`.
 - Kolom kosong tetap dikirim sebagai `null`, supaya model freezed di Flutter selalu lengkap.
 - `DELETE` dan `POST /auth/logout` membalas 204 tanpa body.
 - Angka desimal seperti `position` bisa tiba sebagai `1024` atau `1024.5`; di Dart baca sebagai `num`.
@@ -355,12 +355,15 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
   "notes": null,
   "due_date": "2026-10-09",
   "due_time": "17:00",
+  "repeat_frequency": "weekly",
+  "repeat_interval": 1,
   "priority": 0,
   "position": 2048,
   "assignee_ids": ["01m4dga4y03c5ratqsc31zc916"],
   "remind_at": "2026-10-09T10:00:00.000000Z",
   "completed_at": null,
   "completed_by": null,
+  "next_task_id": null,
   "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
   "updated_by": "01m4dg5jegv6sp4xav8efqzcqe",
   "created_at": "2026-10-08T10:31:00.000000Z",
@@ -374,12 +377,15 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
 | `task_list_id` | wajib | Daftar aktif; `space_id` ikut dari daftarnya. Lewat PATCH hanya bisa pindah ke daftar di ruang yang sama |
 | `title` | wajib | 1–200 karakter |
 | `notes` | opsional | Paling banyak 5.000 karakter |
-| `due_date` | opsional | `YYYY-MM-DD`. Mengosongkannya ikut mengosongkan `due_time` |
+| `due_date` | opsional | `YYYY-MM-DD`. Mengosongkannya ikut mengosongkan `due_time` dan aturan ulang |
 | `due_time` | opsional | `HH:MM` dalam zona waktu ruang; butuh `due_date` |
 | `priority` | opsional | 0 tanpa, 1 rendah, 2 sedang, 3 tinggi; bawaan 0 |
 | `position` | wajib | Angka desimal, dihitung app |
 | `assignee_ids` | opsional | Larik berisi 1–2 anggota ruang; tidak diisi saat PUT berarti pembuat. Dua ID berarti "Kita". `null` atau `[]` ditolak 422 |
 | `completed_at` | opsional | Waktu dicentang di HP, dengan `Z` atau offset; `null` berarti batal selesai. Server mengisi `completed_by` |
+| `repeat_frequency` | opsional | `daily`, `weekly`, `monthly`, `yearly`, atau `null` (tidak berulang, bawaan); butuh `due_date` (v1.0) |
+| `repeat_interval` | opsional | Setiap berapa hari, minggu, bulan, atau tahun: 1–99, bawaan 1; `null` kalau tidak berulang (v1.0) |
+| `next_task_id` | – | Diisi server: tugas berikutnya yang dibuat saat tugas berulang ini selesai (v1.0) |
 
 ### Pengingat
 
@@ -395,6 +401,22 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
 - `completed_at` yang lebih maju dari jam server diturunkan menjadi waktu server, tidak ditolak.
 - Tampilan Semua, Belum selesai, Selesai, dan Hari Ini (termasuk Terlewat) dihitung di HP dari cache, dengan "hari ini" menurut zona waktu ruang (paket `timezone`).
 - Tugas yang dibuat atau dipindah ke daftar yang sudah dihapus dibalas 409 `parent_deleted`, dan ke daftar yang diarsipkan 409 `parent_archived`. App memindahkannya ke daftar aktif pertama di ruang itu, lalu mengirim ulang.
+
+### Tugas berulang (v1.0)
+
+Tugas berulang dibuat ulang oleh server: begitu satu kejadian diselesaikan, server membuat tugas berikutnya dengan tenggat baru. Aturannya disimpan di tugas itu sendiri lewat `repeat_frequency` dan `repeat_interval`, dengan `due_date` sebagai patokan.
+
+- Tugas berikutnya dibuat server, sekali saja, saat tugas berulang menjadi selesai: `completed_at` berubah dari kosong menjadi terisi, lewat `PATCH` atau `PUT`. Server mengunci baris tugasnya, jadi dua HP yang mencentang tugas yang sama tidak membuat dua tugas berikutnya. Saat offline, tugas berikutnya baru muncul setelah centangnya terkirim.
+- Tenggat berikutnya adalah kejadian pertama sesudah tanggal yang lebih akhir antara `due_date` tugas itu dan tanggal selesainya, menurut zona waktu ruang. Kejadian yang terlewat tidak menumpuk: tugas harian bertenggat 20 Oktober yang baru selesai 24 Oktober berikutnya bertenggat 25 Oktober.
+- Kejadian dihitung dari tanggal patokan, yaitu `due_date` terakhir yang dipilih pengguna. Tanggal yang tidak ada di bulan yang lebih pendek jatuh ke hari terakhir bulan itu, lalu kembali ke tanggal aslinya: 31 Januari, 28 Februari, 31 Maret. 29 Februari jatuh ke 28 Februari di tahun biasa.
+- Mengubah `due_date`, `repeat_frequency`, atau `repeat_interval` menjadikan `due_date` saat itu patokan baru.
+- Tugas berikutnya masuk ke daftar yang sama dan membawa judul, catatan, prioritas, penanggung jawab, `due_time`, `position`, dan aturan ulangnya. `created_by` tetap pembuat aslinya, `updated_by` diisi orang yang menyelesaikan, dan `remind_at` dihitung seperti biasa. Tugas berikutnya tidak memicu push `task_assigned`.
+- Balasan `PUT` dan `PATCH /tasks/{id}` berbentuk `{"data": {...}, "next_task": {...}}`. `next_task` adalah tugas berikutnya kalau ada dan belum dihapus, dalam bentuk sumber tugas, atau `null`. App langsung menampilkannya tanpa menunggu sync.
+- Urungkan setelah centangnya terkirim: app mengirim `completed_at: null`. Kalau tugas berikutnya belum disentuh siapa pun (belum diubah dan belum selesai), server ikut menghapusnya dan mengosongkan `next_task_id`, jadi centang ulang membuat tugas berikutnya yang baru. Kalau sudah disentuh, tugas berikutnya dibiarkan, dan centang ulang tidak membuat yang kedua.
+- Pengulangan berhenti kalau `repeat_frequency` dikosongkan, atau tugas yang belum selesai dihapus. Tugas yang sudah selesai tetap ada sebagai riwayat, dan mengubah aturan ulangnya tidak membuat apa-apa lagi.
+- Mengosongkan `due_date` ikut mengosongkan `repeat_frequency` dan `repeat_interval`. Mengisi `repeat_frequency` di tugas tanpa `due_date`, dicek bersama yang sudah tersimpan, ditolak 422.
+- Checklist perjalanan tidak bisa berulang: aturan ulang di daftar dengan `trip_id` ditolak 422, termasuk saat tugas berulang dipindah ke checklist.
+- Kolom baru di sumber tugas berarti app versi baru menjalankan sync penuh sekali, seperti saat ada koleksi baru (lihat Aturan di HP).
 
 ## Tabungan
 
@@ -729,7 +751,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, dan saat push masuk ketika app terbuka.
-- App versi baru yang mengenal koleksi baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat pasangan selama app masih versi lama tidak pernah sampai, karena `since` sudah melewatinya.
+- App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -876,3 +898,18 @@ Sepuluh butir ini menyesuaikan FR-19, FR-20, FR-21, UC-16, UC-17, tabel `memorie
 - [x] Push baru `memory_created` ke anggota lain di channel `aktivitas`, dengan preferensi `partner_activity` yang sudah ada. Dikirim 2 menit setelah kenangan dibuat supaya fotonya sempat terunggah, dengan judul kenangan sebagai judul dan isi "{nama} menyimpan kenangan baru". Menambah foto ke kenangan lama tidak mengirim push.
 - [x] Tabel `memory_photos` tanpa `disk` dan `mime`, karena semua foto berupa JPEG di R2, dan ditambah `space_id` (disalin dari kenangannya) supaya foto yang terhapus ikut tersinkron.
 - [x] Foto disimpan di bucket R2 yang sudah dipakai foto profil, di folder `memories/`, jadi tidak perlu bucket atau kunci baru.
+
+### Tugas berulang (v1.0)
+
+Sepuluh butir ini merancang "Tugas berulang" di lingkup fitur tab utama, yang belum punya FR, dari usulan sesi Flutter, dan disetujui pada 24 Oktober 2026.
+
+- [x] Tugas berikutnya dibuat server saat tugas berulang diselesaikan, bukan oleh HP, supaya centang dari dua HP tidak membuat duplikat. Saat offline, tugas berikutnya baru muncul setelah centangnya terkirim.
+- [x] Pilihan ulang: harian, mingguan, bulanan, dan tahunan, masing-masing dengan "setiap N" (1–99), misalnya setiap 2 minggu atau setiap 3 bulan.
+- [x] Mingguan di beberapa hari sekaligus belum ada di v1.0. Untuk "Selasa dan Jumat", buat dua tugas mingguan; pilihan beberapa hari bisa ditambah nanti tanpa mengubah tugas yang sudah ada.
+- [x] Tugas berulang wajib punya `due_date` sebagai patokan. Bulan yang lebih pendek memakai hari terakhirnya lalu kembali ke tanggal aslinya, dan 29 Februari jatuh ke 28 Februari di tahun biasa.
+- [x] Tenggat berikutnya adalah kejadian pertama sesudah tenggat lama atau tanggal selesai, mana yang lebih akhir, jadi kejadian yang terlewat tidak menumpuk.
+- [x] Tugas berikutnya membawa judul, catatan, daftar, prioritas, penanggung jawab, jam, posisi, dan aturan ulang. `created_by` tetap pembuat aslinya, dan tidak ada push `task_assigned`.
+- [x] Urungkan yang sudah terkirim ikut menghapus tugas berikutnya kalau belum disentuh siapa pun; kalau sudah diubah, tugas itu dibiarkan. Satu tugas paling banyak punya satu tugas berikutnya, jadi centang ulang tidak membuat duplikat.
+- [x] Pengulangan berhenti dengan mengosongkan aturan ulang atau menghapus tugas yang belum selesai. Mengosongkan `due_date` ikut mengosongkan aturan ulang.
+- [x] Checklist perjalanan tidak bisa berulang (422).
+- [x] Balasan PUT dan PATCH tugas membawa `next_task`, dan sumber tugas punya kolom baru `repeat_frequency`, `repeat_interval`, dan `next_task_id`, jadi app versi baru sync penuh sekali.
