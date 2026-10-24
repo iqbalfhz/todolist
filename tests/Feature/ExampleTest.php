@@ -1,7 +1,7 @@
 <?php
 
-test('the application returns a successful response', function () {
+test('the root names the API instead of showing the default Laravel page', function () {
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response->assertOk()->assertExactJson(['name' => 'Denly Days API']);
 });
