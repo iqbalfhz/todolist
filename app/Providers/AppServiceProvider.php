@@ -53,9 +53,15 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
 
-        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(
-            Str::transliterate(Str::lower((string) $request->input('email')).'|'.$request->ip()),
-        ));
+        // The limit runs before validation, so an email sent as an array or a
+        // number must not reach the string functions; it counts per IP alone.
+        RateLimiter::for('login', function (Request $request): Limit {
+            $email = $request->input('email');
+
+            return Limit::perMinute(5)->by(
+                Str::transliterate(Str::lower(is_string($email) ? $email : '').'|'.$request->ip()),
+            );
+        });
 
         RateLimiter::for('invitation-accept', fn (Request $request) => [
             Limit::perMinute(10)->by('account:'.$request->user()?->id),

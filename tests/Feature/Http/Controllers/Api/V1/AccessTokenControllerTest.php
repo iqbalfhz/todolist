@@ -58,6 +58,16 @@ describe('store', function () {
             ->assertJsonValidationErrors(['email', 'password', 'device_name']);
     });
 
+    it('returns 422 instead of a server error for an email that is not text', function (mixed $email) {
+        $response = $this->postJson('/api/v1/auth/login', ['email' => $email, 'password' => 'password', 'device_name' => 'Redmi Note 13']);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors(['email']);
+    })->with([
+        'a list' => [['iqbal@contoh.test']],
+        'an object' => [['alamat' => 'iqbal@contoh.test']],
+        'a number' => [12345],
+    ]);
+
     it('returns 429 after five attempts for the same email from the same IP within a minute', function () {
         $credentials = ['email' => 'iqbal@contoh.test', 'password' => 'kata-sandi-salah', 'device_name' => 'Redmi Note 13'];
         foreach (range(1, 5) as $attempt) {
