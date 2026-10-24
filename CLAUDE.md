@@ -76,7 +76,8 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 
 ## Struktur
 
-- Route: `routes/api.php`, semua di bawah prefix `v1` (jadi `/api/v1/...`)
+- Route: `routes/api.php`, semua di bawah prefix `v1` (jadi `/api/v1/...`). `routes/web.php` hanya berisi `GET /`, yang membalas nama API, bukan halaman bawaan Laravel
+- Header keamanan (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, CSP `frame-ancestors`, dan HSTS lewat HTTPS) dipasang di semua balasan oleh middleware `AddSecurityHeaders`. CSP penuh tidak dipasang, karena Filament dan Livewire memakai skrip dan style inline
 - Controller: `app/Http/Controllers/Api/V1/`
 - Validasi: Form Request di `app/Http/Requests/`
 - Output: API Resource di `app/Http/Resources/`
@@ -126,6 +127,8 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Membatalkan selesai (`completed_at: null`) menghapus tugas berikutnya hanya kalau belum selesai dan `updated_at`-nya masih sama dengan `created_at`, lalu mengosongkan `next_task_id`. Tugas berikutnya yang sudah disentuh atau dihapus pengguna tetap tertaut, jadi centang ulang tidak membuat yang kedua. Tugas berikutnya tidak memicu push `task_assigned`.
 - Balasan PUT dan PATCH tugas membawa `next_task` (tugas berikutnya yang belum dihapus, atau `null`) lewat `TaskController::resource()`; `current` di error tidak membawanya.
 - Data di ruang yang bukan ruang user dianggap tidak ada: 404, bukan 403.
+- Setiap `position` divalidasi `numeric` ditambah aturan `App\Rules\Position` (paling jauh 10^15 dari nol). Tanpa itu, `1e400` lolos `numeric`, lalu MySQL gagal menyimpan double tak hingga dan server membalas 500.
+- Batas request yang berjalan sebelum validasi (seperti `login` di `AppServiceProvider`) tidak boleh memakai input mentah sebagai teks: email berupa array dulu membuat login membalas 500.
 
 ### Error
 
@@ -158,7 +161,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - `memory_created` dikirim job `NotifyMemoryCreated` 2 menit setelah kenangan dibuat di ruang yang punya anggota lain, supaya fotonya sempat terunggah. Job itu membaca kenangan saat jalan, jadi batal kalau kenangannya sudah dihapus dan memakai judul terbarunya.
 - `remind_at` (UTC) dihitung dari `due_date` + `due_time` di zona waktu ruang; tanpa jam → 08.00. Diklaim dengan `UPDATE ... WHERE reminder_sent_at IS NULL` tanpa menyentuh `updated_at`. Scheduler pakai `withoutOverlapping()`. Telat lebih dari 30 menit: tandai terkirim tanpa push.
 - Pengingat tugas yang selesai, terhapus, atau ada di daftar arsip dibiarkan terbuka, jadi masih terkirim kalau tugasnya kembali dalam 30 menit itu; setelahnya ikut ditandai terkirim.
-- Token yang ditolak FCM (`UNREGISTERED`) dihapus dari `device_tokens`.
+- Token yang ditolak FCM (`UNREGISTERED` atau tidak valid) dihapus dari `device_tokens`. Kegagalan FCM lain, seperti gangguan layanan atau kredensial, dicatat ke log sebagai warning tanpa isi tokennya.
 - `savings_achieved` paling banyak sekali per target (`achieved_notified_at`); total dihitung dalam transaksi yang mengunci baris target.
 - Pengingat tanggal penting: H-7, H-1, dan hari H pukul 08.00 di zona waktu ruang, diklaim dengan baris unik `(reminder_key, remind_on)` di `daily_reminders` (dulu `special_date_reminders`) lewat `DailyReminderWindow`, dalam transaksi yang sama dengan push-nya. Ulang tahun anggota diambil dari `birth_date` dan hanya dikirim ke pasangannya; 29 Februari diingatkan 28 Februari di tahun biasa.
 - Pengingat perjalanan: H-7 dan H-1 sebelum `start_date` pukul 08.00, kunci `trip:{id}:{start_date}` supaya perjalanan yang dipindah diingatkan lagi untuk tanggal barunya; isinya menyebut progres checklist kalau checklist berisi.
@@ -192,7 +195,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Setiap container mulai, `docker/start-container` menjalankan `php artisan migrate --force` lalu `php artisan optimize`, baru menyalakan ketiga proses. Kalau migrasi gagal, container berhenti dan Coolify mempertahankan versi sebelumnya.
 - Di Coolify: Ports Exposes `80`, health check memakai `/up` dari `HEALTHCHECK` di Dockerfile, dan log aplikasi tampil di tab Logs karena `LOG_CHANNEL=stderr`.
 - Variabel yang wajib diisi di Coolify: `APP_KEY`, `APP_URL`, `APP_LOCALE=id`, `DB_*`, dan `ADMIN_EMAIL`. Kredensial R2 dan Firebase baru diperlukan saat foto profil dan push dipakai.
-- `bootstrap/app.php` hanya memercayai alamat yang langsung memanggil aplikasi (`trustProxies(at: 'REMOTE_ADDR')`), yaitu cloudflared lewat Docker. IP klien diambil dari entri terakhir `X-Forwarded-For` yang ditambahkan Cloudflare; entri di depannya bisa dipalsukan pengirim dan diabaikan. Jangan kembali ke `at: '*'`: di Laravel ini artinya semua IP dipercaya, sehingga entri pertama yang dipakai dan batas request bisa diakali dengan header palsu. Jangan membuka port container langsung ke internet.
+- `bootstrap/app.php` hanya memercayai alamat yang langsung memanggil aplikasi (`trustProxies(at: 'REMOTE_ADDR')`), yaitu cloudflared lewat Docker, dan dari proxy itu hanya membaca `X-Forwarded-For` dan `X-Forwarded-Proto`. Cloudflare meneruskan `X-Forwarded-Host`, `Port`, dan `Prefix` buatan klien apa adanya; sebelum dibatasi (24 Oktober 2026), `X-Forwarded-Host: evil.example` membuat `/admin` mengarah ke `https://evil.example/admin/login`. IP klien diambil dari entri terakhir `X-Forwarded-For` yang ditambahkan Cloudflare; entri di depannya bisa dipalsukan pengirim dan diabaikan. Jangan kembali ke `at: '*'`: di Laravel ini artinya semua IP dipercaya, sehingga entri pertama yang dipakai dan batas request bisa diakali dengan header palsu. Jangan membuka port container langsung ke internet.
 - Domain produksi lewat Cloudflare Tunnel (tunnel "Coolify"): route-nya meneruskan hostname ke `http://localhost:8089` di server, dan record DNS-nya dibuat otomatis oleh tunnel, jadi tidak ada record A yang diatur manual. Domain diganti di route tunnel, bukan di kolom Domains Coolify, karena request tidak lewat proxy Coolify.
 - Port mappings aplikasi di Coolify `127.0.0.1:8089:80`, jadi port itu hanya bisa dijangkau dari server sendiri. Jangan diubah ke `8089:80`: Docker akan membukanya ke internet, padahal aplikasi memercayai header proxy dari siapa pun.
 - Aplikasi dulu bernama `todolist` (domain lama `todolist.iqbalfhz.my.id`, sudah dilepas). Nama database, bucket R2, proyek Firebase, dan repo GitHub sengaja tetap `todolist`; pengguna tidak melihatnya, dan menggantinya berisiko memutus koneksi yang sudah jalan.

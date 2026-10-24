@@ -68,7 +68,7 @@ Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket l
 - Satu data: `{"data": {...}}`. Tugas (v1.0): `{"data": {...}, "next_task": {...}}`. Sinkron: `{"data": {...}, "meta": {...}}`.
 - Kolom kosong tetap dikirim sebagai `null`, supaya model freezed di Flutter selalu lengkap.
 - `DELETE` dan `POST /auth/logout` membalas 204 tanpa body.
-- Angka desimal seperti `position` bisa tiba sebagai `1024` atau `1024.5`; di Dart baca sebagai `num`.
+- Angka desimal seperti `position` bisa tiba sebagai `1024` atau `1024.5`; di Dart baca sebagai `num`. Nilainya harus di antara -10^15 dan 10^15; di luar itu, termasuk angka yang terlalu besar untuk disimpan, ditolak 422.
 
 ### ID
 
@@ -123,7 +123,7 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `/invitations/accept` | 10 per menit per akun dan per IP |
 | Lainnya | 120 per menit per akun, cukup untuk antrean yang menumpuk setelah offline |
 
-Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
+Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang hanya membalas nama API, dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
 ## Error
 
@@ -243,7 +243,7 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 
 - `POST /devices` dengan `{"token": "<token FCM>", "platform": "android"}` → 201 kalau baru, 200 kalau sudah ada. Token yang tercatat milik akun lain dipindah ke akun ini (HP berganti akun).
 - App mengirim ulang setiap kali FCM memberi token baru.
-- `DELETE /devices/{token}` → 204, hanya untuk token milik akunmu sendiri. Server juga menghapus token yang ditolak FCM sebagai `UNREGISTERED`.
+- `DELETE /devices/{token}` → 204, hanya untuk token milik akunmu sendiri. Server juga menghapus token yang ditolak FCM sebagai `UNREGISTERED` atau sebagai token yang tidak valid.
 
 ## Ruang dan undangan
 
