@@ -64,9 +64,16 @@ class TaskController extends QueuedResourceController
         return Task::class;
     }
 
+    /**
+     * Wrap the task in its resource, next to the next occurrence it created, if that still exists.
+     */
     protected function resource(Model $record): JsonResource
     {
-        return new TaskResource($record);
+        $nextTask = $record->next_task_id === null ? null : $record->nextTask()->first();
+
+        return (new TaskResource($record))->additional([
+            'next_task' => $nextTask === null ? null : new TaskResource($nextTask),
+        ]);
     }
 
     /**

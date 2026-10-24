@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\RepeatFrequency;
 use App\Rules\Iso8601WithOffset;
 use App\Rules\LowercaseUlid;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\Rule;
 
 class UpdateTaskRequest extends ApiRequest
 {
@@ -21,6 +23,8 @@ class UpdateTaskRequest extends ApiRequest
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'due_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'due_time' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'repeat_frequency' => ['sometimes', 'nullable', Rule::enum(RepeatFrequency::class)],
+            'repeat_interval' => ['sometimes', 'nullable', 'integer', 'between:1,99'],
             'priority' => ['sometimes', 'required', 'integer', 'between:0,3'],
             'position' => ['sometimes', 'required', 'numeric'],
             'assignee_ids' => ['sometimes', 'required', 'array', 'max:2'],

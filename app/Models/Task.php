@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RepeatFrequency;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +20,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'notes',
     'due_date',
     'due_time',
+    'repeat_frequency',
+    'repeat_interval',
+    'repeat_anchor',
     'priority',
     'position',
     'remind_at',
@@ -75,6 +79,14 @@ class Task extends Model
     }
 
     /**
+     * Get the next occurrence that completing this recurring task created.
+     */
+    public function nextTask(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'next_task_id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -82,6 +94,8 @@ class Task extends Model
     protected function casts(): array
     {
         return [
+            'repeat_frequency' => RepeatFrequency::class,
+            'repeat_interval' => 'integer',
             'priority' => 'integer',
             'position' => 'float',
             'remind_at' => 'datetime',

@@ -66,6 +66,8 @@ return [
         'reminder_day_monthly' => 'Tanggal setor bulanan harus antara 1 dan 31.',
         'memory_trip_different_space' => 'Perjalanan harus berada di ruang yang sama dengan kenangannya.',
         'memory_photo_limit' => 'Satu kenangan paling banyak :max foto.',
+        'repeat_needs_due_date' => 'Tugas berulang butuh tanggal tenggat.',
+        'repeat_in_trip_checklist' => 'Checklist perjalanan tidak bisa berulang.',
     ],
 
     /*
@@ -109,6 +111,8 @@ return [
         'notes' => 'catatan',
         'due_date' => 'tenggat',
         'due_time' => 'jam tenggat',
+        'repeat_frequency' => 'pengulangan',
+        'repeat_interval' => 'jarak pengulangan',
         'priority' => 'prioritas',
         'assignee_ids' => 'penanggung jawab',
         'assignee_ids.*' => 'penanggung jawab',

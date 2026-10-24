@@ -2,7 +2,10 @@
 
 namespace App\Actions;
 
+use App\Enums\ErrorCode;
+use App\Exceptions\ApiException;
 use App\Models\Task;
+use App\Models\TaskList;
 use App\Models\User;
 use App\Rules\Iso8601WithOffset;
 use Illuminate\Support\Arr;
@@ -16,26 +19,41 @@ class UpdateTask
         private ResolveAssignees $resolveAssignees,
         private CalculateRemindAt $calculateRemindAt,
         private NotifyTaskActivity $notifyTaskActivity,
+        private CheckTaskRepeat $checkTaskRepeat,
+        private CreateNextTask $createNextTask,
     ) {}
 
     /**
      * Apply the given changes to the task.
+     *
+     * The task row is locked first, so two phones completing the same
+     * recurring task at once create its next occurrence only once.
      *
      * @param  array<string, mixed>  $changes
      */
     public function handle(User $actor, Task $task, array $changes): Task
     {
         return DB::transaction(function () use ($actor, $task, $changes): Task {
+            Task::withTrashed()->whereKey($task->id)->lockForUpdate()->first();
+            $task->refresh();
+
+            if ($task->trashed()) {
+                throw new ApiException(ErrorCode::ResourceDeleted);
+            }
+
             $wasCompleted = $task->completed_at !== null;
 
             $this->moveToList($task, $changes, $actor);
             $this->changeDueDate($task, $changes);
+            $this->changeRepeat($task, $changes);
             $this->changeCompletion($task, $changes, $actor);
 
             $task->fill(Arr::only($changes, ['title', 'notes', 'priority', 'position']));
             $task->updated_by = $actor->id;
 
             $newAssigneeIds = $this->changeAssignees($task, $changes);
+
+            $this->moveOnFromCompletion($task, $wasCompleted, $actor);
 
             $task->save();
 
@@ -102,6 +120,48 @@ class UpdateTask
     }
 
     /**
+     * Change the repeat rule, checked together with the due date and the list the task ends up with.
+     *
+     * Clearing the due date clears the rule too. A new due date or rule
+     * makes the due date the anchor the next occurrences are counted from;
+     * otherwise the anchor stays, so a month-end date keeps its day.
+     *
+     * @param  array<string, mixed>  $changes
+     */
+    private function changeRepeat(Task $task, array $changes): void
+    {
+        $frequencySent = array_key_exists('repeat_frequency', $changes);
+        $frequency = $frequencySent ? $changes['repeat_frequency'] : $task->repeat_frequency?->value;
+
+        if (! $frequencySent && $task->due_date === null) {
+            $frequency = null;
+        }
+
+        $interval = null;
+
+        if ($frequency !== null) {
+            $this->checkTaskRepeat->ensureAllowed(
+                $task->due_date,
+                TaskList::query()->whereKey($task->task_list_id)->value('trip_id'),
+                $frequencySent ? 'repeat_frequency' : 'task_list_id',
+            );
+
+            $interval = (int) (($changes['repeat_interval'] ?? null) ?? $task->repeat_interval ?? 1);
+        }
+
+        $ruleChanged = $frequency !== $task->repeat_frequency?->value || $interval !== $task->repeat_interval;
+
+        $task->repeat_frequency = $frequency;
+        $task->repeat_interval = $interval;
+
+        if ($frequency === null) {
+            $task->repeat_anchor = null;
+        } elseif ($ruleChanged || $task->isDirty('due_date') || $task->repeat_anchor === null) {
+            $task->repeat_anchor = $task->due_date;
+        }
+    }
+
+    /**
      * Mark the task completed by the actor, or clear the completion.
      *
      * @param  array<string, mixed>  $changes
@@ -121,6 +181,47 @@ class UpdateTask
 
         $task->completed_by ??= $actor->id;
         $task->completed_at = Iso8601WithOffset::toServerTime($changes['completed_at']);
+    }
+
+    /**
+     * Create the next occurrence of a recurring task that was just completed,
+     * or take it back when the completion is undone.
+     *
+     * A task creates at most one next occurrence. Undoing removes it only
+     * while nobody has touched it, so completing again cannot make a second.
+     */
+    private function moveOnFromCompletion(Task $task, bool $wasCompleted, User $actor): void
+    {
+        $isCompleted = $task->completed_at !== null;
+
+        if (! $wasCompleted && $isCompleted && $task->repeat_frequency !== null && $task->next_task_id === null) {
+            $task->next_task_id = $this->createNextTask->handle($task, $actor)->id;
+
+            return;
+        }
+
+        if ($wasCompleted && ! $isCompleted && $task->next_task_id !== null && $this->removeUntouched($task->next_task_id)) {
+            $task->next_task_id = null;
+        }
+    }
+
+    /**
+     * Delete the next occurrence if nobody changed or completed it since it was created.
+     *
+     * One that was already deleted stays linked, so deleting it keeps the
+     * series stopped.
+     */
+    private function removeUntouched(string $nextTaskId): bool
+    {
+        $next = Task::query()->whereKey($nextTaskId)->lockForUpdate()->first();
+
+        if ($next === null || $next->completed_at !== null || ! $next->updated_at->eq($next->created_at)) {
+            return false;
+        }
+
+        $next->delete();
+
+        return true;
     }
 
     /**

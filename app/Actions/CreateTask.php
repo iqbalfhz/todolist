@@ -15,6 +15,8 @@ class CreateTask
         private ResolveAssignees $resolveAssignees,
         private CalculateRemindAt $calculateRemindAt,
         private NotifyTaskActivity $notifyTaskActivity,
+        private CheckTaskRepeat $checkTaskRepeat,
+        private CreateNextTask $createNextTask,
     ) {}
 
     /**
@@ -39,6 +41,14 @@ class CreateTask
             $task->updated_by = $actor->id;
             $task->remind_at = $this->calculateRemindAt->handle($task->due_date, $task->due_time, $list->space->timezone);
 
+            if (isset($data['repeat_frequency'])) {
+                $this->checkTaskRepeat->ensureAllowed($task->due_date, $list->trip_id, 'repeat_frequency');
+
+                $task->repeat_frequency = $data['repeat_frequency'];
+                $task->repeat_interval = $data['repeat_interval'] ?? 1;
+                $task->repeat_anchor = $task->due_date;
+            }
+
             if (isset($data['completed_at'])) {
                 $task->completed_at = Iso8601WithOffset::toServerTime($data['completed_at']);
                 $task->completed_by = $actor->id;
@@ -46,6 +56,12 @@ class CreateTask
 
             $task->save();
             $task->assignees()->sync($assigneeIds);
+
+            // A recurring task that arrives already completed moves on to its next occurrence at once.
+            if ($task->completed_at !== null && $task->repeat_frequency !== null) {
+                $task->next_task_id = $this->createNextTask->handle($task, $actor)->id;
+                $task->save();
+            }
 
             $this->notifyTaskActivity->assigned($task, $assigneeIds, $actor);
 

@@ -5,6 +5,7 @@ use App\Jobs\SendPushNotification;
 use App\Models\Space;
 use App\Models\Task;
 use App\Models\TaskList;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 
@@ -34,18 +35,22 @@ describe('store', function () {
                 'notes' => null,
                 'due_date' => '2026-10-09',
                 'due_time' => '17:00',
+                'repeat_frequency' => null,
+                'repeat_interval' => null,
                 'priority' => 0,
                 'position' => 2048,
                 'assignee_ids' => [$partner->id],
                 'remind_at' => '2026-10-09T10:00:00.000000Z',
                 'completed_at' => null,
                 'completed_by' => null,
+                'next_task_id' => null,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
                 'created_at' => '2026-10-08T10:31:00.123456Z',
                 'updated_at' => '2026-10-08T10:31:00.123456Z',
                 'deleted_at' => null,
             ],
+            'next_task' => null,
         ]);
         $this->assertDatabaseHas('task_assignees', ['task_id' => $id, 'user_id' => $partner->id]);
     });
@@ -678,5 +683,292 @@ describe('destroy', function () {
         $response = $this->deleteJson('/api/v1/tasks/'.newId());
 
         $response->assertUnauthorized();
+    });
+});
+
+describe('repeat', function () {
+    it('stores the repeat rule of a new task, with an interval of 1 when none is sent', function () {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Bayar listrik',
+            'due_date' => '2026-11-05',
+            'repeat_frequency' => 'monthly',
+            'position' => 1024,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.repeat_frequency', 'monthly')
+            ->assertJsonPath('data.repeat_interval', 1)
+            ->assertJsonPath('data.next_task_id', null)
+            ->assertJsonPath('next_task', null);
+    });
+
+    it('returns 422 for a repeat rule without a due date or in the checklist of a trip', function (Closure $list, array $due, string $message) {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $list($user)->id,
+            'title' => 'Bawa paspor',
+            'repeat_frequency' => 'weekly',
+            'position' => 1024,
+            ...$due,
+        ]);
+
+        $response->assertUnprocessable()->assertJsonPath('errors.repeat_frequency.0', $message);
+        $this->assertDatabaseMissing('tasks', ['title' => 'Bawa paspor']);
+    })->with([
+        'without a due date' => [fn (User $user) => $user->personalSpace()->taskLists()->sole(), [], 'Tugas berulang butuh tanggal tenggat.'],
+        'in a trip checklist' => [
+            fn (User $user) => TaskList::factory()->for($user->personalSpace())->create(['trip_id' => Trip::factory()->for($user->personalSpace())->create()->id]),
+            ['due_date' => '2026-11-05'],
+            'Checklist perjalanan tidak bisa berulang.',
+        ],
+    ]);
+
+    it('returns 422 for an unknown frequency or an interval out of range', function (array $rule, string $field) {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Bayar listrik',
+            'due_date' => '2026-11-05',
+            'position' => 1024,
+            ...$rule,
+        ]);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors([$field]);
+    })->with([
+        'an unknown frequency' => [['repeat_frequency' => 'hourly'], 'repeat_frequency'],
+        'an interval of 0' => [['repeat_frequency' => 'weekly', 'repeat_interval' => 0], 'repeat_interval'],
+        'an interval of 100' => [['repeat_frequency' => 'weekly', 'repeat_interval' => 100], 'repeat_interval'],
+    ]);
+
+    it('creates the next occurrence when a recurring task is completed, and returns it with the task', function () {
+        Queue::fake([SendPushNotification::class]);
+        $this->travelTo('2026-10-17 10:00:00');
+        [$user, $partner, $space] = actingAsPartnered();
+        $task = Task::factory()->for(TaskList::factory()->for($space))->create([
+            'title' => 'Buang sampah',
+            'notes' => 'Pisahkan yang organik',
+            'priority' => 2,
+            'position' => 2048,
+            'due_date' => '2026-10-17',
+            'due_time' => '17:00',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-17',
+            'created_by' => $partner->id,
+        ]);
+        $task->assignees()->sync([$user->id, $partner->id]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-17T16:30:00+07:00']);
+
+        $next = Task::query()->whereKeyNot($task->id)->sole();
+        $response->assertOk()
+            ->assertJsonPath('data.next_task_id', $next->id)
+            ->assertJsonPath('next_task.id', $next->id)
+            ->assertJsonPath('next_task.task_list_id', $task->task_list_id)
+            ->assertJsonPath('next_task.title', 'Buang sampah')
+            ->assertJsonPath('next_task.notes', 'Pisahkan yang organik')
+            ->assertJsonPath('next_task.priority', 2)
+            ->assertJsonPath('next_task.position', 2048)
+            ->assertJsonPath('next_task.due_date', '2026-10-24')
+            ->assertJsonPath('next_task.due_time', '17:00')
+            ->assertJsonPath('next_task.repeat_frequency', 'weekly')
+            ->assertJsonPath('next_task.repeat_interval', 1)
+            ->assertJsonPath('next_task.assignee_ids', collect([$user->id, $partner->id])->sort()->values()->all())
+            ->assertJsonPath('next_task.remind_at', '2026-10-24T10:00:00.000000Z')
+            ->assertJsonPath('next_task.completed_at', null)
+            ->assertJsonPath('next_task.created_by', $partner->id)
+            ->assertJsonPath('next_task.updated_by', $user->id);
+        Queue::assertNotPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->type === PushType::TaskAssigned);
+    });
+
+    it('sets the next due date after the later of the old due date and the day of completion, in the timezone of the space', function (string $completedAt, string $expected) {
+        $this->travelTo('2026-10-26 00:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => $completedAt]);
+
+        $response->assertOk()->assertJsonPath('next_task.due_date', $expected);
+    })->with([
+        'completed late, skipping the missed days' => ['2026-10-24T05:00:00Z', '2026-10-25'],
+        'completed late at night, already the next day in Jakarta' => ['2026-10-24T18:00:00Z', '2026-10-26'],
+        'completed early' => ['2026-10-18T05:00:00Z', '2026-10-21'],
+    ]);
+
+    it('keeps the day of the month after a shorter month', function () {
+        $this->travelTo('2027-03-01 00:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2027-01-31',
+            'repeat_frequency' => 'monthly',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2027-01-31',
+        ]);
+
+        $february = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2027-01-31T05:00:00Z'])->json('next_task');
+        $march = $this->patchJson("/api/v1/tasks/{$february['id']}", ['completed_at' => '2027-02-28T05:00:00Z'])->json('next_task');
+
+        expect($february['due_date'])->toBe('2027-02-28')
+            ->and($march['due_date'])->toBe('2027-03-31');
+    });
+
+    it('counts from the new due date once the user moves it', function () {
+        $this->travelTo('2027-01-20 00:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2027-01-31',
+            'repeat_frequency' => 'monthly',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2027-01-31',
+        ]);
+        $this->patchJson("/api/v1/tasks/{$task->id}", ['due_date' => '2027-01-15']);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2027-01-15T05:00:00Z']);
+
+        $response->assertOk()->assertJsonPath('next_task.due_date', '2027-02-15');
+    });
+
+    it('creates the next occurrence only once when the completion is sent again', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $first = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z']);
+
+        $again = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T06:00:00Z']);
+
+        $again->assertOk()->assertJsonPath('next_task.id', $first->json('next_task.id'));
+        $this->assertDatabaseCount('tasks', 2);
+    });
+
+    it('takes back the untouched next occurrence when the completion is undone, and makes a new one when completed again', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $firstNextId = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z'])->json('next_task.id');
+
+        $undone = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => null]);
+        $completedAgain = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T06:00:00Z']);
+
+        $undone->assertOk()->assertJsonPath('data.next_task_id', null)->assertJsonPath('next_task', null);
+        $this->assertSoftDeleted('tasks', ['id' => $firstNextId]);
+        $completedAgain->assertOk()->assertJsonPath('next_task.due_date', '2026-10-21');
+        expect($completedAgain->json('next_task.id'))->not->toBe($firstNextId)
+            ->and(Task::query()->whereKeyNot($task->id)->count())->toBe(1);
+    });
+
+    it('keeps a next occurrence someone changed when the completion is undone, and makes no second one', function () {
+        $this->travelTo('2026-10-20 10:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $nextId = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z'])->json('next_task.id');
+        $this->travelTo('2026-10-20 10:05:00');
+        $this->patchJson("/api/v1/tasks/{$nextId}", ['title' => 'Siram tanaman pagi']);
+
+        $undone = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => null]);
+        $completedAgain = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T06:00:00Z']);
+
+        $undone->assertOk()->assertJsonPath('next_task.id', $nextId);
+        $completedAgain->assertOk()->assertJsonPath('next_task.id', $nextId);
+        $this->assertNotSoftDeleted('tasks', ['id' => $nextId]);
+        $this->assertDatabaseCount('tasks', 2);
+    });
+
+    it('stops repeating once the rule is cleared', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 2,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+
+        $cleared = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_frequency' => null]);
+        $completed = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z']);
+
+        $cleared->assertOk()->assertJsonPath('data.repeat_frequency', null)->assertJsonPath('data.repeat_interval', null);
+        $completed->assertOk()->assertJsonPath('next_task', null);
+        $this->assertDatabaseCount('tasks', 1);
+    });
+
+    it('clears the repeat rule together with the due date', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['due_date' => null]);
+
+        $response->assertOk()->assertJsonPath('data.repeat_frequency', null)->assertJsonPath('data.repeat_interval', null);
+    });
+
+    it('returns 422 with the stored task when a repeat rule is set on a task without a due date', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create();
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_frequency' => 'daily']);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('errors.repeat_frequency.0', 'Tugas berulang butuh tanggal tenggat.')
+            ->assertJsonPath('current.repeat_frequency', null);
+    });
+
+    it('returns 422 when a recurring task is moved into the checklist of a trip', function () {
+        $user = actingAsApiUser();
+        $space = $user->personalSpace();
+        $task = Task::factory()->for($space->taskLists()->sole())->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $checklist = TaskList::factory()->for($space)->create(['trip_id' => Trip::factory()->for($space)->create()->id]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['task_list_id' => $checklist->id]);
+
+        $response->assertUnprocessable()->assertJsonPath('errors.task_list_id.0', 'Checklist perjalanan tidak bisa berulang.');
+        expect($task->fresh()->task_list_id)->toBe($space->taskLists()->regular()->sole()->id);
+    });
+
+    it('creates the next occurrence of a recurring task that arrives already completed', function () {
+        $this->travelTo('2026-10-21 00:00:00');
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Minum vitamin',
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'position' => 1024,
+            'completed_at' => '2026-10-20T05:00:00Z',
+        ]);
+
+        $response->assertCreated()->assertJsonPath('next_task.due_date', '2026-10-21');
+        expect($response->json('data.next_task_id'))->toBe($response->json('next_task.id'));
     });
 });
