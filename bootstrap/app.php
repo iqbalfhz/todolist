@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ApiExceptionRenderer;
+use App\Http\Middleware\AddSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,17 @@ return Application::configure(basePath: dirname(__DIR__))
         // the client IP from the last X-Forwarded-For entry, which Cloudflare adds;
         // the client can forge the entries before it. '*' would trust every address
         // and let a forged first entry slip past the rate limits.
-        $middleware->trustProxies(at: 'REMOTE_ADDR');
+        //
+        // Only the client IP and the scheme are taken from the proxy. Cloudflare
+        // passes a client's own X-Forwarded-Host, Port, or Prefix through
+        // unchanged, so trusting those would let anyone point the URLs the app
+        // builds, such as the admin redirects, at another host.
+        $middleware->trustProxies(
+            at: 'REMOTE_ADDR',
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
+        $middleware->append(AddSecurityHeaders::class);
 
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('api/*') ? null : route('filament.admin.auth.login'),
