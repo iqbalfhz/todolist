@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// The only client is the app, which talks to /api/v1. The root says what
-// this is, without the default Laravel page that advertises the framework.
-Route::get('/', fn () => response()->json(['name' => 'Denly Days API']));
+// The app talks only to /api/v1, so whoever opens the root in a browser is
+// looking for the admin panel. Its login page sends a signed-in admin on to
+// the dashboard.
+Route::get('/', fn () => redirect()->route('filament.admin.auth.login'));

@@ -1,7 +1,5 @@
 <?php
 
-test('the root names the API instead of showing the default Laravel page', function () {
-    $response = $this->get('/');
-
-    $response->assertOk()->assertExactJson(['name' => 'Denly Days API']);
+test('the root sends a browser to the admin login', function () {
+    $this->get('/')->assertFound()->assertRedirectToRoute('filament.admin.auth.login');
 });
