@@ -76,7 +76,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 
 ## Struktur
 
-- Route: `routes/api.php`, semua di bawah prefix `v1` (jadi `/api/v1/...`). `routes/web.php` hanya berisi `GET /`, yang membalas nama API, bukan halaman bawaan Laravel
+- Route: `routes/api.php`, semua di bawah prefix `v1` (jadi `/api/v1/...`). `routes/web.php` hanya berisi `GET /`, yang mengalihkan ke halaman masuk panel admin (302, bukan 301, supaya tidak disimpan permanen oleh browser), bukan halaman bawaan Laravel
 - Header keamanan (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, CSP `frame-ancestors`, dan HSTS lewat HTTPS) dipasang di semua balasan oleh middleware `AddSecurityHeaders`. CSP penuh tidak dipasang, karena Filament dan Livewire memakai skrip dan style inline
 - Controller: `app/Http/Controllers/Api/V1/`
 - Validasi: Form Request di `app/Http/Requests/`

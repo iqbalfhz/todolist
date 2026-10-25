@@ -1,6 +1,6 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 24 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 25 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
 Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru.
 
@@ -123,7 +123,7 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `/invitations/accept` | 10 per menit per akun dan per IP |
 | Lainnya | 120 per menit per akun, cukup untuk antrean yang menumpuk setelah offline |
 
-Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang hanya membalas nama API, dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
+Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
 ## Error
 

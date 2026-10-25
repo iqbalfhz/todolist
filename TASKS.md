@@ -106,3 +106,4 @@
 - [x] ~~Coolify diperbarui otomatis ke v4.5.0, yang dibangun di atas rilis keamanan v4.4.7 (PHP 8.4.27 untuk PHP2Shell, Node 24.22.1, cloudflared 2026.10.3, Sentinel 1.1.2); server tetap sehat sesudahnya, dan `docker exec coolify php -v` di server membalas PHP 8.4.27~~ (2026-10-25)
 - [x] ~~Container tunnel memakai cloudflared 2026.10.3 (dibangun 21 Oktober 2026), jadi CA eMudhra yang bocor tidak dipercaya lagi; dicek dengan `cloudflared --version` di dalam container itu~~ (2026-10-25)
 - [x] ~~Node di laptop sudah 22.23.4, rilis keamanan 21 Oktober, dari installer resmi di `C:\Program Files\nodejs` (npm 11.19.1). Node 23.11.x dari Herd masih terpasang tetapi tidak aktif; versi 23 tidak lagi mendapat perbaikan keamanan sejak Juni 2025, jadi sebaiknya dihapus dari Herd~~ (2026-10-25)
+- [x] ~~Alamat `/` mengalihkan ke halaman masuk panel admin atas permintaan pemilik, menggantikan balasan JSON nama API; app tidak memakai `/`, hanya `/api/v1`~~ (2026-10-25)
