@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiExceptionRenderer;
 use App\Http\Middleware\AddSecurityHeaders;
+use App\Http\Middleware\NotifyPartnersOfChanges;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -31,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->append(AddSecurityHeaders::class);
+
+        // Tells the partner's phone to sync after a request changed the shared space.
+        $middleware->api(append: [NotifyPartnersOfChanges::class]);
 
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('api/*') ? null : route('filament.admin.auth.login'),

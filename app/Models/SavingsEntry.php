@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\SavingsEntryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SavingsEntry extends Model
 {
     /** @use HasFactory<SavingsEntryFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * The model's default values for attributes.

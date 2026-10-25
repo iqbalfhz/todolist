@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\MemoryPhotoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Storage;
 class MemoryPhoto extends Model
 {
     /** @use HasFactory<MemoryPhotoFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * The filesystem disk that holds memory photos, the same one as profile photos.

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\TripFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Trip extends Model
 {
     /** @use HasFactory<TripFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * Get the space the trip belongs to.

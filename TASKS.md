@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Push sinkron (v1.x)** - since 2026-10-25; push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, dari usulan sesi Flutter. Kontraknya di dokumen perencanaan menunggu dicentang pemilik; kode dan tesnya sudah di branch `feat/push-sinkron`. Setelah itu menyusul penarikan tabungan, pin lokasi kenangan, reaksi dan komentar, lalu masuk dengan Google
+
 ## Waiting On
 
 - [ ] **Bangun ulang app dengan Flutter 3.47.8** - oleh sesi Flutter, since 2026-10-24; Flutter 3.47.2 di laptop masih memercayai CA eMudhra yang bocor (GHSA-frr6-h895-5pxp, dart:io di Android), jadi koneksi HTTPS app bisa disadap. Perbaikannya ada di SDK: `flutter upgrade`, lalu build ulang dan pasang APK di kedua HP

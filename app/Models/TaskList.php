@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\TaskListFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TaskList extends Model
 {
     /** @use HasFactory<TaskListFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * The model's default values for attributes.

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\SpaceType;
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\SpaceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -18,7 +19,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Space extends Model
 {
     /** @use HasFactory<SpaceFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
+
+    /**
+     * Get the ID of the space the row belongs to, which for a space is its own.
+     */
+    public function changedSpaceId(): string
+    {
+        return $this->id;
+    }
 
     /**
      * Get the user who owns the space.

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RepeatFrequency;
 use App\Models\Concerns\HasMicrosecondTimestamps;
+use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, SoftDeletes;
+    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * The model's default values for attributes.
