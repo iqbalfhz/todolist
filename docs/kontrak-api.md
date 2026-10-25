@@ -1,8 +1,8 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 25 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 26 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, juga tanpa endpoint baru.
 
 ## Ringkasan endpoint
 
@@ -750,7 +750,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Baris yang `updated_at`-nya lebih tua dari salinan lokal diabaikan.
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
-- Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, dan saat push masuk ketika app terbuka.
+- Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, saat push masuk ketika app terbuka, termasuk push sinkron (v1.x), dan tiap 30 detik selama app tampil (v1.x).
 - App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
 
 ### Antrean di HP
@@ -761,6 +761,31 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Selesai dan hapus tugas masuk antrean sebagai operasi tersendiri dengan jeda kirim 5 detik selama tombol Urungkan tampil (FR-08). Urungkan hanya menghapus operasi itu, jadi pasangan tidak menerima notifikasi yang dibatalkan.
 - Di layar detail, perubahan dikirim 1 detik setelah berhenti mengetik, dan langsung ditulis ke antrean saat app masuk ke latar belakang.
 - Unggah foto kenangan (v0.3) masuk antrean setelah `PUT` kenangannya. File yang sudah dikompres disimpan di HP sampai server membalas, lalu dipakai sebagai cache versi penuhnya.
+
+### Push sinkron (v1.x)
+
+Push `sync` memberi tahu HP pasangan bahwa ada data baru di Ruang Bersama, supaya app yang sedang terbuka langsung menjalankan sync tanpa menunggu putaran 30 detik berikutnya. Pesannya hanya berisi data, tanpa judul dan isi, jadi tidak pernah tampil sebagai notifikasi.
+
+```json
+{
+  "data": {
+    "type": "sync",
+    "space_id": "01m4dgdt40te98hy85v3fe2t18"
+  },
+  "android": {
+    "priority": "normal",
+    "collapse_key": "sync-01m4dgdt40te98hy85v3fe2t18"
+  }
+}
+```
+
+- Pemicu: setiap perubahan di Ruang Bersama yang ikut terkirim lewat `GET /sync`, yaitu ruang dan anggotanya, daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, dan foto kenangan. Penghapusan ikut dihitung, begitu juga perubahan yang dibuat server dalam request yang sama, seperti tugas berikutnya dari tugas berulang. Perubahan di Ruang Pribadi tidak memicunya.
+- Penerima: anggota lain di ruang itu, di semua perangkatnya. Pelaku tidak menerimanya, termasuk di HP lain miliknya.
+- Selalu dikirim, tanpa melihat `notification_prefs`, karena tidak tampil di layar.
+- Paling banyak satu push per penerima setiap 10 detik. Perubahan pertama dikirim langsung dan biasanya sampai dalam beberapa detik. Perubahan lain selama jeda 10 detik itu digabung menjadi satu push di akhir jeda, jadi antrean HP yang terkirim beruntun tidak membanjiri HP pasangan.
+- Push ini hanya mempercepat. FCM tidak menjamin setiap pesan sampai, jadi app tetap sync saat dibuka, saat kembali aktif, dan tiap 30 detik selama tampil.
+- Sesekali push bisa datang tanpa ada yang baru, misalnya saat penyimpanan dibatalkan di tengah jalan. App cukup menjalankan sync seperti biasa.
+- Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh.
 
 ## Notifikasi push
 
@@ -778,6 +803,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `trip_reminder` | H-7 dan H-1 sebelum `start_date` pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `trip_reminders` | `pengingat` | Tinggi |
 | `savings_reminder` | Hari setor yang dipilih di target, pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `savings_reminders` | `pengingat` | Tinggi |
 | `memory_created` | Kenangan baru dibuat, dikirim 2 menit kemudian (v0.3) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
+| `sync` | Data di Ruang Bersama berubah, paling banyak satu per 10 detik (v1.x) | Anggota lain, selain pelaku | Selalu dikirim | Tanpa notifikasi | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -913,3 +939,13 @@ Sepuluh butir ini merancang "Tugas berulang" di lingkup fitur tab utama, yang be
 - [x] Pengulangan berhenti dengan mengosongkan aturan ulang atau menghapus tugas yang belum selesai. Mengosongkan `due_date` ikut mengosongkan aturan ulang.
 - [x] Checklist perjalanan tidak bisa berulang (422).
 - [x] Balasan PUT dan PATCH tugas membawa `next_task`, dan sumber tugas punya kolom baru `repeat_frequency`, `repeat_interval`, dan `next_task_id`, jadi app versi baru sync penuh sekali.
+
+### Push sinkron (v1.x)
+
+Lima butir ini merancang sinkron langsung (realtime) di lingkup v1.x dari usulan sesi Flutter, dan disetujui pada 25 Oktober 2026.
+
+- [x] Push `sync` berisi data saja (`type` dan `space_id`), tanpa judul dan isi, dengan prioritas normal dan `collapse_key` `sync-{space_id}`.
+- [x] Dikirim untuk setiap perubahan di Ruang Bersama yang terlihat di `GET /sync`, ke anggota lain di semua perangkatnya. Pelaku tidak menerimanya, termasuk di HP lain miliknya.
+- [x] Selalu dikirim, tanpa preferensi notifikasi.
+- [x] Paling banyak satu push per penerima setiap 10 detik: perubahan pertama dikirim langsung, dan sisanya dalam jeda itu digabung di akhir jeda. Ini berbeda dari usulan yang menunda semua push 10 detik, karena dengan cara itu pasangan selalu baru melihat perubahan 10–13 detik kemudian, tidak jauh beda dari sync tiap 30 detik yang rata-rata menunggu 15 detik.
+- [x] Push ini hanya mempercepat: app tetap sync saat dibuka, kembali aktif, dan tiap 30 detik selama tampil, dan push yang datang tanpa perubahan baru cukup dijawab dengan sync biasa.

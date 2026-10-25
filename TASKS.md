@@ -2,10 +2,11 @@
 
 ## Active
 
-- [ ] **Push sinkron (v1.x)** - since 2026-10-25; push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, dari usulan sesi Flutter. Kontraknya di dokumen perencanaan menunggu dicentang pemilik; kode dan tesnya sudah di branch `feat/push-sinkron`. Setelah itu menyusul penarikan tabungan, pin lokasi kenangan, reaksi dan komentar, lalu masuk dengan Google
+- [ ] **Penarikan tabungan (v1.x)** - since 2026-10-26; butir 2 dari usulan sesi Flutter. Kontraknya disusun di dokumen perencanaan dulu, lalu dicentang pemilik. Sesudahnya: pin lokasi kenangan, reaksi dan komentar, lalu masuk dengan Google
 
 ## Waiting On
 
+- [ ] **Uji push sinkron di dua HP** - oleh pemilik, since 2026-10-26; buka app di HP pasangan, ubah atau centang tugas di Ruang Bersama dari HP Anda, lalu pastikan HP pasangan ikut berubah dalam beberapa detik tanpa ditarik untuk menyegarkan
 - [ ] **Bangun ulang app dengan Flutter 3.47.8** - oleh sesi Flutter, since 2026-10-24; Flutter 3.47.2 di laptop masih memercayai CA eMudhra yang bocor (GHSA-frr6-h895-5pxp, dart:io di Android), jadi koneksi HTTPS app bisa disadap. Perbaikannya ada di SDK: `flutter upgrade`, lalu build ulang dan pasang APK di kedua HP
 - [ ] **Ganti `APP_KEY` produksi** - oleh pemilik, since 2026-10-24; kuncinya pernah ditempel ke percakapan saat menyiapkan Coolify. Dampaknya kecil, karena `APP_KEY` hanya dipakai untuk sesi admin (tidak ada kolom terenkripsi, dan token Sanctum disimpan sebagai hash). Di Terminal Coolify jalankan `php artisan key:generate --show`, isi `APP_PREVIOUS_KEYS` dengan kunci lama dan `APP_KEY` dengan kunci baru, lalu deploy ulang; sehari kemudian kosongkan `APP_PREVIOUS_KEYS`
 - [ ] **Naikkan MySQL ke 8.4.13** - oleh pemilik, since 2026-10-24; tidak mendesak. Perbaikan keamanannya di sisi klien MySQL, sedangkan PHP memakai mysqlnd, dan database tidak dibuka ke internet. Kerjakan bersama perawatan berikutnya, setelah backup
@@ -109,3 +110,4 @@
 - [x] ~~Container tunnel memakai cloudflared 2026.10.3 (dibangun 21 Oktober 2026), jadi CA eMudhra yang bocor tidak dipercaya lagi; dicek dengan `cloudflared --version` di dalam container itu~~ (2026-10-25)
 - [x] ~~Node di laptop sudah 22.23.4, rilis keamanan 21 Oktober, dari installer resmi di `C:\Program Files\nodejs` (npm 11.19.1). Node 23.11.x dari Herd masih terpasang tetapi tidak aktif; versi 23 tidak lagi mendapat perbaikan keamanan sejak Juni 2025, jadi sebaiknya dihapus dari Herd~~ (2026-10-25)
 - [x] ~~Alamat `/` mengalihkan ke halaman masuk panel admin atas permintaan pemilik, menggantikan balasan JSON nama API; app tidak memakai `/`, hanya `/api/v1`~~ (2026-10-25)
+- [x] ~~Push sinkron (v1.x): push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, paling banyak satu per 10 detik per penerima, dengan perubahan pertama dikirim langsung. Kontraknya disetujui 25 Oktober~~ (2026-10-26)
