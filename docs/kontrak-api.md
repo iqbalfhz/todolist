@@ -2,7 +2,7 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 29 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis.
 
 ## Ringkasan endpoint
 
@@ -49,6 +49,11 @@ Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya lima yang me
 | Kenangan | PATCH | `/memory-photos/{id}` | Ubah urutan foto (v0.3) |
 | Kenangan | DELETE | `/memory-photos/{id}` | Hapus foto (v0.3) |
 | Kenangan | GET | `/places` | Cari tempat untuk pin lokasi kenangan (v1.x) |
+| Komentar | PUT | `/comments/{id}` | Tulis komentar (v1.x) |
+| Komentar | PATCH | `/comments/{id}` | Ubah komentar sendiri (v1.x) |
+| Komentar | DELETE | `/comments/{id}` | Hapus komentar sendiri (v1.x) |
+| Reaksi | PUT | `/reactions/{id}` | Beri reaksi, atau ganti reaksi sendiri (v1.x) |
+| Reaksi | DELETE | `/reactions/{id}` | Hapus reaksi sendiri (v1.x) |
 
 ## Konvensi
 
@@ -74,7 +79,7 @@ Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket l
 ### ID
 
 - Semua ID berupa ULID 26 karakter huruf kecil, contoh `01m4dg5jegv6sp4xav8efqzcqe`.
-- ID daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, dan foto kenangan dibuat di HP; ID akun, ruang, dan undangan dibuat server.
+- ID daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto kenangan, komentar, dan reaksi dibuat di HP; ID akun, ruang, dan undangan dibuat server.
 - ULID huruf besar ditolak 422. HP membuat huruf kecil sejak awal, supaya kunci di SQLite sama dengan di server.
 
 ### Waktu, tanggal, dan teks
@@ -111,9 +116,9 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 - **Ubah:** `PATCH` hanya berisi kolom yang berubah; `null` untuk mengosongkan. Kolom hanya-baca dan kolom tak dikenal diabaikan. Kolom yang berpasangan dikirim bersama, misalnya `due_date` dengan `due_time`.
 - **Bentrok:** kalau dua HP mengubah kolom yang sama, yang terakhir **sampai di server** yang menang, termasuk perubahan offline yang baru terkirim belakangan. Kolom berbeda tidak saling menimpa.
 - **Hapus:** `DELETE` mengisi `deleted_at` (soft delete) dan membalas 204, termasuk saat diulang. Penghapusan berantai (daftar ke tugas, target ke setoran) ikut memperbarui `updated_at` anak-anaknya, supaya ikut tersinkron.
-- **Induk terhapus atau diarsipkan:** tugas ke daftar yang sudah dihapus dibalas 409 `parent_deleted`, dan ke daftar yang diarsipkan 409 `parent_archived`, baik saat dibuat maupun dipindah. Setoran ke target yang sudah dihapus, dan foto ke kenangan yang sudah dihapus, juga dibalas 409 `parent_deleted`.
-- **Akses:** data di ruang yang bukan ruangmu dianggap tidak ada (404, bukan 403).
-- **Lewat antrean:** hanya PUT, PATCH, dan DELETE untuk daftar, tugas, target, setoran, tanggal penting, perjalanan, dan kenangan; POST, PATCH, dan DELETE untuk foto kenangan; ditambah `PATCH /me`. Endpoint lain dipanggil langsung dan butuh koneksi.
+- **Induk terhapus atau diarsipkan:** tugas ke daftar yang sudah dihapus dibalas 409 `parent_deleted`, dan ke daftar yang diarsipkan 409 `parent_archived`, baik saat dibuat maupun dipindah. Setoran ke target yang sudah dihapus, foto ke kenangan yang sudah dihapus, serta komentar dan reaksi ke subjek yang sudah dihapus (v1.x), juga dibalas 409 `parent_deleted`.
+- **Akses:** data di ruang yang bukan ruangmu dianggap tidak ada (404, bukan 403). 403 hanya untuk komentar atau reaksi orang lain di ruangmu (v1.x).
+- **Lewat antrean:** hanya PUT, PATCH, dan DELETE untuk daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, dan komentar (v1.x); PUT dan DELETE untuk reaksi (v1.x); POST, PATCH, dan DELETE untuk foto kenangan; ditambah `PATCH /me`. Endpoint lain dipanggil langsung dan butuh koneksi.
 
 ### Batas request
 
@@ -147,10 +152,10 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | Status | `code` | Arti | Yang dilakukan app |
 | --- | --- | --- | --- |
 | 401 | `unauthenticated` | Token tidak berlaku lagi | Hentikan antrean (isinya tetap tersimpan untuk akun ini), buka layar Masuk |
-| 403 | `forbidden` | Tidak boleh melakukan ini | Buang dari antrean, pakai `current`, tampilkan pesan |
+| 403 | `forbidden` | Tidak boleh melakukan ini, misalnya mengubah komentar orang lain (v1.x) | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 404 | `not_found` | Data tidak ada, atau bukan di ruangmu | Buang dari antrean, hapus data itu dari cache |
 | 404 | `route_not_found` | Endpoint tidak dikenal, biasanya versi app dan server berbeda | Simpan antrean, coba lagi nanti, tawarkan pembaruan app |
-| 409 | `parent_deleted`, `parent_archived` | Daftar, target, atau kenangan induknya sudah dihapus, atau daftarnya diarsipkan | Tugas: pindahkan ke daftar aktif pertama, lalu kirim ulang. Setoran dan foto kenangan: buang dan beri tahu |
+| 409 | `parent_deleted`, `parent_archived` | Induknya (daftar, target, kenangan, atau subjek komentar dan reaksi) sudah dihapus, atau daftarnya diarsipkan | Tugas: pindahkan ke daftar aktif pertama, lalu kirim ulang. Setoran, foto kenangan, dan komentar: buang dan beri tahu. Reaksi: buang |
 | 409 | `last_list`, `id_conflict` | Bentrok dengan aturan; rinciannya di bagian masing-masing | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `trip_checklist` (v0.2) | Checklist perjalanan dihapus atau diarsipkan sendiri | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
@@ -415,7 +420,7 @@ Tugas berulang dibuat ulang oleh server: begitu satu kejadian diselesaikan, serv
 - Mengubah `due_date`, `repeat_frequency`, atau `repeat_interval` menjadikan `due_date` saat itu patokan baru.
 - Tugas berikutnya masuk ke daftar yang sama dan membawa judul, catatan, prioritas, penanggung jawab, `due_time`, `position`, dan aturan ulangnya. `created_by` tetap pembuat aslinya, `updated_by` diisi orang yang menyelesaikan, dan `remind_at` dihitung seperti biasa. Tugas berikutnya tidak memicu push `task_assigned`.
 - Balasan `PUT` dan `PATCH /tasks/{id}` berbentuk `{"data": {...}, "next_task": {...}}`. `next_task` adalah tugas berikutnya kalau ada dan belum dihapus, dalam bentuk sumber tugas, atau `null`. App langsung menampilkannya tanpa menunggu sync.
-- Urungkan setelah centangnya terkirim: app mengirim `completed_at: null`. Kalau tugas berikutnya belum disentuh siapa pun (belum diubah dan belum selesai), server ikut menghapusnya dan mengosongkan `next_task_id`, jadi centang ulang membuat tugas berikutnya yang baru. Kalau sudah disentuh, tugas berikutnya dibiarkan, dan centang ulang tidak membuat yang kedua.
+- Urungkan setelah centangnya terkirim: app mengirim `completed_at: null`. Kalau tugas berikutnya belum disentuh siapa pun (belum diubah, belum selesai, dan sejak v1.x belum diberi komentar atau reaksi), server ikut menghapusnya dan mengosongkan `next_task_id`, jadi centang ulang membuat tugas berikutnya yang baru. Kalau sudah disentuh, tugas berikutnya dibiarkan, dan centang ulang tidak membuat yang kedua.
 - Pengulangan berhenti kalau `repeat_frequency` dikosongkan, atau tugas yang belum selesai dihapus. Tugas yang sudah selesai tetap ada sebagai riwayat, dan mengubah aturan ulangnya tidak membuat apa-apa lagi.
 - Mengosongkan `due_date` ikut mengosongkan `repeat_frequency` dan `repeat_interval`. Mengisi `repeat_frequency` di tugas tanpa `due_date`, dicek bersama yang sudah tersimpan, ditolak 422.
 - Checklist perjalanan tidak bisa berulang: aturan ulang di daftar dengan `trip_id` ditolak 422, termasuk saat tugas berulang dipindah ke checklist.
@@ -500,6 +505,7 @@ Penarikan dicatat sebagai setoran dengan `type` `withdrawal`, jadi tidak ada end
 - Penarikan yang melebihi saldo tetap diterima, karena dua HP bisa mencatat saat offline bersamaan dan 422 dari antrean harus dihindari. App yang mencegahnya di layar, dan total boleh negatif.
 - Push `savings_withdrawal` dikirim ke anggota lain saat penarikan baru dicatat, dengan preferensi `savings_activity`, channel `aktivitas`, `visibility` `PRIVATE`, dan `tag` `goal-{id}` seperti push tabungan lain. Judulnya nama target, isinya "{nama} mengambil {nominal}". Mengubah atau menghapus penarikan tidak mengirim push, dan penarikan tidak pernah memicu `savings_deposit`.
 - Kolom `type` sudah ada sejak v0.1, jadi app tidak perlu sync penuh. App versi lama menghitung penarikan sebagai setoran, jadi kedua HP perlu memakai app baru sebelum penarikan pertama dicatat.
+
 ### Pengingat setor rutin (v0.2)
 
 - Jadwalnya disimpan di target: `reminder_frequency` (`weekly` atau `monthly`) dan `reminder_day`. Tanpa `reminder_frequency`, target tidak diingatkan.
@@ -685,6 +691,7 @@ Kenangan bisa diberi pin lokasi lewat `latitude` dan `longitude`, dan Peta kenan
 - Batasnya 20 pencarian per menit per akun.
 - Kalau Nominatim gagal atau pencarian dimatikan di server, balasannya 503 `places_unavailable`. App menampilkan pesannya, dan pin tetap bisa dipasang langsung di peta. Saklar `PLACES_SEARCH_ENABLED` ada karena kebijakan Nominatim mewajibkan app bisa berhenti memakai layanannya kapan pun OSMF meminta, tanpa update app.
 - App menampilkan "© OpenStreetMap contributors" di bawah hasil pencarian dan di peta. Ubin peta diambil app langsung dan mengikuti kebijakan tile OSM.
+
 ### Foto kenangan
 
 ```json
@@ -736,6 +743,86 @@ Foto diunggah lewat `POST /memory-photos/{id}` dengan `multipart/form-data`:
 - Hanya dikirim kalau `notification_prefs.partner_activity` penerima menyala, tanpa kunci baru.
 - Judul push adalah judul kenangan, isinya "{nama} menyimpan kenangan baru".
 
+## Reaksi dan komentar (v1.x)
+
+Tugas, setoran, dan kenangan di Ruang Bersama bisa diberi komentar dan reaksi emoji. Keduanya memakai ID dari HP dan lewat antrean, jadi bisa dibuat saat offline dan aman dikirim ulang.
+
+### Sumber komentar
+
+```json
+{
+  "id": "01m4dt2k70f3qzr8vw5hx9cy4b",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "subject_type": "memory",
+  "subject_id": "01m4dr8c50jk2mt7xw3pq9vb6e",
+  "user_id": "01m4dga4y03c5ratqsc31zc916",
+  "body": "Sawahnya masih hijau banget!",
+  "created_at": "2027-06-26T09:05:00.000000Z",
+  "updated_at": "2027-06-26T09:05:00.000000Z",
+  "deleted_at": null
+}
+```
+
+| Kolom | Saat PUT | Aturan |
+| --- | --- | --- |
+| `subject_type` | wajib | `task`, `savings_entry` (setoran atau penarikan), atau `memory`; tidak bisa diubah |
+| `subject_id` | wajib | Tugas, setoran, atau kenangan di Ruang Bersama yang belum dihapus; tidak bisa diubah. `space_id` ikut dari subjeknya |
+| `body` | wajib | 1–1.000 karakter; satu-satunya kolom yang bisa diubah lewat `PATCH` |
+
+- Endpoint: `PUT`, `PATCH`, dan `DELETE /comments/{id}`, dengan aturan tulis yang sama seperti sumber lain.
+- `user_id` diisi server dengan penulisnya. Hanya penulis yang boleh mengubah dan menghapus komentarnya; yang lain dibalas 403 `forbidden` dengan `current`.
+- App mengurutkan komentar menurut `created_at`. Komentar yang `updated_at`-nya lebih baru dari `created_at` sudah diubah, jadi app boleh menandainya "diedit".
+
+### Sumber reaksi
+
+```json
+{
+  "id": "01m4dt3f80g7mnp2xs6ty8vk1d",
+  "space_id": "01m4dgdt40te98hy85v3fe2t18",
+  "subject_type": "memory",
+  "subject_id": "01m4dr8c50jk2mt7xw3pq9vb6e",
+  "user_id": "01m4dg5jegv6sp4xav8efqzcqe",
+  "emoji": "❤️",
+  "created_at": "2027-06-26T09:06:00.000000Z",
+  "updated_at": "2027-06-26T09:06:00.000000Z",
+  "deleted_at": null
+}
+```
+
+| Kolom | Saat PUT | Aturan |
+| --- | --- | --- |
+| `subject_type` | wajib | Sama seperti komentar |
+| `subject_id` | wajib | Sama seperti komentar |
+| `emoji` | wajib | 1–16 code point; app memastikan isinya satu emoji |
+
+- Endpoint: `PUT` dan `DELETE /reactions/{id}`. Reaksi tidak punya `PATCH`: mengganti emoji berarti reaksi baru dengan ID baru.
+- Satu reaksi per orang per subjek. `PUT` reaksi baru untuk subjek yang sudah punya reaksimu menghapus reaksi lama (soft delete, `updated_at` diperbarui), lalu menyimpan yang baru (201). App cukup mengirim `PUT` itu dan menghapus reaksi lama di cache saat itu juga.
+- Server mengunci baris subjeknya saat menyimpan, jadi dua reaksi yang tiba bersamaan tetap menyisakan satu.
+- Hanya pemilik reaksi yang boleh menghapusnya; yang lain dibalas 403 `forbidden` dengan `current`.
+
+### Aturan komentar dan reaksi
+
+- Hanya di Ruang Bersama: subjek di Ruang Pribadi ditolak 422 di kolom `subject_id`.
+- Subjek yang tidak ada atau bukan di ruangmu dibalas 404. Subjek yang sudah dihapus dibalas 409 `parent_deleted`, dan app membuang komentar atau reaksi itu dari antrean. Subjek di daftar atau target yang diarsipkan tetap bisa dikomentari dan diberi reaksi.
+- Menghapus subjek ikut menghapus komentar dan reaksinya (soft delete, `updated_at` diperbarui), termasuk subjek yang terhapus berantai: daftar ke tugasnya, perjalanan ke tugas checklistnya, dan target ke setorannya.
+- Server mengunci baris subjek saat menyimpan komentar atau reaksi, jadi tidak ada yang tertinggal di subjek yang sedang dihapus.
+- Tugas berikutnya dari tugas berulang yang sudah diberi komentar atau reaksi dianggap sudah disentuh, jadi tidak ikut terhapus saat centang tugas sebelumnya diurungkan.
+- Koleksi sync baru `comments` dan `reactions`, jadi `cursor` lama ditolak sekali dan app versi baru menjalankan sync penuh sekali.
+
+### Notifikasi komentar dan reaksi
+
+| `type` | Pemicu | Isi |
+| --- | --- | --- |
+| `comment_created` | Komentar baru dibuat | "{nama}: {komentar}"; spasi dan baris baru dirapikan, dan komentar yang lebih dari 80 karakter dipotong dengan "…" |
+| `reaction_created` | Reaksi baru disimpan; paling banyak satu per subjek per 10 menit untuk tiap penerima | "{nama} memberi reaksi {emoji}" |
+
+- Penerima: anggota lain di Ruang Bersama itu, dengan preferensi `partner_activity`, channel `aktivitas`, dan prioritas normal.
+- Judulnya judul tugas atau kenangan, atau nama target untuk setoran.
+- `data` membawa `subject_type` dan `subject_id`, ditambah `savings_goal_id` untuk setoran. `tag`-nya `comment-{subject_id}` atau `reaction-{subject_id}`, jadi notifikasi baru untuk subjek yang sama menimpa yang lama.
+- Push untuk setoran memakai `visibility` `PRIVATE`, seperti push tabungan lain.
+- Mengubah atau menghapus komentar tidak mengirim push. Reaksi yang diganti atau dihapus dalam 10 menit itu juga tidak mengirim push lagi.
+- Saat diketuk, app membuka detail subjeknya beserta komentarnya, mengikuti aturan ketuk di bagian Notifikasi push.
+
 ## Sinkron
 
 `GET /sync` adalah satu-satunya cara HP membaca data ruang: sekali penuh setelah masuk, lalu hanya yang berubah. Beranda, filter tugas, dan statistik tabungan dihitung dari hasilnya di cache lokal.
@@ -767,7 +854,9 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
     "special_dates": [],
     "trips": [],
     "memories": [],
-    "memory_photos": []
+    "memory_photos": [],
+    "comments": [],
+    "reactions": []
   },
   "meta": {
     "server_time": "2026-10-08T11:10:05.123456Z",
@@ -786,7 +875,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
-- Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
+- Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.x: `comments` dan `reactions`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
 
 ### Aturan di HP
 
@@ -798,7 +887,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, saat push masuk ketika app terbuka, termasuk push sinkron (v1.x), dan tiap 30 detik selama app tampil (v1.x).
-- App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
+- App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`; v1.x: lokasi di `memories`, lalu `comments` dan `reactions`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -826,7 +915,7 @@ Push `sync` memberi tahu HP pasangan bahwa ada data baru di Ruang Bersama, supay
 }
 ```
 
-- Pemicu: setiap perubahan di Ruang Bersama yang ikut terkirim lewat `GET /sync`, yaitu ruang dan anggotanya, daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, dan foto kenangan. Penghapusan ikut dihitung, begitu juga perubahan yang dibuat server dalam request yang sama, seperti tugas berikutnya dari tugas berulang. Perubahan di Ruang Pribadi tidak memicunya.
+- Pemicu: setiap perubahan di Ruang Bersama yang ikut terkirim lewat `GET /sync`, yaitu ruang dan anggotanya, daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto kenangan, komentar, dan reaksi (v1.x). Penghapusan ikut dihitung, begitu juga perubahan yang dibuat server dalam request yang sama, seperti tugas berikutnya dari tugas berulang. Perubahan di Ruang Pribadi tidak memicunya.
 - Penerima: anggota lain di ruang itu, di semua perangkatnya. Pelaku tidak menerimanya, termasuk di HP lain miliknya.
 - Selalu dikirim, tanpa melihat `notification_prefs`, karena tidak tampil di layar.
 - Paling banyak satu push per penerima setiap 10 detik. Perubahan pertama dikirim langsung dan biasanya sampai dalam beberapa detik. Perubahan lain selama jeda 10 detik itu digabung menjadi satu push di akhir jeda, jadi antrean HP yang terkirim beruntun tidak membanjiri HP pasangan.
@@ -852,6 +941,8 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `memory_created` | Kenangan baru dibuat, dikirim 2 menit kemudian (v0.3) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `sync` | Data di Ruang Bersama berubah, paling banyak satu per 10 detik (v1.x) | Anggota lain, selain pelaku | Selalu dikirim | Tanpa notifikasi | Normal |
 | `savings_withdrawal` | Penarikan baru dicatat (v1.x) | Anggota lain | `savings_activity` | `aktivitas` | Normal |
+| `comment_created` | Komentar baru dibuat (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
+| `reaction_created` | Reaksi baru disimpan, paling banyak satu per subjek per 10 menit (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -882,6 +973,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `trip_reminder` (v0.2) membawa `trip_id`, dengan `tag` `trip-{id}`; saat diketuk app membuka Detail perjalanan.
 - `savings_reminder` (v0.2) membawa `savings_goal_id`, dengan `tag` `goal-{id}` dan `visibility` `PRIVATE` seperti push tabungan lain; saat diketuk app membuka Detail target.
 - `memory_created` (v0.3) membawa `memory_id`, dengan `tag` `memory-{id}`; saat diketuk app membuka Detail kenangan. Judulnya judul kenangan, isinya "{nama} menyimpan kenangan baru".
+- `comment_created` dan `reaction_created` (v1.x) membawa `subject_type` dan `subject_id`, ditambah `savings_goal_id` untuk setoran, dengan `tag` `comment-{subject_id}` atau `reaction-{subject_id}`; saat diketuk app membuka detail subjeknya beserta komentarnya. Rinciannya di bagian Reaksi dan komentar.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
@@ -1022,3 +1114,17 @@ Delapan butir ini merancang pin lokasi dan pencarian tempat di lingkup v1.x dari
 - [x] Kode error baru 503 `places_unavailable` saat Nominatim gagal atau pencarian dimatikan; pin manual di peta tetap bisa.
 - [x] Saklar `PLACES_SEARCH_ENABLED` di server untuk mematikan pencarian tanpa update app.
 - [x] Pemilik memutuskan memakai server Nominatim publik dan bertanggung jawab mematuhi [kebijakannya](https://operations.osmfoundation.org/policies/nominatim/): paling banyak 1 request per detik untuk seluruh app, tanpa autocomplete, dengan atribusi OpenStreetMap, dan siap berhenti kapan pun OSMF meminta. Kalau pemakaian membesar saat rilis publik, beralih ke Nominatim sendiri atau penyedia berbayar.
+
+### Reaksi dan komentar (v1.x)
+
+Sembilan butir ini merancang reaksi dan komentar di lingkup v1.x dari usulan sesi Flutter, dan disetujui pada 29 Oktober 2026.
+
+- [x] Komentar dan reaksi untuk tugas, setoran (termasuk penarikan), dan kenangan, hanya di Ruang Bersama. Subjek di Ruang Pribadi ditolak 422.
+- [x] Tabel dan koleksi sync baru `comments` dan `reactions`, dengan `subject_type`, `subject_id`, dan `space_id` yang disalin dari subjeknya. App versi baru sync penuh sekali.
+- [x] Hanya penulis yang boleh mengubah dan menghapus komentarnya, dan hanya pemiliknya yang boleh menghapus reaksi (403 `forbidden`). Ini berbeda dari data lain, yang boleh diubah kedua anggota.
+- [x] Satu reaksi per orang per subjek. Reaksi baru menggantikan yang lama, dan reaksi tidak punya `PATCH`.
+- [x] Menghapus subjek, langsung atau berantai, ikut menghapus komentar dan reaksinya. Subjek di daftar atau target yang diarsipkan tetap bisa dikomentari.
+- [x] Tugas berikutnya yang sudah diberi komentar atau reaksi tidak ikut terhapus saat centang tugas sebelumnya diurungkan, supaya komentar pasangan tidak hilang. Ini menambah aturan Urungkan di Tugas berulang (v1.0).
+- [x] Push baru `comment_created` ke anggota lain: preferensi `partner_activity`, channel `aktivitas`, `tag` `comment-{subject_id}`, judul subjek sebagai judul, dan isi "{nama}: {80 karakter pertama}".
+- [x] Push baru `reaction_created` ke anggota lain, paling banyak satu per subjek per 10 menit, dengan isi "{nama} memberi reaksi {emoji}". Ini berbeda dari usulan "ke pemilik subjek", karena reaksi sering ditujukan ke orang yang menyelesaikan tugas, bukan pembuatnya. Pemilik memilih push ini daripada reaksi tanpa push, karena tanpa feed aktivitas reaksi hanya terlihat kalau subjeknya dibuka.
+- [x] Push komentar dan reaksi pada setoran membawa `savings_goal_id` dan memakai `visibility` `PRIVATE`, seperti push tabungan lain.

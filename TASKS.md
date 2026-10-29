@@ -2,12 +2,15 @@
 
 ## Active
 
-- [ ] **Reaksi dan komentar (v1.x)** - since 2026-10-29; butir 4 dari usulan sesi Flutter: komentar dan reaksi untuk tugas, setoran, dan kenangan di Ruang Bersama, dua koleksi sync baru, dan push `comment_created`. Kontraknya disusun di dokumen perencanaan dulu, lalu dicentang pemilik. Sesudahnya: masuk dengan Google
+- [ ] **Masuk dengan Google (v1.x)** - since 2026-10-29; butir 5, terakhir, dari usulan sesi Flutter: `POST /auth/google` dengan ID token Google, akun lama dikenali dari email, akun baru dibuat seperti daftar. Kontraknya disusun di dokumen perencanaan dulu, lalu dicentang pemilik. Butuh persiapan pemilik di Google Cloud dan Firebase (lihat Waiting On)
 
 ## Waiting On
 
+- [ ] **Persiapan masuk dengan Google** - oleh pemilik, since 2026-10-29; buat klien OAuth "Web application" di Google Cloud proyek `todolist-cb119` (client ID-nya dipakai server dan app), isi layar persetujuan OAuth, lalu tambahkan SHA-1 kunci rilis dan debug ke app Android di Firebase
+- [ ] **Reaksi dan komentar di app Flutter** - oleh sesi Flutter, since 2026-10-29; kontraknya di bagian "Reaksi dan komentar (v1.x)" pada `docs/kontrak-api.md`: dua koleksi sync baru (`comments` dan `reactions`, jadi sync penuh sekali), lima endpoint lewat antrean, dan push `comment_created` serta `reaction_created`
+- [ ] **Uji komentar dan reaksi di dua HP** - oleh pemilik, since 2026-10-29; setelah app punya fiturnya: beri komentar dan reaksi pada tugas, setoran, dan kenangan di Ruang Bersama, pastikan HP pasangan menerima notifikasinya dan menampilkannya, lalu hapus satu komentar
 - [ ] **Uji pin lokasi dan pencarian tempat di HP** - oleh pemilik, since 2026-10-29; setelah app punya fiturnya: cari tempat, pasang pin di kenangan Ruang Bersama, lalu pastikan pin itu muncul di peta HP pasangan
-- [ ] **Pasang app dengan penarikan tabungan di kedua HP sebelum penarikan pertama** - oleh pemilik, since 2026-10-29; app lama menghitung penarikan sebagai setoran, jadi progres target di HP yang belum diperbarui akan salah
+- [ ] **Pasang app dengan penarikan tabungan di kedua HP sebelum penarikan pertama** - oleh pemilik, since 2026-10-29; app lama menghitung penarikan sebagai setoran, jadi progres target di HP yang belum diperbarui akan salah. APK-nya sudah dibangun sesi Flutter (29 Oktober), tetapi belum terpasang karena HP tidak terdeteksi `adb`: sambungkan kabel USB, buka kunci HP, dan izinkan debugging USB, atau kirim `build/app/outputs/flutter-apk/app-release.apk` dari repo Flutter lewat WhatsApp
 - [ ] **Uji push sinkron di dua HP** - oleh pemilik, since 2026-10-26; buka app di HP pasangan, ubah atau centang tugas di Ruang Bersama dari HP Anda, lalu pastikan HP pasangan ikut berubah dalam beberapa detik tanpa ditarik untuk menyegarkan
 - [ ] **Bangun ulang app dengan Flutter 3.47.8** - oleh sesi Flutter, since 2026-10-24; Flutter 3.47.2 di laptop masih memercayai CA eMudhra yang bocor (GHSA-frr6-h895-5pxp, dart:io di Android), jadi koneksi HTTPS app bisa disadap. Perbaikannya ada di SDK: `flutter upgrade`, lalu build ulang dan pasang APK di kedua HP
 - [ ] **Ganti `APP_KEY` produksi** - oleh pemilik, since 2026-10-24; kuncinya pernah ditempel ke percakapan saat menyiapkan Coolify. Dampaknya kecil, karena `APP_KEY` hanya dipakai untuk sesi admin (tidak ada kolom terenkripsi, dan token Sanctum disimpan sebagai hash). Di Terminal Coolify jalankan `php artisan key:generate --show`, isi `APP_PREVIOUS_KEYS` dengan kunci lama dan `APP_KEY` dengan kunci baru, lalu deploy ulang; sehari kemudian kosongkan `APP_PREVIOUS_KEYS`
@@ -23,8 +26,7 @@
 
 ## Someday
 
-- [ ] **v1.0** - ekspor data, hapus akun, tugas berulang, lupa kata sandi di app, keluar dari Ruang Bersama
-- [ ] **v1.x** - penarikan tabungan, realtime
+- [ ] **v1.0** - ekspor data, hapus akun, lupa kata sandi di app, keluar dari Ruang Bersama, tugas berulang di beberapa hari dalam seminggu
 - [ ] **Sebelum rilis publik** - pasang lagi "Application restrictions" (Android apps) pada API key Android Firebase, yang dilepas ke None pada 22 Oktober 2026 karena membuat pendaftaran token FCM gagal (pembatasan per API tetap), jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
@@ -115,3 +117,4 @@
 - [x] ~~Push sinkron (v1.x): push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, paling banyak satu per 10 detik per penerima, dengan perubahan pertama dikirim langsung. Kontraknya disetujui 25 Oktober~~ (2026-10-26)
 - [x] ~~Penarikan tabungan (v1.x): setoran dengan `type` `withdrawal`, total setoran dikurangi penarikan, dan push `savings_withdrawal` "{nama} mengambil {nominal}". Kontraknya disetujui 29 Oktober~~ (2026-10-29)
 - [x] ~~Pin lokasi kenangan (v1.x): `latitude` dan `longitude` di kenangan, dan `GET /places` yang meneruskan pencarian ke Nominatim publik sesuai kebijakannya (cache 1 hari, 1 request per detik, tanpa autocomplete, saklar `PLACES_SEARCH_ENABLED`). Kontraknya disetujui 29 Oktober~~ (2026-10-29)
+- [x] ~~Reaksi dan komentar (v1.x): `PUT`, `PATCH`, `DELETE /comments/{id}` dan `PUT`, `DELETE /reactions/{id}` untuk tugas, setoran, dan kenangan di Ruang Bersama, koleksi sync `comments` dan `reactions`, ikut terhapus bersama subjeknya, dan push `comment_created` serta `reaction_created` (paling banyak satu per subjek per 10 menit). Kontraknya disetujui 29 Oktober~~ (2026-10-29)
