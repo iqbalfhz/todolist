@@ -11,7 +11,8 @@ return [
     | partner_joined texts come from the API contract. The owner approved
     | the others as they are written here on 11 October 2026, the
     | special_date_reminder, trip_reminder, and savings_reminder texts on
-    | 22 October 2026, and the memory_created text on 23 October 2026.
+    | 22 October 2026, the memory_created text on 23 October 2026, and the
+    | savings_withdrawal text on 29 October 2026.
     |
     */
 

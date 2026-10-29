@@ -1,8 +1,8 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 26 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 29 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, juga tanpa endpoint baru.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru.
 
 ## Ringkasan endpoint
 
@@ -420,7 +420,7 @@ Tugas berulang dibuat ulang oleh server: begitu satu kejadian diselesaikan, serv
 
 ## Tabungan
 
-Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk menandai target tercapai dan mengirim notifikasi.
+Progres dihitung di HP dari daftar setoran: total adalah jumlah setoran dikurangi jumlah penarikan (v1.x). Server menghitung total hanya untuk menandai target tercapai dan mengirim notifikasi.
 
 ### Sumber target
 
@@ -480,13 +480,23 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 | `amount` | wajib | Bilangan bulat lebih dari 0, paling besar 10^15, dalam mata uang targetnya |
 | `entry_date` | wajib | Tanggal setor menurut HP; tidak diisi server karena setoran bisa terkirim belakangan |
 | `note` | opsional | Paling banyak 200 karakter |
+| `type` | opsional | `deposit` (bawaan) atau `withdrawal`. Hanya diisi saat PUT; PATCH mengabaikannya (v1.x) |
 
-- `user_id` diisi server dengan akun yang mencatat. `type` di v0.1 selalu `deposit`; penarikan menyusul di v1.x.
+- `user_id` diisi server dengan akun yang mencatat. `type` membedakan setoran dan penarikan (v1.x), dan di v0.1 selalu `deposit`.
 - Kedua anggota boleh mengubah dan menghapus setoran siapa pun.
 - Setiap kali setoran dibuat, diubah, atau dihapus, atau `target_amount` berubah, server menghitung ulang total dalam transaksi yang mengunci baris target. Total mencapai target: `achieved_at` diisi. Total turun lagi di bawah target: `achieved_at` kembali `null`.
 - Push `savings_achieved` dikirim paling banyak sekali per target, dicatat di `achieved_notified_at`. Kalau push itu terkirim karena sebuah setoran, push `savings_deposit` untuk setoran yang sama tidak dikirim.
 - `DELETE /savings-goals/{id}` ikut menghapus semua setorannya dan memperbarui `updated_at` setoran itu. Setoran ke target yang sudah dihapus dibalas 409 `parent_deleted`; setoran ke target yang diarsipkan tetap diterima.
 
+### Penarikan tabungan (v1.x)
+
+Penarikan dicatat sebagai setoran dengan `type` `withdrawal`, jadi tidak ada endpoint atau koleksi baru. `amount` tetap bilangan bulat lebih dari 0; arah uangnya ditentukan `type`.
+
+- `type` hanya diisi saat `PUT`: `deposit` (bawaan) atau `withdrawal`. `PATCH` mengabaikannya, jadi setoran tidak bisa diubah menjadi penarikan atau sebaliknya. Nilai lain ditolak 422.
+- Total target = jumlah setoran dikurangi jumlah penarikan. Total ini yang dipakai untuk `achieved_at`, persen di push `savings_reminder`, dan progres di app. Kalau penarikan membuat total turun di bawah target, `achieved_at` kembali `null`. Push `savings_achieved` tetap hanya sekali per target, jadi tidak terkirim lagi saat target tercapai kembali.
+- Penarikan yang melebihi saldo tetap diterima, karena dua HP bisa mencatat saat offline bersamaan dan 422 dari antrean harus dihindari. App yang mencegahnya di layar, dan total boleh negatif.
+- Push `savings_withdrawal` dikirim ke anggota lain saat penarikan baru dicatat, dengan preferensi `savings_activity`, channel `aktivitas`, `visibility` `PRIVATE`, dan `tag` `goal-{id}` seperti push tabungan lain. Judulnya nama target, isinya "{nama} mengambil {nominal}". Mengubah atau menghapus penarikan tidak mengirim push, dan penarikan tidak pernah memicu `savings_deposit`.
+- Kolom `type` sudah ada sejak v0.1, jadi app tidak perlu sync penuh. App versi lama menghitung penarikan sebagai setoran, jadi kedua HP perlu memakai app baru sebelum penarikan pertama dicatat.
 ### Pengingat setor rutin (v0.2)
 
 - Jadwalnya disimpan di target: `reminder_frequency` (`weekly` atau `monthly`) dan `reminder_day`. Tanpa `reminder_frequency`, target tidak diingatkan.
@@ -495,7 +505,7 @@ Progres dihitung di HP dari daftar setoran. Server menghitung total hanya untuk 
 - Penerima: kedua anggota untuk target di Ruang Bersama, pemilik ruang untuk target di Ruang Pribadi.
 - Target yang sudah tercapai, diarsipkan, atau dihapus tidak diingatkan. Setoran yang sudah masuk minggu atau bulan itu tidak membatalkan pengingat.
 - Hanya dikirim kalau `notification_prefs.savings_reminders` penerima menyala. Kunci ini baru di v0.2 dan bawaannya menyala.
-- Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target." Persen dibulatkan ke bawah.
+- Judul push adalah nama target, isinya "Waktunya menabung. Terkumpul {persen}% dari target." Persen dihitung dari total bersih, dibulatkan ke bawah, dan paling kecil 0 (v1.x).
 - Paling banyak sekali per target per hari. Yang telat lebih dari 30 menit dilewati.
 
 ## Tanggal penting (v0.2)
@@ -804,6 +814,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `savings_reminder` | Hari setor yang dipilih di target, pukul 08.00 (v0.2) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `savings_reminders` | `pengingat` | Tinggi |
 | `memory_created` | Kenangan baru dibuat, dikirim 2 menit kemudian (v0.3) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `sync` | Data di Ruang Bersama berubah, paling banyak satu per 10 detik (v1.x) | Anggota lain, selain pelaku | Selalu dikirim | Tanpa notifikasi | Normal |
+| `savings_withdrawal` | Penarikan baru dicatat (v1.x) | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -949,3 +960,15 @@ Lima butir ini merancang sinkron langsung (realtime) di lingkup v1.x dari usulan
 - [x] Selalu dikirim, tanpa preferensi notifikasi.
 - [x] Paling banyak satu push per penerima setiap 10 detik: perubahan pertama dikirim langsung, dan sisanya dalam jeda itu digabung di akhir jeda. Ini berbeda dari usulan yang menunda semua push 10 detik, karena dengan cara itu pasangan selalu baru melihat perubahan 10–13 detik kemudian, tidak jauh beda dari sync tiap 30 detik yang rata-rata menunggu 15 detik.
 - [x] Push ini hanya mempercepat: app tetap sync saat dibuka, kembali aktif, dan tiap 30 detik selama tampil, dan push yang datang tanpa perubahan baru cukup dijawab dengan sync biasa.
+
+### Penarikan tabungan (v1.x)
+
+Tujuh butir ini merancang penarikan tabungan di lingkup v1.x dari usulan sesi Flutter, dan disetujui pada 29 Oktober 2026.
+
+- [x] Penarikan dicatat sebagai setoran dengan `type` `withdrawal`, dan `amount` tetap lebih dari 0. Tidak ada endpoint atau koleksi baru.
+- [x] `type` hanya diisi saat `PUT` dan tidak bisa diubah lewat `PATCH`.
+- [x] Total = setoran dikurangi penarikan, dipakai untuk `achieved_at`, persen `savings_reminder`, dan progres di app. Total yang turun di bawah target membuat `achieved_at` kembali `null`, tetapi `savings_achieved` tetap sekali per target.
+- [x] Penarikan yang melebihi saldo tidak ditolak; app yang mencegahnya, dan total boleh negatif. Persen di `savings_reminder` paling kecil 0.
+- [x] Push baru `savings_withdrawal` ke anggota lain saat penarikan dibuat: preferensi `savings_activity`, channel `aktivitas`, `visibility` `PRIVATE`, dan `tag` `goal-{id}`.
+- [x] Teks push: judulnya nama target, isinya "{nama} mengambil {nominal}". Ini berbeda dari usulan "{nama} mengambil {nominal} dari {target}", karena nama target sudah menjadi judul, sama seperti "{nama} menabung {nominal}" di push setoran.
+- [x] Kedua HP memakai app baru sebelum penarikan pertama dicatat, karena app lama menghitung penarikan sebagai setoran.
