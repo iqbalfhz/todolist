@@ -10,7 +10,7 @@ Blok Laravel Boost di bagian bawah file ini berisi panduan umum Laravel dan ditu
 
 ## Kondisi repo (per 29 Oktober 2026)
 
-Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Perjalanan dan checklist persiapan (v0.2) juga sudah dibangun dan bertes: 3 endpoint `/trips/{id}`, koleksi sync `trips`, checklist sebagai daftar tugas dengan `trip_id`, dan pengingat `trip_reminder`. Pengingat setor rutin per target (v0.2) juga sudah dibangun dan bertes: kolom `reminder_frequency` dan `reminder_day` di target, dan pengingat `savings_reminder`. Kenangan dan foto (v0.3) juga sudah dibangun dan bertes: 7 endpoint (`/memories/{id}`, `/memories/{id}/photos`, dan `/memory-photos/{id}`), koleksi sync `memories` dan `memory_photos`, foto di R2 folder `memories/`, dan push `memory_created`. Dari v1.0, Tugas berulang sudah dibangun dan bertes: kolom `repeat_frequency`, `repeat_interval`, `repeat_anchor`, dan `next_task_id` di `tasks`, tugas berikutnya yang dibuat server saat tugas berulang selesai, dan `next_task` di balasan PUT dan PATCH tugas. Dari v1.x, Push sinkron sudah dibangun dan bertes: push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, paling banyak satu per 10 detik per penerima. Penarikan tabungan (v1.x) juga sudah dibangun dan bertes: setoran dengan `type` `withdrawal`, total setoran dikurangi penarikan, dan push `savings_withdrawal`. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
+Seluruh cakupan v0.1 sudah dibangun, bertes, dan ter-deploy di `https://denlydays.iqbalfhz.my.id`: ke-25 endpoint di kontrak, pengingat terjadwal, keenam jenis push, panel admin, dan seeder lokal. Dari v0.2, Tanggal penting sudah dibangun dan bertes: 3 endpoint `/special-dates/{id}`, koleksi sync `special_dates`, `birth_date` anggota di sumber ruang, dan pengingat `special_date_reminder`. Perjalanan dan checklist persiapan (v0.2) juga sudah dibangun dan bertes: 3 endpoint `/trips/{id}`, koleksi sync `trips`, checklist sebagai daftar tugas dengan `trip_id`, dan pengingat `trip_reminder`. Pengingat setor rutin per target (v0.2) juga sudah dibangun dan bertes: kolom `reminder_frequency` dan `reminder_day` di target, dan pengingat `savings_reminder`. Kenangan dan foto (v0.3) juga sudah dibangun dan bertes: 7 endpoint (`/memories/{id}`, `/memories/{id}/photos`, dan `/memory-photos/{id}`), koleksi sync `memories` dan `memory_photos`, foto di R2 folder `memories/`, dan push `memory_created`. Dari v1.0, Tugas berulang sudah dibangun dan bertes: kolom `repeat_frequency`, `repeat_interval`, `repeat_anchor`, dan `next_task_id` di `tasks`, tugas berikutnya yang dibuat server saat tugas berulang selesai, dan `next_task` di balasan PUT dan PATCH tugas. Dari v1.x, Push sinkron sudah dibangun dan bertes: push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, paling banyak satu per 10 detik per penerima. Penarikan tabungan (v1.x) juga sudah dibangun dan bertes: setoran dengan `type` `withdrawal`, total setoran dikurangi penarikan, dan push `savings_withdrawal`. Pin lokasi kenangan (v1.x) juga sudah dibangun dan bertes: `latitude` dan `longitude` di kenangan, dan `GET /places` yang meneruskan pencarian tempat ke Nominatim. Daftar pekerjaan beserta statusnya ada di `TASKS.md`; perbarui file itu setiap kali memulai atau menyelesaikan pekerjaan.
 
 Belum beres:
 
@@ -32,9 +32,9 @@ Perbarui atau hapus butir di atas begitu selesai dikerjakan.
 - Sync (`GET /sync`) dan push notification
 - Panel admin Filament
 
-Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibangun (kontraknya di bagian "Tanggal penting (v0.2)" dan "Perjalanan dan checklist persiapan (v0.2)" pada `docs/kontrak-api.md`). Pengingat setor rutin per target juga sudah dibangun, jadi seluruh cakupan v0.2 di server selesai. Tabel `activities` di tab utama ditunda. Kenangan dan foto (v0.3) juga sudah dibangun (kontraknya di bagian "Kenangan dan foto (v0.3)"). Dari v1.0, Tugas berulang sudah dibangun (kontraknya di bagian "Tugas berulang (v1.0)" pada Daftar dan tugas). Dari v1.x, Push sinkron dan Penarikan tabungan sudah dibangun (kontraknya di bagian "Push sinkron (v1.x)" pada Sinkron dan "Penarikan tabungan (v1.x)" pada Tabungan).
+Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibangun (kontraknya di bagian "Tanggal penting (v0.2)" dan "Perjalanan dan checklist persiapan (v0.2)" pada `docs/kontrak-api.md`). Pengingat setor rutin per target juga sudah dibangun, jadi seluruh cakupan v0.2 di server selesai. Tabel `activities` di tab utama ditunda. Kenangan dan foto (v0.3) juga sudah dibangun (kontraknya di bagian "Kenangan dan foto (v0.3)"). Dari v1.0, Tugas berulang sudah dibangun (kontraknya di bagian "Tugas berulang (v1.0)" pada Daftar dan tugas). Dari v1.x, Push sinkron, Penarikan tabungan, dan Pin lokasi kenangan sudah dibangun (kontraknya di bagian "Push sinkron (v1.x)" pada Sinkron, "Penarikan tabungan (v1.x)" pada Tabungan, dan "Lokasi dan cari tempat (v1.x)" pada Kenangan dan foto).
 
-**Berikutnya dari usulan sesi Flutter (v1.x), dikerjakan berurutan dan masing-masing lewat kontrak yang dicentang pemilik dulu:** pin lokasi kenangan (petanya dibuat app), reaksi dan komentar, lalu masuk dengan Google.
+**Berikutnya dari usulan sesi Flutter (v1.x), dikerjakan berurutan dan masing-masing lewat kontrak yang dicentang pemilik dulu:** reaksi dan komentar, lalu masuk dengan Google.
 
 **Belum dibangun, jangan dibuat dulu:** ekspor data dan hapus akun (v1.0), lupa kata sandi di app dan keluar dari Ruang Bersama (v1.0), tugas berulang di beberapa hari dalam seminggu.
 
@@ -48,6 +48,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Pest untuk tes, Laravel Pint untuk format
 - Queue driver `database`, scheduler setiap menit
 - Push: FCM HTTP v1 lewat `kreait/laravel-firebase`
+- Pencarian tempat (v1.x): server Nominatim publik OpenStreetMap lewat HTTP client Laravel, tanpa paket tambahan
 - File: disk `r2` (driver `s3`, butuh `league/flysystem-aws-s3-v3`) ke Cloudflare R2, akses lewat URL bertanda tangan. Disk ini tidak melempar error, tetapi melaporkannya ke log (`report`), jadi penyebab kegagalan unggah bisa dilihat di log server
 - Intervention Image untuk mengolah foto
 - Scramble untuk dokumentasi API di `/docs/api`
@@ -73,6 +74,7 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - `APP_TIMEZONE` selain `UTC` ditolak saat aplikasi mulai (`AppServiceProvider`), juga di server. Zona waktu yang dilihat pengguna diatur per akun dan per ruang (bawaan `Asia/Jakarta`).
 - `ADMIN_EMAIL` — satu-satunya email yang boleh masuk `/admin`
 - `FIREBASE_CREDENTIALS` — path ke file service account Firebase (di luar repo atau di folder yang di-gitignore). Di server, berkasnya dipasang Coolify sebagai File Mount di `/etc/secrets/firebase.json`
+- `PLACES_SEARCH_ENABLED` (bawaan `true`) dan `NOMINATIM_URL` (bawaan server publik) — pencarian tempat untuk pin kenangan. Kalau OSMF meminta kita berhenti, isi `PLACES_SEARCH_ENABLED=false` di Coolify lalu deploy ulang; app tetap bisa memasang pin langsung di peta.
 - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` — disk `r2`, region `auto`, bucket privat
 - Setiap variabel baru ditambahkan juga ke `.env.example` dengan nilai kosong atau contoh.
 
@@ -132,6 +134,12 @@ Dari v0.2, Tanggal penting serta Perjalanan dan checklist persiapan sudah dibang
 - Data di ruang yang bukan ruang user dianggap tidak ada: 404, bukan 403.
 - Setiap `position` divalidasi `numeric` ditambah aturan `App\Rules\Position` (paling jauh 10^15 dari nol). Tanpa itu, `1e400` lolos `numeric`, lalu MySQL gagal menyimpan double tak hingga dan server membalas 500.
 - Batas request yang berjalan sebelum validasi (seperti `login` di `AppServiceProvider`) tidak boleh memakai input mentah sebagai teks: email berupa array dulu membuat login membalas 500.
+
+### Lokasi dan cari tempat (v1.x)
+
+- `latitude` dan `longitude` kenangan selalu berpasangan. `StoreMemoryRequest::locationRules()`, yang juga dipakai `UpdateMemoryRequest`, memakai `present_with` dan `required_with` tanpa `sometimes`, supaya `PATCH` yang mengirim salah satunya saja tetap ditolak. Model membulatkan keduanya ke 6 desimal lewat mutator; kolomnya `decimal(8,6)` dan `decimal(9,6)`.
+- `SearchPlaces` mematuhi [kebijakan Nominatim](https://operations.osmfoundation.org/policies/nominatim/), yang dipilih pemilik secara sadar pada 29 Oktober 2026: hasil di-cache 1 hari per kata kunci yang dinormalkan (huruf kecil, spasi dirapikan), `Cache::lock('nominatim')` menjaga jeda 1 detik antar-request untuk seluruh app (giliran yang tidak didapat dalam 2 detik dibalas 429), User-Agent `DenlyDays/1.0 (+APP_URL)`, dan hanya kata kuncinya yang dikirim. Nominatim gagal: 503 `places_unavailable` dan warning di log, tanpa di-cache.
+- Jangan menambah autocomplete, pencarian massal, atau pemanggilan Nominatim dari job dan perintah terjadwal; kebijakannya melarang itu. Tes memalsukan `nominatim.openstreetmap.org/search*`, karena `Http::preventStrayRequests()` aktif di semua tes.
 
 ### Error
 

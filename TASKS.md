@@ -2,10 +2,11 @@
 
 ## Active
 
-- [ ] **Pin lokasi kenangan (v1.x)** - since 2026-10-29; butir 3 dari usulan sesi Flutter: `latitude` dan `longitude` di kenangan, plus pencarian tempat lewat server. Kontraknya disusun di dokumen perencanaan dulu, lalu dicentang pemilik. Sesudahnya: reaksi dan komentar, lalu masuk dengan Google
+- [ ] **Reaksi dan komentar (v1.x)** - since 2026-10-29; butir 4 dari usulan sesi Flutter: komentar dan reaksi untuk tugas, setoran, dan kenangan di Ruang Bersama, dua koleksi sync baru, dan push `comment_created`. Kontraknya disusun di dokumen perencanaan dulu, lalu dicentang pemilik. Sesudahnya: masuk dengan Google
 
 ## Waiting On
 
+- [ ] **Uji pin lokasi dan pencarian tempat di HP** - oleh pemilik, since 2026-10-29; setelah app punya fiturnya: cari tempat, pasang pin di kenangan Ruang Bersama, lalu pastikan pin itu muncul di peta HP pasangan
 - [ ] **Pasang app dengan penarikan tabungan di kedua HP sebelum penarikan pertama** - oleh pemilik, since 2026-10-29; app lama menghitung penarikan sebagai setoran, jadi progres target di HP yang belum diperbarui akan salah
 - [ ] **Uji push sinkron di dua HP** - oleh pemilik, since 2026-10-26; buka app di HP pasangan, ubah atau centang tugas di Ruang Bersama dari HP Anda, lalu pastikan HP pasangan ikut berubah dalam beberapa detik tanpa ditarik untuk menyegarkan
 - [ ] **Bangun ulang app dengan Flutter 3.47.8** - oleh sesi Flutter, since 2026-10-24; Flutter 3.47.2 di laptop masih memercayai CA eMudhra yang bocor (GHSA-frr6-h895-5pxp, dart:io di Android), jadi koneksi HTTPS app bisa disadap. Perbaikannya ada di SDK: `flutter upgrade`, lalu build ulang dan pasang APK di kedua HP
@@ -113,3 +114,4 @@
 - [x] ~~Alamat `/` mengalihkan ke halaman masuk panel admin atas permintaan pemilik, menggantikan balasan JSON nama API; app tidak memakai `/`, hanya `/api/v1`~~ (2026-10-25)
 - [x] ~~Push sinkron (v1.x): push `sync` berisi data saja ke anggota lain setiap Ruang Bersama berubah, paling banyak satu per 10 detik per penerima, dengan perubahan pertama dikirim langsung. Kontraknya disetujui 25 Oktober~~ (2026-10-26)
 - [x] ~~Penarikan tabungan (v1.x): setoran dengan `type` `withdrawal`, total setoran dikurangi penarikan, dan push `savings_withdrawal` "{nama} mengambil {nominal}". Kontraknya disetujui 29 Oktober~~ (2026-10-29)
+- [x] ~~Pin lokasi kenangan (v1.x): `latitude` dan `longitude` di kenangan, dan `GET /places` yang meneruskan pencarian ke Nominatim publik sesuai kebijakannya (cache 1 hari, 1 request per detik, tanpa autocomplete, saklar `PLACES_SEARCH_ENABLED`). Kontraknya disetujui 29 Oktober~~ (2026-10-29)
