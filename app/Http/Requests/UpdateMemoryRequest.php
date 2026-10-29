@@ -20,6 +20,7 @@ class UpdateMemoryRequest extends ApiRequest
             'trip_id' => ['sometimes', 'nullable', new LowercaseUlid],
             'title' => ['sometimes', 'required', 'string', 'max:50'],
             'place_name' => ['sometimes', 'nullable', 'string', 'max:100'],
+            ...StoreMemoryRequest::locationRules(),
             'visited_on' => ['sometimes', 'required', 'date_format:Y-m-d'],
             'story' => ['sometimes', 'nullable', 'string', 'max:10000'],
         ];

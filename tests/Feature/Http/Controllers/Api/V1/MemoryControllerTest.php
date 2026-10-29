@@ -22,6 +22,8 @@ describe('store', function () {
             'trip_id' => $trip->id,
             'title' => 'Liburan ke Bali',
             'place_name' => 'Ubud, Bali',
+            'latitude' => -8.50685349,
+            'longitude' => 115.26247751,
             'visited_on' => '2027-06-20',
             'story' => 'Hari pertama hujan, tapi sawahnya tetap hijau.',
         ]);
@@ -33,6 +35,8 @@ describe('store', function () {
                 'trip_id' => $trip->id,
                 'title' => 'Liburan ke Bali',
                 'place_name' => 'Ubud, Bali',
+                'latitude' => -8.506853,
+                'longitude' => 115.262478,
                 'visited_on' => '2027-06-20',
                 'story' => 'Hari pertama hujan, tapi sawahnya tetap hijau.',
                 'created_by' => $user->id,
@@ -207,6 +211,13 @@ describe('store', function () {
         'a date that is not on the calendar' => [['visited_on' => '2027-02-30'], 'visited_on'],
         'a story longer than 10,000 characters' => [['story' => str_repeat('a', 10001)], 'story'],
         'an uppercase trip ID' => [['trip_id' => '01M4DP5R20VBX9K3WS7TY6HN2Q'], 'trip_id'],
+        'a latitude without a longitude' => [['latitude' => -8.5], 'longitude'],
+        'a longitude without a latitude' => [['longitude' => 115.2], 'latitude'],
+        'a latitude with an empty longitude' => [['latitude' => -8.5, 'longitude' => null], 'longitude'],
+        'a longitude with an empty latitude' => [['latitude' => null, 'longitude' => 115.2], 'latitude'],
+        'a latitude beyond the pole' => [['latitude' => 90.000001, 'longitude' => 115.2], 'latitude'],
+        'a longitude beyond 180' => [['latitude' => -8.5, 'longitude' => -180.5], 'longitude'],
+        'a latitude that is not a number' => [['latitude' => 'utara', 'longitude' => 115.2], 'latitude'],
     ]);
 
     it('accepts a story of 10,000 characters counted as code points', function () {
@@ -259,6 +270,43 @@ describe('update', function () {
             ->assertJsonPath('data.title', 'Liburan ke Bali')
             ->assertJsonPath('data.place_name', 'Ubud, Bali');
     });
+
+    it('sets the pin, and removes it with two nulls', function () {
+        $user = actingAsApiUser();
+        $memory = Memory::factory()->for($user->personalSpace())->create();
+
+        $placed = $this->patchJson("/api/v1/memories/{$memory->id}", ['latitude' => -8.506853, 'longitude' => 115.262478]);
+        $removed = $this->patchJson("/api/v1/memories/{$memory->id}", ['latitude' => null, 'longitude' => null]);
+
+        $placed->assertOk()->assertJsonPath('data.latitude', -8.506853)->assertJsonPath('data.longitude', 115.262478);
+        $removed->assertOk()->assertJsonPath('data.latitude', null)->assertJsonPath('data.longitude', null);
+    });
+
+    it('keeps the pin when other fields change', function () {
+        $user = actingAsApiUser();
+        $memory = Memory::factory()->for($user->personalSpace())->create(['latitude' => -8.506853, 'longitude' => 115.262478]);
+
+        $response = $this->patchJson("/api/v1/memories/{$memory->id}", ['title' => 'Sawah Tegallalang']);
+
+        $response->assertOk()->assertJsonPath('data.latitude', -8.506853)->assertJsonPath('data.longitude', 115.262478);
+    });
+
+    it('returns 422 with the stored memory when only one half of the pin is sent', function (array $payload, string $field) {
+        $user = actingAsApiUser();
+        $memory = Memory::factory()->for($user->personalSpace())->create(['latitude' => -8.506853, 'longitude' => 115.262478]);
+
+        $response = $this->patchJson("/api/v1/memories/{$memory->id}", $payload);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors([$field])
+            ->assertJsonPath('current.latitude', -8.506853);
+        expect($memory->fresh()->longitude)->toBe(115.262478);
+    })->with([
+        'a latitude alone' => [['latitude' => -6.2], 'longitude'],
+        'an empty latitude alone' => [['latitude' => null], 'longitude'],
+        'a longitude alone' => [['longitude' => 106.8], 'latitude'],
+        'an empty longitude alone' => [['longitude' => null], 'latitude'],
+    ]);
 
     it('links a trip, and unlinks it with null', function () {
         $user = actingAsApiUser();

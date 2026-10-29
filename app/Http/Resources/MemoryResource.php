@@ -24,6 +24,8 @@ class MemoryResource extends JsonResource
             'trip_id' => $this->trip_id,
             'title' => $this->title,
             'place_name' => $this->place_name,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'visited_on' => $this->visited_on,
             'story' => $this->story,
             'created_by' => $this->created_by,

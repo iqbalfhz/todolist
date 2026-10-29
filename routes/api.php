@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MemoryController;
 use App\Http\Controllers\Api\V1\MemoryPhotoController;
+use App\Http\Controllers\Api\V1\PlaceController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SavingsEntryController;
 use App\Http\Controllers\Api\V1\SavingsGoalController;
@@ -79,5 +80,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/memory-photos/{id}', [MemoryPhotoController::class, 'store'])->name('memory-photos.store');
         Route::patch('/memory-photos/{id}', [MemoryPhotoController::class, 'update'])->name('memory-photos.update');
         Route::delete('/memory-photos/{id}', [MemoryPhotoController::class, 'destroy'])->name('memory-photos.destroy');
+
+        Route::get('/places', [PlaceController::class, 'index'])
+            ->middleware('throttle:places')
+            ->name('places.index');
     });
 });

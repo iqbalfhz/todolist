@@ -28,6 +28,7 @@ return [
         'invalid_credentials' => 'Email atau kata sandi salah.',
         'invitation_invalid' => 'Kode tidak berlaku, minta kode baru.',
         'too_many_requests' => 'Terlalu sering. Coba lagi sebentar lagi.',
+        'places_unavailable' => 'Pencarian tempat sedang tidak tersedia. Pin tetap bisa dipasang langsung di peta.',
         'server_error' => 'Terjadi kesalahan di server. Coba lagi nanti.',
     ],
 
@@ -134,6 +135,9 @@ return [
         'reminder_frequency' => 'pengingat setor',
         'reminder_day' => 'hari setor',
         'place_name' => 'nama tempat',
+        'latitude' => 'garis lintang',
+        'longitude' => 'garis bujur',
+        'q' => 'kata kunci',
         'visited_on' => 'tanggal',
         'story' => 'cerita',
         'memory_id' => 'kenangan',

@@ -6,6 +6,7 @@ use App\Models\Concerns\HasMicrosecondTimestamps;
 use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\MemoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'trip_id',
     'title',
     'place_name',
+    'latitude',
+    'longitude',
     'visited_on',
     'story',
     'created_by',
@@ -49,5 +52,42 @@ class Memory extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(MemoryPhoto::class);
+    }
+
+    /**
+     * Round the latitude to six decimals, as the column stores it.
+     */
+    protected function latitude(): Attribute
+    {
+        return Attribute::make(set: fn (mixed $value): ?float => self::roundCoordinate($value));
+    }
+
+    /**
+     * Round the longitude to six decimals, as the column stores it.
+     */
+    protected function longitude(): Attribute
+    {
+        return Attribute::make(set: fn (mixed $value): ?float => self::roundCoordinate($value));
+    }
+
+    /**
+     * Round a coordinate from the phone, whose GPS gives many more decimals than are kept.
+     */
+    private static function roundCoordinate(mixed $value): ?float
+    {
+        return $value === null ? null : round((float) $value, 6);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+        ];
     }
 }

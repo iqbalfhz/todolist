@@ -28,6 +28,16 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Place search for memory pins. The public server's usage policy asks for
+    // at most one request per second for the whole app, an identifying
+    // User-Agent, caching, no autocomplete, and a way to stop without an app
+    // update: https://operations.osmfoundation.org/policies/nominatim/
+    'nominatim' => [
+        'enabled' => (bool) env('PLACES_SEARCH_ENABLED', true),
+        'url' => env('NOMINATIM_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => 'DenlyDays/1.0 (+'.env('APP_URL', 'https://denlydays.iqbalfhz.my.id').')',
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

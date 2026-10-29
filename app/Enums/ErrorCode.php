@@ -19,6 +19,7 @@ enum ErrorCode: string
     case InvalidCredentials = 'invalid_credentials';
     case InvitationInvalid = 'invitation_invalid';
     case TooManyRequests = 'too_many_requests';
+    case PlacesUnavailable = 'places_unavailable';
     case ServerError = 'server_error';
 
     /**
@@ -35,6 +36,7 @@ enum ErrorCode: string
             self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid => 422,
             self::TooManyRequests => 429,
             self::ServerError => 500,
+            self::PlacesUnavailable => 503,
         };
     }
 }
