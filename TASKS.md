@@ -6,7 +6,6 @@
 
 ## Waiting On
 
-- [ ] **Ganti client secret klien Web `Denly Days server`** - oleh pemilik, since 2026-10-29; secret-nya sempat ditempel ke percakapan. Server dan app tidak memakainya, dan klien ini tanpa redirect URI, jadi risikonya kecil. Di Google Auth Platform → Clients → Denly Days server: Add secret, lalu Disable dan Delete secret lama; secret baru tidak perlu disimpan
 - [ ] **Reaksi dan komentar di app Flutter** - oleh sesi Flutter, since 2026-10-29; kontraknya di bagian "Reaksi dan komentar (v1.x)" pada `docs/kontrak-api.md`: dua koleksi sync baru (`comments` dan `reactions`, jadi sync penuh sekali), lima endpoint lewat antrean, dan push `comment_created` serta `reaction_created`
 - [ ] **Uji komentar dan reaksi di dua HP** - oleh pemilik, since 2026-10-29; setelah app punya fiturnya: beri komentar dan reaksi pada tugas, setoran, dan kenangan di Ruang Bersama, pastikan HP pasangan menerima notifikasinya dan menampilkannya, lalu hapus satu komentar
 - [ ] **Uji pin lokasi dan pencarian tempat di HP** - oleh pemilik, since 2026-10-29; setelah app punya fiturnya: cari tempat, pasang pin di kenangan Ruang Bersama, lalu pastikan pin itu muncul di peta HP pasangan
@@ -119,3 +118,4 @@
 - [x] ~~Pin lokasi kenangan (v1.x): `latitude` dan `longitude` di kenangan, dan `GET /places` yang meneruskan pencarian ke Nominatim publik sesuai kebijakannya (cache 1 hari, 1 request per detik, tanpa autocomplete, saklar `PLACES_SEARCH_ENABLED`). Kontraknya disetujui 29 Oktober~~ (2026-10-29)
 - [x] ~~Reaksi dan komentar (v1.x): `PUT`, `PATCH`, `DELETE /comments/{id}` dan `PUT`, `DELETE /reactions/{id}` untuk tugas, setoran, dan kenangan di Ruang Bersama, koleksi sync `comments` dan `reactions`, ikut terhapus bersama subjeknya, dan push `comment_created` serta `reaction_created` (paling banyak satu per subjek per 10 menit). Kontraknya disetujui 29 Oktober~~ (2026-10-29)
 - [x] ~~Persiapan masuk dengan Google (oleh pemilik): layar persetujuan Google Auth Platform berstatus Testing dengan pengguna uji pemilik dan pasangan, klien Web `Denly Days server`, klien Android rilis dan debug untuk `id.my.iqbalfhz.denlydays` (SHA-1 rilis `4E:22:F8:AE:D5:9D:DD:2B:39:6F:1A:C9:6A:D1:1E:B4:CC:A0:63:74`, debug `2A:80:3F:B0:D4:4A:B3:9D:24:73:00:21:4B:C8:99:39:77:87:31:46`), dan kedua SHA-1 di app Android Firebase~~ (2026-10-29)
+- [x] ~~Client secret klien Web `Denly Days server` yang sempat ditempel ke percakapan dihapus pemilik; server dan app tidak memakai secret~~ (2026-10-29)
