@@ -36,6 +36,10 @@ return [
         'body' => 'Target tabungan ini tercapai',
     ],
 
+    'savings_withdrawal' => [
+        'body' => ':name mengambil :amount',
+    ],
+
     'partner_joined' => [
         'body' => ':name sudah bergabung. Ruang Bersama kalian siap.',
     ],

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SavingsEntryType;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,5 +26,15 @@ class SavingsEntryFactory extends Factory
             'amount' => 100_000,
             'entry_date' => now()->toDateString(),
         ];
+    }
+
+    /**
+     * Indicate that the entry takes money out of the goal.
+     */
+    public function withdrawal(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => SavingsEntryType::Withdrawal,
+        ]);
     }
 }

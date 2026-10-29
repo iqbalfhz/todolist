@@ -43,7 +43,6 @@ class SendSavingsReminders
                     ->orWhere(fn (Builder $monthly) => $monthly
                         ->where('reminder_frequency', SavingsReminderFrequency::Monthly)
                         ->where('reminder_day', $today->isLastOfMonth() ? '>=' : '=', $today->day)))
-                ->withSum('entries', 'amount')
                 ->get()
                 ->filter(fn (SavingsGoal $goal): bool => $this->window->send(
                     "goal:{$goal->id}",
@@ -65,9 +64,11 @@ class SendSavingsReminders
 
     /**
      * Get the share of the target that was saved, rounded down to a whole percent.
+     *
+     * Withdrawals can take the saved amount below zero; the push then says 0%.
      */
     private function percentSaved(SavingsGoal $goal): int
     {
-        return intdiv((int) $goal->entries_sum_amount * 100, $goal->target_amount);
+        return max(0, intdiv($goal->savedAmount() * 100, $goal->target_amount));
     }
 }

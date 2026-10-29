@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SavingsEntryType;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\SavingsEntryFactory;
@@ -59,6 +60,7 @@ class SavingsEntry extends Model
     protected function casts(): array
     {
         return [
+            'type' => SavingsEntryType::class,
             'amount' => 'integer',
         ];
     }

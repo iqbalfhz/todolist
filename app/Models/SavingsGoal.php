@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SavingsEntryType;
 use App\Enums\SavingsReminderFrequency;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use App\Models\Concerns\NotifiesSpaceChanges;
@@ -47,6 +48,18 @@ class SavingsGoal extends Model
     public function entries(): HasMany
     {
         return $this->hasMany(SavingsEntry::class);
+    }
+
+    /**
+     * Get the amount saved so far: the deposits minus the withdrawals.
+     *
+     * It can be below zero, because a withdrawal larger than the balance is
+     * accepted. The two sums are taken apart since `amount` is unsigned.
+     */
+    public function savedAmount(): int
+    {
+        return (int) $this->entries()->where('type', SavingsEntryType::Deposit)->sum('amount')
+            - (int) $this->entries()->where('type', SavingsEntryType::Withdrawal)->sum('amount');
     }
 
     /**

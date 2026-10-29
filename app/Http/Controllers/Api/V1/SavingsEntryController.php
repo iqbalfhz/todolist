@@ -20,7 +20,7 @@ use Illuminate\Http\Response;
 class SavingsEntryController extends QueuedResourceController
 {
     /**
-     * Record a deposit with the ID the phone chose.
+     * Record a deposit or a withdrawal with the ID the phone chose.
      */
     public function store(Request $request, string $id, CreateSavingsEntry $createSavingsEntry): JsonResponse
     {

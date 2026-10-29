@@ -39,6 +39,22 @@ describe('store', function () {
         ]);
     });
 
+    it('records a withdrawal when the phone sends that type', function () {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create();
+        $id = newId();
+
+        $response = $this->putJson("/api/v1/savings-entries/{$id}", [
+            'savings_goal_id' => $goal->id,
+            'type' => 'withdrawal',
+            'amount' => 200000,
+            'entry_date' => '2026-10-08',
+        ]);
+
+        $response->assertCreated()->assertJsonPath('data.type', 'withdrawal');
+        $this->assertDatabaseHas('savings_entries', ['id' => $id, 'type' => 'withdrawal', 'amount' => 200000]);
+    });
+
     it('still accepts a deposit for an archived goal', function () {
         $user = actingAsApiUser();
         $goal = SavingsGoal::factory()->for($user->personalSpace())->archived()->create();
@@ -153,6 +169,8 @@ describe('store', function () {
         'no entry date' => [['entry_date' => null], 'entry_date'],
         'an entry date in another format' => [['entry_date' => '08/10/2026'], 'entry_date'],
         'a note longer than 200 characters' => [['note' => str_repeat('a', 201)], 'note'],
+        'an unknown type' => [['type' => 'loan'], 'type'],
+        'an empty type' => [['type' => null], 'type'],
     ]);
 
     it('marks the goal achieved once the deposits reach the target', function () {
@@ -181,6 +199,67 @@ describe('store', function () {
         ]);
 
         expect($goal->fresh()->achieved_at)->toBeNull();
+    });
+
+    it('counts a withdrawal against the target', function (int $withdrawn, bool $achieved) {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create([
+            'target_amount' => 500_000,
+            'achieved_at' => now(),
+            'achieved_notified_at' => now(),
+        ]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 600_000]);
+
+        $this->putJson('/api/v1/savings-entries/'.newId(), [
+            'savings_goal_id' => $goal->id,
+            'type' => 'withdrawal',
+            'amount' => $withdrawn,
+            'entry_date' => '2026-10-08',
+        ]);
+
+        expect($goal->fresh()->achieved_at !== null)->toBe($achieved);
+    })->with([
+        'leaving exactly the target' => [100_000, true],
+        'taking the total below the target' => [100_001, false],
+    ]);
+
+    it('accepts a withdrawal larger than what was saved', function () {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create(['target_amount' => 500_000]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 100_000]);
+
+        $response = $this->putJson('/api/v1/savings-entries/'.newId(), [
+            'savings_goal_id' => $goal->id,
+            'type' => 'withdrawal',
+            'amount' => 300_000,
+            'entry_date' => '2026-10-08',
+        ]);
+
+        $response->assertCreated();
+        expect($goal->savedAmount())->toBe(-200_000);
+    });
+
+    it('queues a savings_withdrawal push for the partner instead of a deposit push', function () {
+        Queue::fake([SendPushNotification::class]);
+        [$user, $partner, $space] = actingAsPartnered();
+        $user->update(['name' => 'Iqbal']);
+        $goal = SavingsGoal::factory()->for($space)->create(['name' => 'Dana Liburan', 'target_amount' => 10_000_000]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 1_000_000]);
+
+        $this->putJson('/api/v1/savings-entries/'.newId(), [
+            'savings_goal_id' => $goal->id,
+            'type' => 'withdrawal',
+            'amount' => 200_000,
+            'entry_date' => '2026-10-08',
+        ]);
+
+        Queue::assertPushedTimes(SendPushNotification::class, 1);
+        Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $partner->id
+            && $job->type === PushType::SavingsWithdrawal
+            && $job->title === 'Dana Liburan'
+            && $job->body === 'Iqbal mengambil Rp200.000'
+            && $job->spaceId === $space->id
+            && $job->savingsGoalId === $goal->id);
     });
 
     it('queues a savings_deposit push for the partner', function () {
@@ -313,6 +392,22 @@ describe('update', function () {
         expect($goal->fresh()->achieved_at)->toBeNull();
     });
 
+    it('clears the achievement when a withdrawal grows past what is left above the target', function () {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create([
+            'target_amount' => 500_000,
+            'achieved_at' => now(),
+            'achieved_notified_at' => now(),
+        ]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 600_000]);
+        $withdrawal = SavingsEntry::factory()->for($goal)->withdrawal()->create(['amount' => 50_000]);
+
+        $response = $this->patchJson("/api/v1/savings-entries/{$withdrawal->id}", ['amount' => 150_000]);
+
+        $response->assertOk()->assertJsonPath('data.type', 'withdrawal');
+        expect($goal->fresh()->achieved_at)->toBeNull();
+    });
+
     it('ignores the goal and other read-only fields', function () {
         $user = actingAsApiUser();
         $entry = SavingsEntry::factory()->for(SavingsGoal::factory()->for($user->personalSpace()))->create();
@@ -401,6 +496,17 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/savings-entries/{$entry->id}");
 
         expect($goal->fresh()->achieved_at)->toBeNull();
+    });
+
+    it('marks the goal achieved again when the withdrawal that took it below the target is deleted', function () {
+        $user = actingAsApiUser();
+        $goal = SavingsGoal::factory()->for($user->personalSpace())->create(['target_amount' => 500_000]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 500_000]);
+        $withdrawal = SavingsEntry::factory()->for($goal)->withdrawal()->create(['amount' => 100_000]);
+
+        $this->deleteJson("/api/v1/savings-entries/{$withdrawal->id}");
+
+        expect($goal->fresh()->achieved_at)->not->toBeNull();
     });
 
     it('returns 204 again when the delete is repeated', function () {

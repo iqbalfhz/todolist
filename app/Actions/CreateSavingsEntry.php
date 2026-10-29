@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\PushType;
+use App\Enums\SavingsEntryType;
 use App\Models\SavingsEntry;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -17,7 +18,7 @@ class CreateSavingsEntry
     ) {}
 
     /**
-     * Record a deposit with the ID the phone chose.
+     * Record a deposit or a withdrawal with the ID the phone chose.
      *
      * @param  array<string, mixed>  $data
      */
@@ -27,7 +28,7 @@ class CreateSavingsEntry
             $goal = $this->findWritableSavingsGoal->handle($actor, $data['savings_goal_id']);
 
             $entry = new SavingsEntry(array_filter(
-                Arr::only($data, ['amount', 'entry_date', 'note']),
+                Arr::only($data, ['type', 'amount', 'entry_date', 'note']),
                 fn (mixed $value): bool => $value !== null,
             ));
             $entry->id = $id;
@@ -36,12 +37,17 @@ class CreateSavingsEntry
             $entry->user_id = $actor->id;
             $entry->save();
 
-            // The "achieved" push replaces the deposit push for the entry that reaches the target.
-            if (! $this->refreshSavingsProgress->handle($goal, $actor)) {
-                $this->refreshSavingsProgress->notifyOthers($goal, $actor, PushType::SavingsDeposit, __('push.savings_deposit.body', [
-                    'name' => $actor->name,
-                    'amount' => $this->formatMoney->handle($entry->amount, $goal->currency),
-                ]));
+            $celebrates = $this->refreshSavingsProgress->handle($goal, $actor);
+            $replacements = [
+                'name' => $actor->name,
+                'amount' => $this->formatMoney->handle($entry->amount, $goal->currency),
+            ];
+
+            if ($entry->type === SavingsEntryType::Withdrawal) {
+                $this->refreshSavingsProgress->notifyOthers($goal, $actor, PushType::SavingsWithdrawal, __('push.savings_withdrawal.body', $replacements));
+            } elseif (! $celebrates) {
+                // The "achieved" push replaces the deposit push for the entry that reaches the target.
+                $this->refreshSavingsProgress->notifyOthers($goal, $actor, PushType::SavingsDeposit, __('push.savings_deposit.body', $replacements));
             }
 
             return $entry;

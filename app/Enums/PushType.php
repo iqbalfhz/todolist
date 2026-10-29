@@ -9,6 +9,7 @@ enum PushType: string
     case TaskCompleted = 'task_completed';
     case SavingsDeposit = 'savings_deposit';
     case SavingsAchieved = 'savings_achieved';
+    case SavingsWithdrawal = 'savings_withdrawal';
     case PartnerJoined = 'partner_joined';
     case SpecialDateReminder = 'special_date_reminder';
     case TripReminder = 'trip_reminder';
@@ -24,7 +25,7 @@ enum PushType: string
         return match ($this) {
             self::TaskReminder => 'task_reminders',
             self::TaskAssigned, self::TaskCompleted, self::MemoryCreated => 'partner_activity',
-            self::SavingsDeposit, self::SavingsAchieved => 'savings_activity',
+            self::SavingsDeposit, self::SavingsAchieved, self::SavingsWithdrawal => 'savings_activity',
             self::PartnerJoined => null,
             self::SpecialDateReminder => 'special_dates',
             self::TripReminder => 'trip_reminders',
@@ -56,6 +57,6 @@ enum PushType: string
      */
     public function isPrivate(): bool
     {
-        return in_array($this, [self::SavingsDeposit, self::SavingsAchieved, self::SavingsReminder], true);
+        return in_array($this, [self::SavingsDeposit, self::SavingsAchieved, self::SavingsWithdrawal, self::SavingsReminder], true);
     }
 }

@@ -40,6 +40,26 @@ it('queues a reminder for both members at 08.00 on the chosen weekday, with the 
     }
 });
 
+it('takes withdrawals off the share already saved, and never says less than 0%', function (int $deposited, int $withdrawn, string $body) {
+    Queue::fake([SendPushNotification::class]);
+    $owner = User::factory()->withPersonalSpace()->create();
+    $goal = SavingsGoal::factory()->for($owner->personalSpace())->create([
+        'target_amount' => 3_000_000,
+        'reminder_frequency' => 'weekly',
+        'reminder_day' => 4,
+    ]);
+    SavingsEntry::factory()->for($goal)->create(['amount' => $deposited]);
+    SavingsEntry::factory()->for($goal)->withdrawal()->create(['amount' => $withdrawn]);
+    $this->travelTo('2026-10-22 01:00:00');
+
+    app(SendSavingsReminders::class)->handle();
+
+    Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->body === $body);
+})->with([
+    'a third left after a withdrawal' => [1_500_000, 500_000, 'Waktunya menabung. Terkumpul 33% dari target.'],
+    'more taken out than saved' => [100_000, 400_000, 'Waktunya menabung. Terkumpul 0% dari target.'],
+]);
+
 it('sends on the chosen day of the month', function (string $now, int $expected) {
     Queue::fake([SendPushNotification::class]);
     SavingsGoal::factory()->create(['reminder_frequency' => 'monthly', 'reminder_day' => 25]);

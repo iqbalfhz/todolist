@@ -92,6 +92,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['savingsGoalId' => 'id-target'],
         ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
     ],
+    'a withdrawal, hidden on the lock screen' => [
+        PushType::SavingsWithdrawal,
+        ['savingsGoalId' => 'id-target'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'goal-id-target', 'visibility' => 'PRIVATE']],
+    ],
     'an achieved goal, hidden on the lock screen' => [
         PushType::SavingsAchieved,
         ['savingsGoalId' => 'id-target'],
@@ -177,6 +182,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'completed tasks' => [PushType::TaskCompleted, 'partner_activity'],
     'deposits' => [PushType::SavingsDeposit, 'savings_activity'],
     'achieved goals' => [PushType::SavingsAchieved, 'savings_activity'],
+    'withdrawals' => [PushType::SavingsWithdrawal, 'savings_activity'],
     'special dates' => [PushType::SpecialDateReminder, 'special_dates'],
     'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
     'deposit reminders' => [PushType::SavingsReminder, 'savings_reminders'],

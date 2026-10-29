@@ -19,7 +19,7 @@ class RefreshSavingsProgress
      */
     public function handle(SavingsGoal $goal, User $actor): bool
     {
-        $isAchieved = (int) $goal->entries()->sum('amount') >= $goal->target_amount;
+        $isAchieved = $goal->savedAmount() >= $goal->target_amount;
 
         if ($isAchieved) {
             $goal->achieved_at ??= now();
