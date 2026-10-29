@@ -12,7 +12,8 @@ return [
     | the others as they are written here on 11 October 2026, the
     | special_date_reminder, trip_reminder, and savings_reminder texts on
     | 22 October 2026, the memory_created text on 23 October 2026, and the
-    | savings_withdrawal text on 29 October 2026.
+    | savings_withdrawal, comment_created, and reaction_created texts on
+    | 29 October 2026.
     |
     */
 
@@ -66,6 +67,14 @@ return [
 
     'memory_created' => [
         'body' => ':name menyimpan kenangan baru',
+    ],
+
+    'comment_created' => [
+        'body' => ':name: :comment',
+    ],
+
+    'reaction_created' => [
+        'body' => ':name memberi reaksi :emoji',
     ],
 
 ];

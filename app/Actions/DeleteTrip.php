@@ -3,15 +3,19 @@
 namespace App\Actions;
 
 use App\Models\Memory;
+use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\Trip;
 use Illuminate\Support\Facades\DB;
 
 class DeleteTrip
 {
+    public function __construct(private DeleteDiscussions $deleteDiscussions) {}
+
     /**
      * Soft delete the trip together with its checklist and the checklist's
-     * tasks, and unlink the memories saved from it, which stay.
+     * tasks with their comments and reactions, and unlink the memories saved
+     * from it, which stay.
      *
      * Everything is changed through Eloquent, which also bumps updated_at, so
      * the changes reach the other phone through sync.
@@ -31,6 +35,7 @@ class DeleteTrip
                 TaskList::query()->whereKey($checklist->id)->lockForUpdate()->first();
 
                 $checklist->tasks()->delete();
+                $this->deleteDiscussions->handle(Task::query()->where('task_list_id', $checklist->id));
                 $checklist->delete();
             }
 

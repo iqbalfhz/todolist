@@ -2,8 +2,10 @@
 
 use App\Jobs\DeleteStoredFiles;
 use App\Jobs\NotifyMemoryCreated;
+use App\Models\Comment;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Models\Reaction;
 use App\Models\Space;
 use App\Models\Trip;
 use App\Models\User;
@@ -400,6 +402,23 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/memories/{$memory->id}");
 
         Queue::assertNotPushed(DeleteStoredFiles::class);
+    });
+
+    it('deletes the comments and reactions on the memory, leaving those on other memories alone', function () {
+        $this->travelTo('2026-10-23 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $memory = Memory::factory()->for($space)->create();
+        $comment = Comment::factory()->on($memory)->for($partner)->create();
+        $reaction = Reaction::factory()->on($memory)->for($partner)->create();
+        $onAnotherMemory = Reaction::factory()->on(Memory::factory()->for($space)->create())->for($partner)->create();
+        $this->travelTo('2026-10-23 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/memories/{$memory->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($comment->fresh()->updated_at->toJSON())->toBe('2026-10-23T11:00:00.250000Z');
+        $this->assertNotSoftDeleted($onAnotherMemory);
     });
 
     it('returns 204 again when the delete is repeated', function () {

@@ -132,6 +132,26 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['memoryId' => 'id-kenangan'],
         ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'memory-id-kenangan']],
     ],
+    'a comment on a task' => [
+        PushType::CommentCreated,
+        ['subjectType' => 'task', 'subjectId' => 'id-tugas'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'comment-id-tugas']],
+    ],
+    'a comment on a deposit, hidden on the lock screen' => [
+        PushType::CommentCreated,
+        ['savingsGoalId' => 'id-target', 'subjectType' => 'savings_entry', 'subjectId' => 'id-setoran'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'comment-id-setoran', 'visibility' => 'PRIVATE']],
+    ],
+    'a reaction to a memory' => [
+        PushType::ReactionCreated,
+        ['subjectType' => 'memory', 'subjectId' => 'id-kenangan'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'reaction-id-kenangan']],
+    ],
+    'a reaction to a withdrawal, hidden on the lock screen' => [
+        PushType::ReactionCreated,
+        ['savingsGoalId' => 'id-target', 'subjectType' => 'savings_entry', 'subjectId' => 'id-penarikan'],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'reaction-id-penarikan', 'visibility' => 'PRIVATE']],
+    ],
 ]);
 
 it('sends the special date or the member a reminder is about in the data', function (array $ids, array $data) {
@@ -170,6 +190,54 @@ it('sends the memory a push is about in the data', function () {
     expect($sent->message['data'])->toBe(['type' => 'memory_created', 'space_id' => 'id-ruang', 'memory_id' => 'id-kenangan']);
 });
 
+it('still sends a push that was queued before comments and reactions existed', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+    $job = (new ReflectionClass(SendPushNotification::class))->newInstanceWithoutConstructor();
+
+    // The queue rebuilds a job from the fields it was stored with, which here lack the subject.
+    $job->__unserialize([
+        'userId' => $user->id,
+        'type' => PushType::TaskCompleted,
+        'title' => 'Beli galon',
+        'body' => 'Chika menyelesaikan tugas ini',
+        'spaceId' => 'id-ruang',
+        'taskId' => 'id-tugas',
+        'savingsGoalId' => null,
+        'specialDateId' => null,
+        'memberId' => null,
+        'tripId' => null,
+        'memoryId' => null,
+    ]);
+    $job->handle();
+
+    expect($sent->message['data'])->toBe(['type' => 'task_completed', 'space_id' => 'id-ruang', 'task_id' => 'id-tugas']);
+});
+
+it('sends the subject a comment or a reaction is about in the data, with the goal of an entry', function (PushType $type, array $ids, array $data) {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create();
+    DeviceToken::factory()->for($user)->create();
+
+    SendPushNotification::dispatchSync($user->id, $type, 'Judul', 'Isi', 'id-ruang', ...$ids);
+
+    expect($sent->message['data'])->toBe($data);
+})->with([
+    'a comment on a task' => [
+        PushType::CommentCreated,
+        ['subjectType' => 'task', 'subjectId' => 'id-tugas'],
+        ['type' => 'comment_created', 'space_id' => 'id-ruang', 'subject_type' => 'task', 'subject_id' => 'id-tugas'],
+    ],
+    'a reaction to a deposit' => [
+        PushType::ReactionCreated,
+        ['savingsGoalId' => 'id-target', 'subjectType' => 'savings_entry', 'subjectId' => 'id-setoran'],
+        ['type' => 'reaction_created', 'space_id' => 'id-ruang', 'savings_goal_id' => 'id-target', 'subject_type' => 'savings_entry', 'subject_id' => 'id-setoran'],
+    ],
+]);
+
 it('sends nothing when the recipient turned that kind of push off', function (PushType $type, string $preference) {
     $this->mock(Messaging::class)->shouldNotReceive('sendMulticast');
     $user = User::factory()->create(['notification_prefs' => [$preference => false]]);
@@ -187,6 +255,8 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
     'deposit reminders' => [PushType::SavingsReminder, 'savings_reminders'],
     'new memories' => [PushType::MemoryCreated, 'partner_activity'],
+    'comments' => [PushType::CommentCreated, 'partner_activity'],
+    'reactions' => [PushType::ReactionCreated, 'partner_activity'],
 ]);
 
 it('sends partner_joined even when every preference is off', function () {

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\NotifySpaceChanges;
+use App\Enums\SubjectType;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -27,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->ensureApplicationRunsInUtc();
         $this->configureRateLimiting();
+
+        SubjectType::registerMorphMap();
     }
 
     /**

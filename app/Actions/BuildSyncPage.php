@@ -2,8 +2,10 @@
 
 namespace App\Actions;
 
+use App\Models\Comment;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
@@ -142,6 +144,8 @@ class BuildSyncPage
             'trips' => Trip::query()->whereIn('space_id', $spaceIds),
             'memories' => Memory::query()->whereIn('space_id', $spaceIds),
             'memory_photos' => MemoryPhoto::query()->whereIn('space_id', $spaceIds),
+            'comments' => Comment::query()->whereIn('space_id', $spaceIds),
+            'reactions' => Reaction::query()->whereIn('space_id', $spaceIds),
         };
 
         if ($withDeleted) {

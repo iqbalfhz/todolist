@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Comment;
+use App\Models\Reaction;
 use App\Models\Space;
 use App\Models\Task;
 use App\Models\TaskList;
@@ -469,6 +471,24 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/lists/{$list->id}");
 
         $this->assertNotSoftDeleted($otherTask);
+    });
+
+    it('deletes the comments and reactions on its tasks, leaving those on other lists alone', function () {
+        $this->travelTo('2026-10-08 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $list = TaskList::factory()->for($space)->create();
+        $task = Task::factory()->for($list)->create();
+        $comment = Comment::factory()->on($task)->for($partner)->create();
+        $reaction = Reaction::factory()->on($task)->for($partner)->create();
+        $onAnotherList = Comment::factory()->on(Task::factory()->for(TaskList::factory()->for($space))->create())->for($partner)->create();
+        $this->travelTo('2026-10-08 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/lists/{$list->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($reaction->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+        $this->assertNotSoftDeleted($onAnotherList);
     });
 
     it('returns 204 again when the delete is repeated', function () {

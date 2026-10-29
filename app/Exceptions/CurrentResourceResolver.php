@@ -2,8 +2,10 @@
 
 namespace App\Exceptions;
 
+use App\Http\Resources\CommentResource;
 use App\Http\Resources\MemoryPhotoResource;
 use App\Http\Resources\MemoryResource;
+use App\Http\Resources\ReactionResource;
 use App\Http\Resources\SavingsEntryResource;
 use App\Http\Resources\SavingsGoalResource;
 use App\Http\Resources\SpecialDateResource;
@@ -11,8 +13,10 @@ use App\Http\Resources\TaskListResource;
 use App\Http\Resources\TaskResource;
 use App\Http\Resources\TripResource;
 use App\Http\Resources\UserResource;
+use App\Models\Comment;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\SpecialDate;
@@ -42,6 +46,8 @@ class CurrentResourceResolver
         'trips' => [Trip::class, TripResource::class],
         'memories' => [Memory::class, MemoryResource::class],
         'memory-photos' => [MemoryPhoto::class, MemoryPhotoResource::class],
+        'comments' => [Comment::class, CommentResource::class],
+        'reactions' => [Reaction::class, ReactionResource::class],
     ];
 
     /**

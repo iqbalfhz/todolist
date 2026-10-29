@@ -206,7 +206,8 @@ class UpdateTask
     }
 
     /**
-     * Delete the next occurrence if nobody changed or completed it since it was created.
+     * Delete the next occurrence if nobody changed, completed, commented on,
+     * or reacted to it since it was created.
      *
      * One that was already deleted stays linked, so deleting it keeps the
      * series stopped.
@@ -215,13 +216,25 @@ class UpdateTask
     {
         $next = Task::query()->whereKey($nextTaskId)->lockForUpdate()->first();
 
-        if ($next === null || $next->completed_at !== null || ! $next->updated_at->eq($next->created_at)) {
+        if ($next === null || $next->completed_at !== null || ! $next->updated_at->eq($next->created_at) || $this->hasDiscussion($next)) {
             return false;
         }
 
         $next->delete();
 
         return true;
+    }
+
+    /**
+     * Determine whether anyone commented on or reacted to the task.
+     *
+     * The reads lock, so they also see a comment or reaction stored after
+     * this transaction took its snapshot; storing one holds the task's row,
+     * which this transaction has locked by now.
+     */
+    private function hasDiscussion(Task $task): bool
+    {
+        return $task->comments()->sharedLock()->exists() || $task->reactions()->sharedLock()->exists();
     }
 
     /**

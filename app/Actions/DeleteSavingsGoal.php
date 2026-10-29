@@ -2,14 +2,18 @@
 
 namespace App\Actions;
 
+use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Trip;
 use Illuminate\Support\Facades\DB;
 
 class DeleteSavingsGoal
 {
+    public function __construct(private DeleteDiscussions $deleteDiscussions) {}
+
     /**
-     * Soft delete the goal together with its entries, and unlink the trips saved up with it.
+     * Soft delete the goal together with its entries and their comments and
+     * reactions, and unlink the trips saved up with it.
      *
      * The entries are deleted through Eloquent, which also bumps their
      * updated_at, so the deletions reach the other phone through sync.
@@ -24,6 +28,7 @@ class DeleteSavingsGoal
             Trip::query()->where('savings_goal_id', $goal->id)->update(['savings_goal_id' => null]);
 
             $goal->entries()->delete();
+            $this->deleteDiscussions->handle(SavingsEntry::query()->where('savings_goal_id', $goal->id));
             $goal->delete();
         });
     }

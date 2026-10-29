@@ -35,7 +35,7 @@ it('pairs the two accounts through an invitation that the partner accepted', fun
     ]);
 });
 
-it('gives the first sync of the app spaces, lists, tasks, goals, and deposits to show', function () {
+it('gives the first sync of the app spaces, lists, tasks, goals, deposits, comments, and reactions to show', function () {
     $this->seed(DemoSeeder::class);
     $user = User::query()->where('email', 'aku@contoh.test')->sole();
 
@@ -45,7 +45,9 @@ it('gives the first sync of the app spaces, lists, tasks, goals, and deposits to
     expect($response->json('data.task_lists'))->not->toBeEmpty()
         ->and($response->json('data.tasks'))->not->toBeEmpty()
         ->and($response->json('data.savings_goals'))->not->toBeEmpty()
-        ->and($response->json('data.savings_entries'))->not->toBeEmpty();
+        ->and($response->json('data.savings_entries'))->not->toBeEmpty()
+        ->and($response->json('data.comments'))->not->toBeEmpty()
+        ->and($response->json('data.reactions'))->not->toBeEmpty();
 });
 
 it('includes a completed task and an achieved goal among the demo data', function () {

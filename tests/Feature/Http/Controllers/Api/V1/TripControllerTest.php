@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Comment;
 use App\Models\Memory;
+use App\Models\Reaction;
 use App\Models\SavingsGoal;
 use App\Models\Space;
 use App\Models\Task;
@@ -298,6 +300,22 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/trips/{$trip->id}");
 
         $this->assertNotSoftDeleted($user->personalSpace()->taskLists()->sole());
+    });
+
+    it('deletes the comments and reactions on the tasks of its checklist', function () {
+        $this->travelTo('2026-10-22 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $trip = Trip::factory()->for($space)->create();
+        $task = Task::factory()->for(TaskList::factory()->for($space)->create(['trip_id' => $trip->id]))->create();
+        $comment = Comment::factory()->on($task)->for($partner)->create();
+        $reaction = Reaction::factory()->on($task)->for($partner)->create();
+        $this->travelTo('2026-10-22 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/trips/{$trip->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($comment->fresh()->updated_at->toJSON())->toBe('2026-10-22T11:00:00.250000Z');
     });
 
     it('returns 204 again when the delete is repeated', function () {

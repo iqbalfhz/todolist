@@ -2,6 +2,8 @@
 
 use App\Enums\PushType;
 use App\Jobs\SendPushNotification;
+use App\Models\Comment;
+use App\Models\Reaction;
 use App\Models\Space;
 use App\Models\Task;
 use App\Models\TaskList;
@@ -661,6 +663,28 @@ describe('destroy', function () {
         expect($task->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
     });
 
+    it('deletes the comments and reactions on the task and bumps their updated_at, leaving the others alone', function () {
+        $this->travelTo('2026-10-08 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $list = TaskList::factory()->for($space)->create();
+        $task = Task::factory()->for($list)->create();
+        $comment = Comment::factory()->on($task)->for($partner)->create();
+        $reaction = Reaction::factory()->on($task)->for($partner)->create();
+        $deletedBefore = Comment::factory()->on($task)->for($partner)->create();
+        $deletedBefore->delete();
+        $onAnotherTask = Comment::factory()->on(Task::factory()->for($list)->create())->for($partner)->create();
+        $this->travelTo('2026-10-08 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/tasks/{$task->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($comment->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+        expect($reaction->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+        expect($deletedBefore->fresh()->updated_at->toJSON())->toBe('2026-10-08T10:00:00.000000Z');
+        $this->assertNotSoftDeleted($onAnotherTask);
+    });
+
     it('returns 204 again when the delete is repeated', function () {
         $user = actingAsApiUser();
         $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create();
@@ -896,6 +920,43 @@ describe('repeat', function () {
         $completedAgain->assertOk()->assertJsonPath('next_task.id', $nextId);
         $this->assertNotSoftDeleted('tasks', ['id' => $nextId]);
         $this->assertDatabaseCount('tasks', 2);
+    });
+
+    it('keeps a next occurrence someone commented on or reacted to when the completion is undone', function (string $discussion) {
+        [, $partner, $space] = actingAsPartnered();
+        $task = Task::factory()->for(TaskList::factory()->for($space))->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $nextId = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z'])->json('next_task.id');
+        $discussion::factory()->on(Task::query()->findOrFail($nextId))->for($partner)->create();
+
+        $undone = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => null]);
+
+        $undone->assertOk()->assertJsonPath('data.next_task_id', $nextId)->assertJsonPath('next_task.id', $nextId);
+        $this->assertNotSoftDeleted('tasks', ['id' => $nextId]);
+    })->with([
+        'a comment' => [Comment::class],
+        'a reaction' => [Reaction::class],
+    ]);
+
+    it('still takes back the next occurrence when its only comment was deleted', function () {
+        [, $partner, $space] = actingAsPartnered();
+        $task = Task::factory()->for(TaskList::factory()->for($space))->create([
+            'due_date' => '2026-10-20',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-10-20',
+        ]);
+        $nextId = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-10-20T05:00:00Z'])->json('next_task.id');
+        Comment::factory()->on(Task::query()->findOrFail($nextId))->for($partner)->create()->delete();
+
+        $undone = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => null]);
+
+        $undone->assertOk()->assertJsonPath('next_task', null);
+        $this->assertSoftDeleted('tasks', ['id' => $nextId]);
     });
 
     it('stops repeating once the rule is cleared', function () {

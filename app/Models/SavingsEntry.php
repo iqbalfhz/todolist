@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SavingsEntryType;
+use App\Models\Concerns\HasDiscussion;
 use App\Models\Concerns\HasMicrosecondTimestamps;
 use App\Models\Concerns\NotifiesSpaceChanges;
 use Database\Factories\SavingsEntryFactory;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class SavingsEntry extends Model
 {
     /** @use HasFactory<SavingsEntryFactory> */
-    use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
+    use HasDiscussion, HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
      * The model's default values for attributes.

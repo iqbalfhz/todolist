@@ -3,12 +3,14 @@
 use App\Http\Controllers\Api\V1\AcceptedInvitationController;
 use App\Http\Controllers\Api\V1\AccessTokenController;
 use App\Http\Controllers\Api\V1\AvatarController;
+use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MemoryController;
 use App\Http\Controllers\Api\V1\MemoryPhotoController;
 use App\Http\Controllers\Api\V1\PlaceController;
+use App\Http\Controllers\Api\V1\ReactionController;
 use App\Http\Controllers\Api\V1\RegisteredUserController;
 use App\Http\Controllers\Api\V1\SavingsEntryController;
 use App\Http\Controllers\Api\V1\SavingsGoalController;
@@ -84,5 +86,12 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/places', [PlaceController::class, 'index'])
             ->middleware('throttle:places')
             ->name('places.index');
+
+        Route::put('/comments/{id}', [CommentController::class, 'store'])->name('comments.store');
+        Route::patch('/comments/{id}', [CommentController::class, 'update'])->name('comments.update');
+        Route::delete('/comments/{id}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+        Route::put('/reactions/{id}', [ReactionController::class, 'store'])->name('reactions.store');
+        Route::delete('/reactions/{id}', [ReactionController::class, 'destroy'])->name('reactions.destroy');
     });
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\CreateTask;
+use App\Actions\DeleteTask;
 use App\Actions\UpdateTask;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
@@ -48,12 +49,12 @@ class TaskController extends QueuedResourceController
     /**
      * Delete the task.
      */
-    public function destroy(string $id): Response
+    public function destroy(string $id, DeleteTask $deleteTask): Response
     {
         $task = $this->findOrFail($id);
 
         if (! $task->trashed()) {
-            $task->delete();
+            $deleteTask->handle($task);
         }
 
         return response()->noContent();

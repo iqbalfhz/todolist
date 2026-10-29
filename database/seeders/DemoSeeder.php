@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Actions\AcceptInvitation;
+use App\Actions\CreateComment;
 use App\Actions\CreatePersonalSpace;
+use App\Actions\CreateReaction;
 use App\Actions\CreateSavingsEntry;
 use App\Actions\CreateTask;
 use App\Actions\IssueInvitation;
 use App\Actions\UpdateTask;
+use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
 use App\Models\Task;
@@ -38,6 +41,8 @@ class DemoSeeder extends Seeder
         private CreateTask $createTask,
         private UpdateTask $updateTask,
         private CreateSavingsEntry $createSavingsEntry,
+        private CreateComment $createComment,
+        private CreateReaction $createReaction,
     ) {}
 
     /**
@@ -141,6 +146,9 @@ class DemoSeeder extends Seeder
             'assignee_ids' => [$partner->id],
         ]);
         $this->updateTask->handle($partner, $soap, ['completed_at' => now()->toIso8601String()]);
+        $this->comment($user, $soap, 'Makasih ya, sudah dibelikan!');
+        $this->comment($partner, $soap, 'Sama-sama. Sekalian beli pewangi juga.');
+        $this->react($user, $soap, '❤️');
         $this->task($partner, $home, [
             'title' => 'Bayar listrik',
             'due_date' => $today->addDay()->toDateString(),
@@ -158,7 +166,8 @@ class DemoSeeder extends Seeder
             'target_amount' => 10_000_000,
             'target_date' => $today->addMonths(8)->toDateString(),
         ]);
-        $this->deposit($user, $holiday, 2_000_000, $today->subDays(20), 'Gajian');
+        $payday = $this->deposit($user, $holiday, 2_000_000, $today->subDays(20), 'Gajian');
+        $this->react($partner, $payday, '🎉');
         $this->deposit($partner, $holiday, 1_500_000, $today->subDays(6));
 
         $gift = $this->goal($partner, $space, [
@@ -207,13 +216,37 @@ class DemoSeeder extends Seeder
     /**
      * Record a deposit towards the goal.
      */
-    private function deposit(User $depositor, SavingsGoal $goal, int $amount, CarbonImmutable $date, ?string $note = null): void
+    private function deposit(User $depositor, SavingsGoal $goal, int $amount, CarbonImmutable $date, ?string $note = null): SavingsEntry
     {
-        $this->createSavingsEntry->handle($depositor, $this->newId(), [
+        return $this->createSavingsEntry->handle($depositor, $this->newId(), [
             'savings_goal_id' => $goal->id,
             'amount' => $amount,
             'entry_date' => $date->toDateString(),
             'note' => $note,
+        ]);
+    }
+
+    /**
+     * Comment on a task or a deposit in the shared space.
+     */
+    private function comment(User $author, Task|SavingsEntry $subject, string $body): void
+    {
+        $this->createComment->handle($author, $this->newId(), [
+            'subject_type' => $subject->getMorphClass(),
+            'subject_id' => $subject->id,
+            'body' => $body,
+        ]);
+    }
+
+    /**
+     * React to a task or a deposit in the shared space.
+     */
+    private function react(User $author, Task|SavingsEntry $subject, string $emoji): void
+    {
+        $this->createReaction->handle($author, $this->newId(), [
+            'subject_type' => $subject->getMorphClass(),
+            'subject_id' => $subject->id,
+            'emoji' => $emoji,
         ]);
     }
 

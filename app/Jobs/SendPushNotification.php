@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\SendToDevices;
 use App\Enums\PushType;
+use App\Enums\SubjectType;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,6 +29,19 @@ class SendPushNotification implements ShouldQueue
     public array $backoff = [10, 60];
 
     /**
+     * The type of the task, savings entry, or memory a comment or reaction push is about.
+     *
+     * Declared with a default rather than promoted, so a push queued before
+     * this field existed is still read as having none after a deploy.
+     */
+    public ?string $subjectType = null;
+
+    /**
+     * The ID of the task, savings entry, or memory a comment or reaction push is about.
+     */
+    public ?string $subjectId = null;
+
+    /**
      * Create a new job instance.
      */
     public function __construct(
@@ -42,7 +56,12 @@ class SendPushNotification implements ShouldQueue
         public ?string $memberId = null,
         public ?string $tripId = null,
         public ?string $memoryId = null,
-    ) {}
+        ?string $subjectType = null,
+        ?string $subjectId = null,
+    ) {
+        $this->subjectType = $subjectType;
+        $this->subjectId = $subjectId;
+    }
 
     /**
      * Send the push to every device of the recipient, unless they turned this kind off.
@@ -84,15 +103,26 @@ class SendPushNotification implements ShouldQueue
                 'member_id' => $this->memberId,
                 'trip_id' => $this->tripId,
                 'memory_id' => $this->memoryId,
+                'subject_type' => $this->subjectType,
+                'subject_id' => $this->subjectId,
             ]))
             ->withAndroidConfig(AndroidConfig::fromArray([
                 'priority' => $this->type->priority(),
                 'notification' => array_filter([
                     'channel_id' => $this->type->channel(),
                     'tag' => $this->tag(),
-                    'visibility' => $this->type->isPrivate() ? 'PRIVATE' : null,
+                    'visibility' => $this->isPrivate() ? 'PRIVATE' : null,
                 ]),
             ]));
+    }
+
+    /**
+     * Determine whether the content must stay hidden on the lock screen, as
+     * for every push about savings, comments and reactions on entries included.
+     */
+    private function isPrivate(): bool
+    {
+        return $this->type->isPrivate() || $this->subjectType === SubjectType::SavingsEntry->value;
     }
 
     /**
@@ -100,6 +130,10 @@ class SendPushNotification implements ShouldQueue
      */
     private function tag(): string
     {
+        if ($this->subjectId !== null) {
+            return $this->type === PushType::ReactionCreated ? "reaction-{$this->subjectId}" : "comment-{$this->subjectId}";
+        }
+
         return match (true) {
             $this->taskId !== null => "task-{$this->taskId}",
             $this->savingsGoalId !== null => "goal-{$this->savingsGoalId}",

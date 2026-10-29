@@ -1,8 +1,10 @@
 <?php
 
 use App\Actions\UpdateProfile;
+use App\Models\Comment;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
@@ -24,6 +26,8 @@ dataset('content rows', [
     'a trip' => ['trips', fn (Space $space) => Trip::factory()->for($space)->create()],
     'a memory' => ['memories', fn (Space $space) => Memory::factory()->for($space)->create()],
     'a memory photo' => ['memory_photos', fn (Space $space) => MemoryPhoto::factory()->for(Memory::factory()->for($space))->create()],
+    'a comment' => ['comments', fn (Space $space) => Comment::factory()->on(Memory::factory()->for($space)->create())->create()],
+    'a reaction' => ['reactions', fn (Space $space) => Reaction::factory()->on(Memory::factory()->for($space)->create())->create()],
 ]);
 
 it('returns everything a new account has in the shape of the contract', function () {
@@ -83,6 +87,8 @@ it('returns everything a new account has in the shape of the contract', function
             'trips' => [],
             'memories' => [],
             'memory_photos' => [],
+            'comments' => [],
+            'reactions' => [],
         ],
         'meta' => [
             'server_time' => '2026-10-08T11:10:05.123456Z',
@@ -149,6 +155,28 @@ it('returns each row exactly as its own endpoint returned it', function () {
         ->assertJsonPath('data.trips', [$trip])
         ->assertJsonPath('data.memories', [$memory])
         ->assertJsonPath('data.memory_photos', [$photo]);
+});
+
+it('returns comments and reactions exactly as their own endpoints returned them', function () {
+    $this->travelTo('2026-10-29 10:00:00');
+    [, , $sharedSpace] = actingAsPartnered();
+    $memory = Memory::factory()->for($sharedSpace)->create();
+    $comment = $this->putJson('/api/v1/comments/'.newId(), [
+        'subject_type' => 'memory',
+        'subject_id' => $memory->id,
+        'body' => 'Sawahnya masih hijau banget!',
+    ])->json('data');
+    $reaction = $this->putJson('/api/v1/reactions/'.newId(), [
+        'subject_type' => 'memory',
+        'subject_id' => $memory->id,
+        'emoji' => '❤️',
+    ])->json('data');
+
+    $response = $this->getJson('/api/v1/sync');
+
+    $response->assertOk()
+        ->assertJsonPath('data.comments', [$comment])
+        ->assertJsonPath('data.reactions', [$reaction]);
 });
 
 it('orders each collection by updated_at and then by ID', function () {
@@ -287,6 +315,8 @@ it('never sends the content of the personal space of the partner', function (arr
     SpecialDate::factory()->for($privateSpace)->create();
     Trip::factory()->for($privateSpace)->create();
     MemoryPhoto::factory()->for(Memory::factory()->for($privateSpace))->create();
+    Comment::factory()->on(Memory::factory()->for($privateSpace)->create())->create();
+    Reaction::factory()->on(Memory::factory()->for($privateSpace)->create())->create();
 
     $response = $this->getJson('/api/v1/sync?'.http_build_query($query));
 
@@ -302,6 +332,8 @@ it('leaves out the spaces and rows of other couples', function () {
     $strangerSpace = sharedSpaceBetween(User::factory()->withPersonalSpace()->create(), User::factory()->create());
     Task::factory()->for(TaskList::factory()->for($strangerSpace))->create();
     SavingsEntry::factory()->for(SavingsGoal::factory()->for($strangerSpace))->create();
+    Comment::factory()->on(Memory::factory()->for($strangerSpace)->create())->create();
+    Reaction::factory()->on(Memory::factory()->for($strangerSpace)->create())->create();
 
     $response = $this->getJson('/api/v1/sync');
 
@@ -310,7 +342,10 @@ it('leaves out the spaces and rows of other couples', function () {
         ->assertJsonCount(1, 'data.task_lists')
         ->assertJsonCount(0, 'data.tasks')
         ->assertJsonCount(0, 'data.savings_goals')
-        ->assertJsonCount(0, 'data.savings_entries');
+        ->assertJsonCount(0, 'data.savings_entries')
+        ->assertJsonCount(0, 'data.memories')
+        ->assertJsonCount(0, 'data.comments')
+        ->assertJsonCount(0, 'data.reactions');
 });
 
 it('pages through rows that share one updated_at without repeating or skipping any', function () {
@@ -393,6 +428,15 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
         ['cursor' => base64_encode(json_encode([
             'server_time' => '2026-02-30 10:00:00.000000',
             'with_deleted' => false,
+            'positions' => array_fill_keys(SyncCursor::COLLECTIONS, null),
+        ]))],
+        'cursor',
+        'Cursor tidak berlaku, mulai sinkron dari awal.',
+    ],
+    'a cursor from before comments and reactions joined the sync' => [
+        ['cursor' => base64_encode(json_encode([
+            'server_time' => '2026-10-08 10:00:00.000000',
+            'with_deleted' => false,
             'positions' => ['spaces' => null, 'task_lists' => null, 'tasks' => null, 'savings_goals' => null, 'savings_entries' => null, 'special_dates' => null, 'trips' => null, 'memories' => null, 'memory_photos' => null],
         ]))],
         'cursor',
@@ -439,6 +483,8 @@ it('returns 422 with the validation_failed code for an invalid since or cursor',
                 'trips' => ['2026-10-08 09:59:55.000000', ''],
                 'memories' => ['2026-10-08 09:59:55.000000', ''],
                 'memory_photos' => ['2026-10-08 09:59:55.000000', ''],
+                'comments' => ['2026-10-08 09:59:55.000000', ''],
+                'reactions' => ['2026-10-08 09:59:55.000000', ''],
             ],
         ]))],
         'cursor',

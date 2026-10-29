@@ -2,6 +2,8 @@
 
 use App\Enums\PushType;
 use App\Jobs\SendPushNotification;
+use App\Models\Comment;
+use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\User;
@@ -507,6 +509,24 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/savings-entries/{$withdrawal->id}");
 
         expect($goal->fresh()->achieved_at)->not->toBeNull();
+    });
+
+    it('deletes the comments and reactions on the entry, leaving those on other entries alone', function () {
+        $this->travelTo('2026-10-08 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $goal = SavingsGoal::factory()->for($space)->create();
+        $entry = SavingsEntry::factory()->for($goal)->create();
+        $comment = Comment::factory()->on($entry)->for($partner)->create();
+        $reaction = Reaction::factory()->on($entry)->for($partner)->create();
+        $onAnotherEntry = Comment::factory()->on(SavingsEntry::factory()->for($goal)->create())->for($partner)->create();
+        $this->travelTo('2026-10-08 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/savings-entries/{$entry->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($reaction->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+        $this->assertNotSoftDeleted($onAnotherEntry);
     });
 
     it('returns 204 again when the delete is repeated', function () {

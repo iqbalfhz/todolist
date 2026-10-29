@@ -32,6 +32,8 @@ class SyncResource extends JsonResource
             'trips' => TripResource::collection($changes['trips']),
             'memories' => MemoryResource::collection($changes['memories']),
             'memory_photos' => MemoryPhotoResource::collection($changes['memory_photos']),
+            'comments' => CommentResource::collection($changes['comments']),
+            'reactions' => ReactionResource::collection($changes['reactions']),
         ];
     }
 

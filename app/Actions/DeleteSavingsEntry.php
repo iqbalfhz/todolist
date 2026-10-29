@@ -9,10 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class DeleteSavingsEntry
 {
-    public function __construct(private RefreshSavingsProgress $refreshSavingsProgress) {}
+    public function __construct(
+        private RefreshSavingsProgress $refreshSavingsProgress,
+        private DeleteDiscussions $deleteDiscussions,
+    ) {}
 
     /**
-     * Soft delete the entry and recalculate its goal.
+     * Soft delete the entry with its comments and reactions, and recalculate its goal.
      */
     public function handle(User $actor, SavingsEntry $entry): void
     {
@@ -20,6 +23,7 @@ class DeleteSavingsEntry
             $goal = SavingsGoal::query()->whereKey($entry->savings_goal_id)->lockForUpdate()->first();
 
             $entry->delete();
+            $this->deleteDiscussions->handle(SavingsEntry::query()->whereKey($entry->id));
 
             if ($goal !== null) {
                 $this->refreshSavingsProgress->handle($goal, $actor);

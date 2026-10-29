@@ -2,6 +2,8 @@
 
 use App\Enums\PushType;
 use App\Jobs\SendPushNotification;
+use App\Models\Comment;
+use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
@@ -339,6 +341,24 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/savings-goals/{$goal->id}");
 
         $this->assertNotSoftDeleted($otherEntry);
+    });
+
+    it('deletes the comments and reactions on its entries, leaving those on other goals alone', function () {
+        $this->travelTo('2026-10-08 10:00:00');
+        [, $partner, $space] = actingAsPartnered();
+        $goal = SavingsGoal::factory()->for($space)->create();
+        $entry = SavingsEntry::factory()->for($goal)->create();
+        $comment = Comment::factory()->on($entry)->for($partner)->create();
+        $reaction = Reaction::factory()->on($entry)->for($partner)->create();
+        $onAnotherGoal = Reaction::factory()->on(SavingsEntry::factory()->for(SavingsGoal::factory()->for($space))->create())->for($partner)->create();
+        $this->travelTo('2026-10-08 11:00:00.250000');
+
+        $this->deleteJson("/api/v1/savings-goals/{$goal->id}")->assertNoContent();
+
+        $this->assertSoftDeleted($comment);
+        $this->assertSoftDeleted($reaction);
+        expect($comment->fresh()->updated_at->toJSON())->toBe('2026-10-08T11:00:00.250000Z');
+        $this->assertNotSoftDeleted($onAnotherGoal);
     });
 
     it('returns 204 again when the delete is repeated', function () {

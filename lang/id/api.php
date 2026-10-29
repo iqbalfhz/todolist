@@ -37,6 +37,9 @@ return [
         'savings_goal' => 'Target ini sudah dihapus.',
         'trip' => 'Perjalanan ini sudah dihapus.',
         'memory' => 'Kenangan ini sudah dihapus.',
+        'task' => 'Tugas ini sudah dihapus.',
+        'savings_entry' => 'Setoran ini sudah dihapus.',
+        'savings_withdrawal' => 'Penarikan ini sudah dihapus.',
     ],
 
     /*
@@ -70,6 +73,7 @@ return [
         'repeat_needs_due_date' => 'Tugas berulang butuh tanggal tenggat.',
         'repeat_in_trip_checklist' => 'Checklist perjalanan tidak bisa berulang.',
         'position' => ':Attribute harus berupa angka antara -10^15 dan 10^15.',
+        'discussion_needs_shared_space' => 'Komentar dan reaksi hanya ada di Ruang Bersama.',
     ],
 
     /*
@@ -142,6 +146,9 @@ return [
         'story' => 'cerita',
         'memory_id' => 'kenangan',
         'taken_at' => 'waktu foto',
+        'subject_type' => 'jenis subjek',
+        'subject_id' => 'subjek',
+        'body' => 'komentar',
         'since' => 'since',
         'cursor' => 'cursor',
     ],
