@@ -57,6 +57,9 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
 
+        // The email is only known once the token is checked, so this counts per IP alone, as registration does.
+        RateLimiter::for('google', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
         // The limit runs before validation, so an email sent as an array or a
         // number must not reach the string functions; it counts per IP alone.
         RateLimiter::for('login', function (Request $request): Limit {

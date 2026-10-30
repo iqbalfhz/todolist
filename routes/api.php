@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AccessTokenController;
 use App\Http\Controllers\Api\V1\AvatarController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\GoogleAccessTokenController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MemoryController;
@@ -30,6 +31,10 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/login', [AccessTokenController::class, 'store'])
         ->middleware('throttle:login')
         ->name('auth.login');
+
+    Route::post('/auth/google', [GoogleAccessTokenController::class, 'store'])
+        ->middleware('throttle:google')
+        ->name('auth.google');
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
         Route::post('/auth/logout', [AccessTokenController::class, 'destroy'])->name('auth.logout');

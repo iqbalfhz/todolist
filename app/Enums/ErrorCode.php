@@ -18,6 +18,7 @@ enum ErrorCode: string
     case ValidationFailed = 'validation_failed';
     case InvalidCredentials = 'invalid_credentials';
     case InvitationInvalid = 'invitation_invalid';
+    case GoogleTokenInvalid = 'google_token_invalid';
     case TooManyRequests = 'too_many_requests';
     case PlacesUnavailable = 'places_unavailable';
     case ServerError = 'server_error';
@@ -33,7 +34,7 @@ enum ErrorCode: string
             self::NotFound, self::RouteNotFound => 404,
             self::ParentDeleted, self::ParentArchived, self::LastList, self::IdConflict, self::TripChecklist, self::SharedSpaceExists => 409,
             self::ResourceDeleted => 410,
-            self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid => 422,
+            self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid, self::GoogleTokenInvalid => 422,
             self::TooManyRequests => 429,
             self::ServerError => 500,
             self::PlacesUnavailable => 503,

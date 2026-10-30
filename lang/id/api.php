@@ -27,9 +27,14 @@ return [
         'validation_failed' => 'Data yang dikirim tidak valid.',
         'invalid_credentials' => 'Email atau kata sandi salah.',
         'invitation_invalid' => 'Kode tidak berlaku, minta kode baru.',
+        'google_token_invalid' => 'Masuk dengan Google gagal. Coba lagi.',
         'too_many_requests' => 'Terlalu sering. Coba lagi sebentar lagi.',
         'places_unavailable' => 'Pencarian tempat sedang tidak tersedia. Pin tetap bisa dipasang langsung di peta.',
         'server_error' => 'Terjadi kesalahan di server. Coba lagi nanti.',
+    ],
+
+    'google' => [
+        'email_unverified' => 'Email akun Google ini belum terverifikasi.',
     ],
 
     'parent_deleted' => [
@@ -91,6 +96,7 @@ return [
         'email' => 'email',
         'password' => 'kata sandi',
         'device_name' => 'nama perangkat',
+        'id_token' => 'token Google',
         'timezone' => 'zona waktu',
         'color' => 'warna',
         'default_currency' => 'mata uang',

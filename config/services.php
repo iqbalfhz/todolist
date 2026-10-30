@@ -38,6 +38,13 @@ return [
         'user_agent' => 'DenlyDays/1.0 (+'.env('APP_URL', 'https://denlydays.iqbalfhz.my.id').')',
     ],
 
+    // Sign in with Google. The client ID of the "Web application" OAuth client
+    // is the audience of the ID tokens the app receives, through its
+    // serverClientId, and the server only accepts tokens issued for it.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
