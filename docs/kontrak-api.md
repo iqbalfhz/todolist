@@ -2,7 +2,7 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 30 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama, yang menambah satu endpoint. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
 
 ## Ringkasan endpoint
 
@@ -23,6 +23,7 @@ Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Goog
 | Ruang | GET | `/spaces` | Ruang tempatmu menjadi anggota, beserta profil anggotanya |
 | Ruang | POST | `/invitations` | Ambil kode undangan aktif, atau buat yang baru |
 | Ruang | POST | `/invitations/accept` | Pakai kode; Ruang Bersama dibuat untuk kalian berdua |
+| Ruang | DELETE | `/spaces/{id}` | Keluar dari Ruang Bersama; ruang ditutup untuk kalian berdua (v1.0) |
 | Sinkron | GET | `/sync` | Semua data yang berubah sejak kursor |
 | Daftar | PUT | `/lists/{id}` | Buat daftar tugas |
 | Daftar | PATCH | `/lists/{id}` | Ubah daftar, termasuk urutan dan arsip |
@@ -287,7 +288,7 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 
 ## Ruang dan undangan
 
-Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu selalu berisi tepat 2 orang. Setiap akun punya tepat satu Ruang Pribadi dan, di v0.1, paling banyak satu Ruang Bersama.
+Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu selalu berisi tepat 2 orang. Setiap akun punya tepat satu Ruang Pribadi dan, di v0.1, paling banyak satu Ruang Bersama. Ruang Bersama yang sudah ditutup (v1.0) tidak dihitung.
 
 ### Sumber ruang
 
@@ -329,6 +330,7 @@ Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu se
 - `type` berisi `personal` atau `shared`. Ruang Pribadi mengikuti zona waktu pemiliknya; Ruang Bersama memakai zona waktu pengundang dan tidak berubah di v0.1.
 - Perubahan nama, warna, foto, atau tanggal lahir (v0.2) seorang anggota ikut memperbarui `updated_at` ruangnya, supaya sampai ke HP pasangan lewat sync.
 - `GET /spaces` membalas semua ruang tempatmu menjadi anggota (1 atau 2), tanpa paginasi.
+- `deleted_at` terisi berarti Ruang Bersama sudah ditutup (v1.0). Ruang seperti itu hanya muncul lewat sync, sebagai tanda untuk menghapusnya dari HP; rinciannya di Keluar dari Ruang Bersama.
 
 ### Endpoint undangan
 
@@ -345,7 +347,26 @@ Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu se
 - Karena itu, kalau kalian sama-sama memasukkan kode pasangan, yang kedua tetap mendapat 200 berisi ruang yang sama, tanpa ruang ganda.
 - Kalau warna diri kalian sama, warna yang bergabung diganti ke warna pertama yang belum dipakai, supaya Aku dan Pasangan tetap terbedakan.
 - Pengundang menerima push `partner_joined`. Kedua HP lalu menjalankan sync biasa; semua isi ruang baru lebih muda dari kursor masing-masing, jadi sync penuh tidak perlu.
-- `space_invitations.space_id` baru terisi saat kode diterima. Keluar dari Ruang Bersama belum ada di v0.1, tapi wajib ada sebelum rilis publik.
+- `space_invitations.space_id` baru terisi saat kode diterima.
+- Kalau kalian berdua punya Ruang Bersama yang ditutup kurang dari 30 hari lalu (v1.0), menerima kode memulihkan ruang itu, bukan membuat yang baru. Balasannya tetap 201, berisi ruang lama dengan `created_at` aslinya, dan pengundang menerima `partner_joined` dengan teks bergabung lagi. Rinciannya di Keluar dari Ruang Bersama.
+
+### Keluar dari Ruang Bersama (v1.0)
+
+Salah satu dari kalian bisa keluar kapan saja, tanpa persetujuan pasangan. Ruang Bersama lalu ditutup untuk kalian berdua: isinya tidak bisa dibuka lagi dari HP mana pun, tetapi disimpan server 30 hari, supaya kembali utuh kalau kalian bergabung lagi.
+
+| Endpoint | Body | Berhasil | Ditolak |
+| --- | --- | --- | --- |
+| `DELETE /spaces/{id}` | kosong | 204, juga saat diulang dan saat pasangan sudah lebih dulu keluar | 404 `not_found` (bukan ruangmu), 422 `validation_failed` (Ruang Pribadi) |
+
+- Endpoint ini tidak lewat antrean dan butuh koneksi. Sebelum memanggilnya, app mengirim isi antreannya dulu, supaya perubahan terakhir ikut tersimpan.
+- Di app, keluar memakai konfirmasi yang menyebut akibatnya: Ruang Bersama ditutup untuk kalian berdua, isinya disimpan 30 hari dan kembali utuh kalau kalian bergabung lagi, lalu dihapus permanen beserta fotonya.
+- Server mengisi `deleted_at` ruang itu. Sejak saat itu ruang dan semua isinya tidak ada lagi untuk kalian berdua: `GET /spaces` tidak menampilkannya, dan setiap tulis ke sana dibalas 404. Operasi antrean di HP mana pun yang belum terkirim ikut hilang, karena app membuangnya setelah 404.
+- Setelah 204, app menghapus ruang itu beserta isinya dari cache. HP lain milikmu dan HP pasangan mendapat ruang itu dengan `deleted_at` terisi lewat sync, lalu melakukan hal yang sama.
+- Pasangan menerima push `partner_left`. Pengingat dan push lain untuk ruang itu berhenti, dan yang terlewat selama ditutup tidak dikirim menyusul.
+- Ruang yang ditutup tidak dihitung sebagai Ruang Bersama, jadi kalian berdua bisa langsung membuat atau memakai kode undangan, dengan siapa pun.
+- **Dipulihkan:** kalau kalian berdua bergabung lagi lewat kode undangan dalam 30 hari, siapa pun pembuat kodenya, server memulihkan ruang lama, bukan membuat yang baru. Isinya kembali seperti saat ditutup; yang sudah dihapus sebelumnya tetap terhapus.
+- **Dihapus permanen:** lewat 30 hari, server menghapus ruang beserta seluruh isinya dari database dan semua fotonya dari R2, paling lambat sehari kemudian. Setelah itu tidak bisa dipulihkan, juga oleh admin.
+- Ruang Pribadi kalian tidak berubah.
 
 ## Daftar dan tugas
 
@@ -905,6 +926,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Setiap daftar diurutkan `(updated_at, id)` dan dipotong paling banyak 500 baris. `next_cursor` menyimpan posisi terakhir tiap daftar; app cukup mengirimnya balik apa adanya. Dengan begitu baris yang `updated_at`-nya sama tidak terulang atau terlewat.
 - Tanpa `since`: semua data aktif di semua ruangmu, tanpa yang terhapus. Hanya dipakai saat database lokal akun itu masih kosong, yaitu setelah daftar atau saat akun itu pertama kali masuk di HP tersebut.
 - Isi Ruang Pribadi pasangan tidak pernah ikut terkirim.
+- Ruang Bersama yang ditutup (v1.0) tiba di `spaces` dengan `deleted_at` terisi, tetapi isinya tidak dikirim lagi. Ruang yang dipulihkan tiba lagi dengan `deleted_at` kosong, dan semua isinya ikut terkirim lewat `since`, karena server memperbarui `updated_at`-nya saat memulihkan.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
 - Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.x: `comments` dan `reactions`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
@@ -917,6 +939,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Data yang masih punya operasi di antrean dilindungi: kolomnya tidak ditimpa, dan baris yang DELETE-nya masih di antrean tidak muncul lagi.
 - Baris yang `updated_at`-nya lebih tua dari salinan lokal diabaikan.
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
+- Ruang adalah induk dari semua isinya (v1.0). Saat Ruang Bersama tiba dengan `deleted_at` terisi, app menghapus ruang itu beserta semua daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto, komentar, dan reaksinya dari cache, dengan pengecualian yang sama.
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, saat push masuk ketika app terbuka, termasuk push sinkron (v1.x), dan tiap 30 detik selama app tampil (v1.x).
 - App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`; v1.x: lokasi di `memories`, lalu `comments` dan `reactions`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
@@ -975,6 +998,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `savings_withdrawal` | Penarikan baru dicatat (v1.x) | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 | `comment_created` | Komentar baru dibuat (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `reaction_created` | Reaksi baru disimpan, paling banyak satu per subjek per 10 menit (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
+| `partner_left` | Pasangan keluar dari Ruang Bersama (v1.0) | Anggota lain | Selalu dikirim | `aktivitas` | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -1007,6 +1031,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `memory_created` (v0.3) membawa `memory_id`, dengan `tag` `memory-{id}`; saat diketuk app membuka Detail kenangan. Judulnya judul kenangan, isinya "{nama} menyimpan kenangan baru".
 - `comment_created` dan `reaction_created` (v1.x) membawa `subject_type` dan `subject_id`, ditambah `savings_goal_id` untuk setoran, dengan `tag` `comment-{subject_id}` atau `reaction-{subject_id}`; saat diketuk app membuka detail subjeknya beserta komentarnya. Rinciannya di bagian Reaksi dan komentar.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
+- `partner_left` (v1.0) membawa `space_id`, dengan `tag` `space-{id}`. Judulnya "Ruang Bersama", isinya "{nama} keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi." Saat diketuk, app menjalankan sync lalu membuka Beranda. Saat ruang dipulihkan, `partner_joined` berbunyi "{nama} sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh."
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
 - Saat pertama dibuka, app membuat dua channel: `pengingat` (penting, bersuara) dan `aktivitas` (normal). Keduanya bisa dimatikan terpisah dari pengaturan Android.
@@ -1174,3 +1199,18 @@ Sembilan butir ini merancang masuk dengan Google di lingkup v1.x dari usulan ses
 - [x] Batasnya 5 per menit per IP, seperti daftar, karena email baru diketahui setelah token diperiksa.
 - [x] Sumber user tidak berubah, dan foto profil Google tidak diambil, jadi app tetap memakai inisial atau foto yang diunggah sendiri.
 - [x] `GOOGLE_CLIENT_ID` di server berisi client ID klien Web yang dibuat pemilik pada 29 Oktober, dan app memakai nilai yang sama untuk `serverClientId`. Selama layar persetujuan berstatus Testing, hanya pengguna uji yang bisa masuk dengan Google; statusnya diubah sebelum rilis publik.
+
+### Keluar dari Ruang Bersama (v1.0)
+
+Sepuluh butir ini merancang keluar dari Ruang Bersama, salah satu syarat sebelum rilis publik di tab utama, dan disetujui pada 30 Oktober 2026. Butir pertama adalah pilihan pemilik soal nasib data bersama.
+
+- [x] Ruang Bersama ditutup untuk kalian berdua saat salah satu keluar, sesuai pilihan pemilik, bukan tetap untuk yang tinggal atau jadi arsip baca-saja. Salah satu dari kalian bisa menutupnya tanpa persetujuan pasangan.
+- [x] Keluar memakai `DELETE /spaces/{id}`: 204, aman diulang, dan tidak lewat antrean. Ruang Pribadi tidak bisa dihapus (422 `validation_failed`), dan tidak ada kode error baru.
+- [x] Isinya disimpan 30 hari. Kalau kalian berdua bergabung lagi lewat kode undangan dalam waktu itu, ruang lama otomatis dipulihkan utuh, bukan dibuat ruang baru.
+- [x] Lewat 30 hari, ruang beserta seluruh isi dan fotonya dihapus permanen dari database dan R2 oleh perintah terjadwal harian, jadi tidak bisa dipulihkan lagi, juga oleh admin.
+- [x] Ruang yang ditutup tidak dihitung sebagai Ruang Bersama, jadi kalian berdua bisa langsung berpasangan lagi dengan siapa pun.
+- [x] Perubahan yang belum terkirim dari HP mana pun saat ruang ditutup ikut hilang. App mengirim antreannya dulu sebelum keluar, tetapi antrean HP pasangan yang sedang offline tidak bisa diselamatkan.
+- [x] Push baru `partner_left` ke pasangan: selalu dikirim, channel `aktivitas`, dengan isi "{nama} keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi." Saat ruang dipulihkan, `partner_joined` berbunyi "{nama} sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh."
+- [x] Pengingat dan push lain untuk ruang yang ditutup berhenti, dan yang terlewat selama ditutup tidak dikirim menyusul setelah dipulihkan.
+- [x] Ruang yang ditutup tiba lewat sync dengan `deleted_at` terisi, tanpa isinya, dan app menghapus semuanya dari cache. Saat dipulihkan, server memperbarui `updated_at` semua isinya supaya terkirim lagi lewat `since`. Tidak ada koleksi atau kolom baru, jadi app tidak perlu sync penuh.
+- [x] Hapus akun (v1.0) belum termasuk. Nasib Ruang Bersama saat akun dihapus diputuskan di kontraknya sendiri, karena pasangan tidak bisa bergabung kembali dengan akun yang sudah dihapus.
