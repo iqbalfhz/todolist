@@ -4,6 +4,9 @@
 
 ## Waiting On
 
+- [ ] **Keluar dari Ruang Bersama di app Flutter** - oleh sesi Flutter, since 2026-10-30; kontraknya di bagian "Keluar dari Ruang Bersama (v1.0)" pada Ruang dan undangan di `docs/kontrak-api.md`: tombol keluar dengan konfirmasi, antrean dikirim dulu sebelum `DELETE /spaces/{id}`, ruang beserta isinya dihapus dari cache saat tiba dengan `deleted_at`, dan push `partner_left`
+- [ ] **Uji keluar dan bergabung lagi dengan dua akun uji** - oleh pemilik, since 2026-10-30; setelah app punya tombolnya: keluar dari Ruang Bersama akun uji, pastikan ruang hilang di kedua HP dan push `partner_left` datang, lalu bergabung lagi lewat kode undangan dan pastikan isinya kembali utuh. Jangan pakai Ruang Bersama kalian sendiri, karena selama ditutup pengingatnya berhenti dan antrean yang belum terkirim hilang
+
 - [ ] **Masuk dengan Google di app Flutter** - oleh sesi Flutter, since 2026-10-30; kontraknya di bagian "Masuk dengan Google (v1.x)" pada Akun di `docs/kontrak-api.md`: paket `google_sign_in` dengan `serverClientId` berisi client ID klien Web (`878969336009-091frg25m4lc24jlfmt8b3iu3qea4cq3.apps.googleusercontent.com`, sama dengan `GOOGLE_CLIENT_ID` di server), dan tombol di layar Masuk dan Daftar. Server produksi sudah siap
 - [ ] **Uji masuk dengan Google di dua HP** - oleh pemilik, since 2026-10-30; setelah app punya tombolnya: masuk dengan akun Google yang emailnya sama dengan akun Denly Days, pastikan masuk ke akun yang sama dan Ruang Bersama tetap ada, lalu ulangi di HP pasangan
 
@@ -26,7 +29,7 @@
 
 ## Someday
 
-- [ ] **v1.0** - ekspor data, hapus akun, lupa kata sandi di app, keluar dari Ruang Bersama, tugas berulang di beberapa hari dalam seminggu
+- [ ] **v1.0** - ekspor data, hapus akun, lupa kata sandi di app, tugas berulang di beberapa hari dalam seminggu
 - [ ] **Sebelum rilis publik** - ubah status Google Auth Platform dari Testing ke In production beserta verifikasi brand (selama Testing hanya pengguna uji yang bisa masuk dengan Google), tambahkan SHA-1 kunci Play App Signing ke klien Android dan Firebase kalau rilis lewat Play Store, pasang lagi "Application restrictions" (Android apps) pada API key Android Firebase, yang dilepas ke None pada 22 Oktober 2026 karena membuat pendaftaran token FCM gagal (pembatasan per API tetap), jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
@@ -122,3 +125,4 @@
 - [x] ~~Client secret klien Web `Denly Days server` yang sempat ditempel ke percakapan dihapus pemilik; server dan app tidak memakai secret~~ (2026-10-29)
 - [x] ~~Masuk dengan Google (v1.x): `POST /auth/google` memeriksa ID token Google sendiri (kunci publik Google di-cache, `firebase/php-jwt` sebagai dependensi langsung), mencari akun lewat `google_id` lalu email, atau membuat akun baru tanpa kata sandi; kode error baru 422 `google_token_invalid`. Kontraknya disetujui 30 Oktober~~ (2026-10-30)
 - [x] ~~`GOOGLE_CLIENT_ID` diisi pemilik di Coolify lalu deploy ulang: di produksi, `POST /auth/google` dengan token asal membalas 422 `google_token_invalid` (sebelumnya 500), dan token berheader lengkap juga dibalas 422, bukan 503, jadi server bisa mengambil kunci publik Google~~ (2026-10-30)
+- [x] ~~Keluar dari Ruang Bersama (v1.0): pemilik memilih Ruang Bersama ditutup untuk berdua, bukan tetap untuk yang tinggal atau jadi arsip baca-saja. `DELETE /spaces/{id}`, pemulihan otomatis kalau pasangan yang sama berpasangan lagi dalam 30 hari, `spaces:purge` harian yang menghapus permanen sesudahnya beserta foto di R2, dan push `partner_left`. Kontraknya disetujui 30 Oktober~~ (2026-10-30)
