@@ -1,17 +1,18 @@
 # Kontrak API v0.1
 
-> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 29 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
+> Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 30 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
 
 ## Ringkasan endpoint
 
-Semua endpoint butuh token Sanctum, kecuali daftar dan masuk. Hanya lima yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, dan `GET /places` sejak v1.x); sisanya menulis.
+Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Google. Hanya lima yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, dan `GET /places` sejak v1.x); sisanya menulis.
 
 | Modul | Method | Endpoint | Fungsi |
 | --- | --- | --- | --- |
 | Akun | POST | `/auth/register` | Daftar, membuat Ruang Pribadi, menerima token |
 | Akun | POST | `/auth/login` | Masuk, menerima token |
+| Akun | POST | `/auth/google` | Masuk atau daftar dengan akun Google, menerima token (v1.x) |
 | Akun | POST | `/auth/logout` | Mencabut token HP ini dan menghapus token FCM-nya |
 | Akun | GET | `/me` | Profil sendiri, preferensi notifikasi, dan kode undangan aktif |
 | Akun | PATCH | `/me` | Ubah nama, warna diri, zona waktu, mata uang, preferensi, tanggal lahir |
@@ -64,7 +65,7 @@ Semua request dan balasan memakai JSON dengan nama kolom `snake_case`, sama deng
 | Header | Isi | Kapan |
 | --- | --- | --- |
 | `Accept` | `application/json` | Selalu |
-| `Authorization` | `Bearer <token>` | Semua endpoint kecuali daftar dan masuk |
+| `Authorization` | `Bearer <token>` | Semua endpoint kecuali daftar, masuk, dan masuk dengan Google |
 | `Content-Type` | `application/json` | Request yang punya body; `multipart/form-data` untuk foto profil dan foto kenangan |
 
 Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket laravel-lang). Semua route `api/*` dibalas JSON walau header `Accept` terlewat, lewat `shouldRenderJsonWhen()` di `bootstrap/app.php`.
@@ -126,6 +127,7 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | --- | --- |
 | `/auth/login` | 5 per menit per email + IP |
 | `/auth/register` | 5 per menit per IP |
+| `/auth/google` | 5 per menit per IP (v1.x) |
 | `/invitations/accept` | 10 per menit per akun dan per IP |
 | Lainnya | 120 per menit per akun, cukup untuk antrean yang menumpuk setelah offline |
 | `/places` | 20 per menit per akun (v1.x) |
@@ -161,6 +163,7 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
 | 410 | `resource_deleted` | Sudah dihapus, biasanya oleh pasangan | Buang dari antrean, hapus data itu dari cache |
 | 422 | `validation_failed`, `invalid_credentials`, `invitation_invalid` | Isi request tidak valid | Tampilkan pesan; kalau dari antrean, buang dan pakai `current` |
+| 422 | `google_token_invalid` (v1.x) | Token Google salah, kedaluwarsa, untuk app lain, atau emailnya belum terverifikasi | Tampilkan pesan; pengguna bisa mencoba masuk dengan Google lagi |
 | 429 | `too_many_requests` | Terlalu sering | Tunggu sesuai header `Retry-After`, lalu coba lagi |
 | 5xx, tanpa koneksi, atau balasan bukan JSON | `server_error` atau tidak ada | Server, proxy, atau jaringan bermasalah | Coba lagi dengan jeda 2, 4, 8 detik dan seterusnya, maksimal 5 menit |
 | 503 | `places_unavailable` (v1.x) | Pencarian tempat sedang tidak tersedia: layanannya gangguan atau dimatikan di server | Tampilkan pesan; pin tetap bisa dipasang langsung di peta |
@@ -193,6 +196,35 @@ Request `POST /auth/register` (balasan 201):
 - `POST /auth/login` memakai `email`, `password`, dan `device_name`, lalu membalas bentuk yang sama (200). Email atau kata sandi salah: 422 `invalid_credentials`.
 - `POST /auth/logout` boleh membawa `{"fcm_token": "..."}`. Server mencabut token Sanctum yang dipakai dan menghapus token FCM itu (204). App juga memanggil `FirebaseMessaging.instance.deleteToken()` apa pun hasilnya, supaya HP yang sudah keluar tidak menerima push.
 - Cache dan antrean disimpan per akun. Kalau akun lain masuk di HP yang sama, app memakai database lokal yang berbeda, jadi antrean akun sebelumnya tidak terkirim atas nama akun baru.
+
+### Masuk dengan Google (v1.x)
+
+App bisa masuk atau daftar dengan akun Google. App meminta ID token ke Google lewat paket `google_sign_in`, dengan `serverClientId` berisi client ID klien Web, lalu menukarnya dengan token Denly Days. Server memeriksa token itu sendiri, jadi app tidak pernah mengirim email atau nama mentah sebagai bukti.
+
+Request `POST /auth/google`, tanpa token Sanctum:
+
+```json
+{
+  "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...",
+  "device_name": "Redmi Note 14 Pro+ 5G",
+  "timezone": "Asia/Jakarta"
+}
+```
+
+- Balasan berbentuk sama dengan daftar dan masuk, `{"data": {"token": "1|abc...", "user": {...}}}`: 201 kalau akun baru dibuat, 200 kalau masuk ke akun yang sudah ada. Setelah itu app menjalankan sync penuh seperti setelah masuk.
+- `id_token` wajib, paling banyak 4.096 karakter. `device_name` dan `timezone` mengikuti aturan daftar; `timezone` hanya dipakai saat akun baru dibuat.
+- Server memeriksa tanda tangan token dengan kunci publik Google, masa berlakunya, penerbitnya (`accounts.google.com`), dan `aud` yang harus sama dengan client ID klien Web. Email di token wajib terverifikasi. Token yang tidak lolos dibalas 422 `google_token_invalid`.
+- Kunci publik Google disimpan di cache server selama masa berlaku yang diberikan Google. Kalau kunci itu tidak bisa diambil, balasannya 503 `server_error`, dan pengguna bisa mencoba lagi.
+- Akun dicari dengan urutan ini:
+    1. Akun yang pernah masuk dengan akun Google yang sama (`sub` di token): langsung masuk, walau email akun Google itu sudah berubah.
+    2. Akun yang emailnya sama dengan email Google: akun itu disambungkan ke akun Google tersebut, lalu masuk. Kata sandinya tetap berlaku.
+    3. Belum ada: akun baru dibuat seperti daftar, dengan Ruang Pribadi berisi daftar "Tugas", nama dari Google (paling banyak 50 karakter; bagian email sebelum @ kalau Google tidak memberi nama), dan tanpa kata sandi.
+- Kalau email Google berbeda dari email akun lama, server membuat akun baru yang terpisah. App sebaiknya menyebut akun Google yang sedang dipakai di layar Masuk.
+- Akun tanpa kata sandi bisa memakai semua fitur, tetapi hanya bisa masuk dengan Google; masuk dengan kata sandi dibalas `invalid_credentials`. Sampai ada fitur kata sandi di app, admin bisa membuatkannya lewat "Reset kata sandi".
+- Server hanya menyimpan ID akun Google (`sub`). Nama dan email diambil saat akun dibuat, dan email akun tidak ikut berubah kalau email Google berubah. Foto profil Google tidak diambil.
+- Sumber user tidak berubah, jadi fitur ini tidak membuat app perlu sync penuh.
+- Batasnya 5 per menit per IP.
+- Server membaca client ID dari `GOOGLE_CLIENT_ID`, dan app memakai nilai yang sama untuk `serverClientId`. Selama layar persetujuan Google berstatus Testing, hanya pengguna uji (pemilik dan pasangan) yang bisa masuk dengan Google.
 
 ### Sumber user
 
@@ -1128,3 +1160,17 @@ Sembilan butir ini merancang reaksi dan komentar di lingkup v1.x dari usulan ses
 - [x] Push baru `comment_created` ke anggota lain: preferensi `partner_activity`, channel `aktivitas`, `tag` `comment-{subject_id}`, judul subjek sebagai judul, dan isi "{nama}: {80 karakter pertama}".
 - [x] Push baru `reaction_created` ke anggota lain, paling banyak satu per subjek per 10 menit, dengan isi "{nama} memberi reaksi {emoji}". Ini berbeda dari usulan "ke pemilik subjek", karena reaksi sering ditujukan ke orang yang menyelesaikan tugas, bukan pembuatnya. Pemilik memilih push ini daripada reaksi tanpa push, karena tanpa feed aktivitas reaksi hanya terlihat kalau subjeknya dibuka.
 - [x] Push komentar dan reaksi pada setoran membawa `savings_goal_id` dan memakai `visibility` `PRIVATE`, seperti push tabungan lain.
+
+### Masuk dengan Google (v1.x)
+
+Sembilan butir ini merancang masuk dengan Google di lingkup v1.x dari usulan sesi Flutter, dan disetujui pada 30 Oktober 2026.
+
+- [x] `POST /auth/google` menukar ID token Google dengan token Denly Days. Bentuk balasannya sama dengan daftar dan masuk, dengan 201 untuk akun baru dan 200 untuk akun yang sudah ada. Ini berbeda dari usulan "balasan sama dengan `/auth/login`", supaya app tahu akun baru saja dibuat.
+- [x] Server memeriksa token sendiri dengan kunci publik Google yang disimpan di cache, bukan lewat endpoint tokeninfo Google, yang menurut Google tidak untuk produksi. Pemeriksaannya memakai `firebase/php-jwt`, yang sudah terpasang lewat `kreait/laravel-firebase` dan kini dicatat sebagai dependensi langsung, jadi tidak ada paket baru.
+- [x] Email Google yang sama dengan akun yang sudah ada langsung disambungkan ke akun itu, asalkan Google menandainya terverifikasi, dan kata sandinya tetap berlaku. Dengan begitu akun kalian berdua bisa langsung masuk dengan Google. Pemilik memilih ini daripada menolak email yang sama, yang membuat akun harus disambungkan dari Pengaturan setelah masuk dengan kata sandi dan butuh endpoint serta layar tambahan.
+- [x] Akun dikenali dari ID akun Google lebih dulu, jadi email akun Google yang berubah tidak memutus akses. Email akun Denly Days tidak ikut berubah.
+- [x] Akun baru dibuat seperti daftar biasa, dengan nama dari Google dan tanpa kata sandi. Masuk dengan kata sandi untuk akun itu dibalas `invalid_credentials`, dan admin bisa membuatkan kata sandi lewat "Reset kata sandi".
+- [x] Kode error baru 422 `google_token_invalid` untuk token yang salah, kedaluwarsa, untuk app lain, atau yang emailnya belum terverifikasi. Kunci Google yang tidak bisa diambil dibalas 503 `server_error`.
+- [x] Batasnya 5 per menit per IP, seperti daftar, karena email baru diketahui setelah token diperiksa.
+- [x] Sumber user tidak berubah, dan foto profil Google tidak diambil, jadi app tetap memakai inisial atau foto yang diunggah sendiri.
+- [x] `GOOGLE_CLIENT_ID` di server berisi client ID klien Web yang dibuat pemilik pada 29 Oktober, dan app memakai nilai yang sama untuk `serverClientId`. Selama layar persetujuan berstatus Testing, hanya pengguna uji yang bisa masuk dengan Google; statusnya diubah sebelum rilis publik.
