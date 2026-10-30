@@ -11,6 +11,7 @@ enum PushType: string
     case SavingsAchieved = 'savings_achieved';
     case SavingsWithdrawal = 'savings_withdrawal';
     case PartnerJoined = 'partner_joined';
+    case PartnerLeft = 'partner_left';
     case SpecialDateReminder = 'special_date_reminder';
     case TripReminder = 'trip_reminder';
     case SavingsReminder = 'savings_reminder';
@@ -28,7 +29,7 @@ enum PushType: string
             self::TaskReminder => 'task_reminders',
             self::TaskAssigned, self::TaskCompleted, self::MemoryCreated, self::CommentCreated, self::ReactionCreated => 'partner_activity',
             self::SavingsDeposit, self::SavingsAchieved, self::SavingsWithdrawal => 'savings_activity',
-            self::PartnerJoined => null,
+            self::PartnerJoined, self::PartnerLeft => null,
             self::SpecialDateReminder => 'special_dates',
             self::TripReminder => 'trip_reminders',
             self::SavingsReminder => 'savings_reminders',

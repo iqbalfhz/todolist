@@ -165,3 +165,16 @@ it('reminds nobody of the birthday of an account without a shared space', functi
     expect($sent)->toBe(0);
     Queue::assertNothingPushed();
 });
+
+it('sends no reminder in a shared space that was closed', function () {
+    Queue::fake([SendPushNotification::class]);
+    $space = sharedSpaceBetween(User::factory()->create(['birth_date' => '--10-29']), User::factory()->create());
+    SpecialDate::factory()->for($space)->create(['date' => '2023-10-29']);
+    $space->delete();
+    $this->travelTo('2026-10-29 01:00:00');
+
+    $sent = app(SendSpecialDateReminders::class)->handle();
+
+    expect($sent)->toBe(0);
+    Queue::assertNothingPushed();
+});

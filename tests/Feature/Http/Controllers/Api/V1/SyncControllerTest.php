@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\UpdateProfile;
+use App\Jobs\SendPushNotification;
 use App\Models\Comment;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
@@ -8,6 +9,7 @@ use App\Models\Reaction;
 use App\Models\SavingsEntry;
 use App\Models\SavingsGoal;
 use App\Models\Space;
+use App\Models\SpaceInvitation;
 use App\Models\SpecialDate;
 use App\Models\Task;
 use App\Models\TaskList;
@@ -15,6 +17,7 @@ use App\Models\Trip;
 use App\Models\User;
 use App\Rules\SyncCursor;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 dataset('content rows', [
@@ -496,4 +499,57 @@ it('returns 401 when no token is sent', function () {
     $response = $this->getJson('/api/v1/sync');
 
     $response->assertUnauthorized();
+});
+
+it('sends a closed shared space with deleted_at and none of what it held', function (string $collection, Closure $create) {
+    $this->travelTo('2026-10-08 10:00:00');
+    [, , $sharedSpace] = actingAsPartnered();
+    $this->travelTo('2026-10-08 11:00:00');
+    $changed = $create($sharedSpace);
+    $this->travelTo('2026-10-08 11:30:00.500000');
+    $sharedSpace->delete();
+
+    $response = $this->getJson('/api/v1/sync?'.http_build_query(['since' => '2026-10-08T10:30:00Z']));
+
+    $response->assertOk()
+        ->assertJsonPath('data.spaces.*.id', [$sharedSpace->id])
+        ->assertJsonPath('data.spaces.0.deleted_at', '2026-10-08T11:30:00.500000Z');
+    expect($response->json("data.{$collection}.*.id"))->not->toContain($changed->id);
+})->with('content rows');
+
+it('leaves a closed shared space and what it held out of a sync without since', function () {
+    [$user, , $sharedSpace] = actingAsPartnered();
+    $task = Task::factory()->for(TaskList::factory()->for($sharedSpace))->create();
+    $sharedSpace->delete();
+
+    $response = $this->getJson('/api/v1/sync');
+
+    $response->assertOk()->assertJsonPath('data.spaces.*.id', [$user->personalSpace()->id]);
+    expect($response->json('data.tasks.*.id'))->not->toContain($task->id);
+});
+
+it('sends a restored shared space and everything it still holds through since', function () {
+    Queue::fake([SendPushNotification::class]);
+    $this->travelTo('2026-10-08 10:00:00');
+    [, $partner, $sharedSpace] = actingAsPartnered();
+    $list = TaskList::factory()->for($sharedSpace)->create();
+    $task = Task::factory()->for($list)->create();
+    $comment = Comment::factory()->on($task)->create();
+    $deletedBeforeClosing = Task::factory()->for($list)->create();
+    $deletedBeforeClosing->delete();
+    $this->travelTo('2026-10-08 11:00:00');
+    $sharedSpace->delete();
+    $this->travelTo('2026-10-08 12:00:00');
+    SpaceInvitation::factory()->for($partner, 'creator')->create(['code' => 'K7M2QX']);
+    $this->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX'])->assertCreated();
+
+    $response = $this->getJson('/api/v1/sync?'.http_build_query(['since' => '2026-10-08T11:30:00Z']));
+
+    $response->assertOk()
+        ->assertJsonPath('data.task_lists.*.id', [$list->id])
+        ->assertJsonPath('data.tasks.*.id', [$task->id])
+        ->assertJsonPath('data.comments.*.id', [$comment->id]);
+    expect(collect($response->json('data.spaces'))->firstWhere('id', $sharedSpace->id))
+        ->not->toBeNull()
+        ->deleted_at->toBeNull();
 });

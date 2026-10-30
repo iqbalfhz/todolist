@@ -107,6 +107,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         [],
         ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'space-id-ruang']],
     ],
+    'a partner who left' => [
+        PushType::PartnerLeft,
+        [],
+        ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'space-id-ruang']],
+    ],
     'a special date reminder' => [
         PushType::SpecialDateReminder,
         ['specialDateId' => 'id-tanggal'],
@@ -270,6 +275,17 @@ it('sends partner_joined even when every preference is off', function () {
     DeviceToken::factory()->for($user)->create(['token' => 'fcm-hp']);
 
     SendPushNotification::dispatchSync($user->id, PushType::PartnerJoined, 'Ruang Bersama', 'Isi', 'id-ruang');
+
+    expect($sent->tokens)->toBe(['fcm-hp']);
+});
+
+it('sends partner_left even when every preference is off', function () {
+    $sent = new stdClass;
+    fakeFcm($sent);
+    $user = User::factory()->create(['notification_prefs' => array_fill_keys(array_keys(User::DEFAULT_NOTIFICATION_PREFS), false)]);
+    DeviceToken::factory()->for($user)->create(['token' => 'fcm-hp']);
+
+    SendPushNotification::dispatchSync($user->id, PushType::PartnerLeft, 'Ruang Bersama', 'Isi', 'id-ruang');
 
     expect($sent->tokens)->toBe(['fcm-hp']);
 });

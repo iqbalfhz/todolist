@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\PurgeClosedSpaces;
 use App\Actions\SendDueReminders;
 use App\Actions\SendSavingsReminders;
 use App\Actions\SendSpecialDateReminders;
@@ -50,3 +51,13 @@ Artisan::command('savings:remind', function (SendSavingsReminders $sendSavingsRe
 })->purpose('Send the deposit reminders of the savings goals whose day is today')
     ->everyMinute()
     ->withoutOverlapping(5);
+
+// Runs once a day, so a closed shared space is deleted at most a day after its
+// 30 days run out. A run that is cut short leaves the rest for the next day.
+Artisan::command('spaces:purge', function (PurgeClosedSpaces $purgeClosedSpaces) {
+    $purged = $purgeClosedSpaces->handle();
+
+    $this->info("Closed shared spaces deleted for good: {$purged}.");
+})->purpose('Delete for good the shared spaces that were closed more than 30 days ago')
+    ->daily()
+    ->withoutOverlapping(60);

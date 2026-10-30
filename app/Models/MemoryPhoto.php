@@ -48,7 +48,7 @@ class MemoryPhoto extends Model
      */
     public static function pathFor(string $spaceId, string $id): string
     {
-        return "memories/{$spaceId}/{$id}.jpg";
+        return self::directoryFor($spaceId)."/{$id}.jpg";
     }
 
     /**
@@ -56,7 +56,15 @@ class MemoryPhoto extends Model
      */
     public static function thumbPathFor(string $spaceId, string $id): string
     {
-        return "memories/{$spaceId}/{$id}-thumb.jpg";
+        return self::directoryFor($spaceId)."/{$id}-thumb.jpg";
+    }
+
+    /**
+     * Get the directory that holds the photos of every memory in a space.
+     */
+    public static function directoryFor(string $spaceId): string
+    {
+        return "memories/{$spaceId}";
     }
 
     /**

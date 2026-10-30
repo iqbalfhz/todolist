@@ -5,6 +5,7 @@ use App\Enums\SpaceType;
 use App\Jobs\SendPushNotification;
 use App\Models\Space;
 use App\Models\SpaceInvitation;
+use App\Models\TaskList;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 
@@ -197,3 +198,109 @@ it('returns 401 when no token is sent', function () {
 
     $response->assertUnauthorized();
 });
+
+/**
+ * Create two partners whose shared space, holding one list, was closed on 1 October 2026 at 08.00.
+ *
+ * @return array{0: User, 1: User, 2: Space} The owner of the space, the other member signed in, and the closed space.
+ */
+function partnersWhoClosedTheirSpace(): array
+{
+    test()->travelTo('2026-09-20 08:00:00');
+    $owner = User::factory()->withPersonalSpace()->create(['name' => 'Iqbal']);
+    $member = actingAsApiUser();
+    $member->update(['name' => 'Pasangan']);
+    $space = sharedSpaceBetween($owner, $member);
+    TaskList::factory()->for($space)->create();
+    test()->travelTo('2026-10-01 08:00:00');
+    $space->delete();
+
+    return [$owner, $member, $space];
+}
+
+it('restores the shared space the partners closed less than 30 days ago and returns 201', function (string $now) {
+    Queue::fake([SendPushNotification::class]);
+    [$owner, , $space] = partnersWhoClosedTheirSpace();
+    $this->travelTo($now);
+    $invitation = SpaceInvitation::factory()->for($owner, 'creator')->create(['code' => 'K7M2QX']);
+
+    $response = $this->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX']);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.id', $space->id)
+        ->assertJsonPath('data.created_at', '2026-09-20T08:00:00.000000Z')
+        ->assertJsonPath('data.deleted_at', null);
+    $this->assertNotSoftDeleted($space);
+    expect(Space::withTrashed()->where('type', SpaceType::Shared)->count())->toBe(1)
+        ->and(TaskList::query()->where('space_id', $space->id)->count())->toBe(1);
+    $this->assertDatabaseHas('space_invitations', ['id' => $invitation->id, 'space_id' => $space->id]);
+})->with([
+    'a day after it was closed' => ['2026-10-02 08:00:00'],
+    'exactly 30 days after it was closed' => ['2026-10-31 08:00:00'],
+]);
+
+it('restores the shared space whichever partner made the code', function (Closure $codeMaker) {
+    Queue::fake([SendPushNotification::class]);
+    [$owner, $member, $space] = partnersWhoClosedTheirSpace();
+    $this->travelTo('2026-10-02 08:00:00');
+    $maker = $codeMaker($owner, $member);
+    SpaceInvitation::factory()->for($maker, 'creator')->create(['code' => 'K7M2QX']);
+    $joiner = $maker->is($owner) ? $member : $owner;
+
+    $response = $this->actingAs($joiner, 'sanctum')->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX']);
+
+    $response->assertCreated()->assertJsonPath('data.id', $space->id);
+})->with([
+    'the owner of the space' => [fn (User $owner, User $member) => $owner],
+    'the other member' => [fn (User $owner, User $member) => $member],
+]);
+
+it('queues partner_joined with the text for a restored space', function () {
+    Queue::fake([SendPushNotification::class]);
+    [$owner, , $space] = partnersWhoClosedTheirSpace();
+    $this->travelTo('2026-10-02 08:00:00');
+    SpaceInvitation::factory()->for($owner, 'creator')->create(['code' => 'K7M2QX']);
+
+    $this->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX']);
+
+    Queue::assertPushedTimes(SendPushNotification::class, 1);
+    Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $owner->id
+        && $job->type === PushType::PartnerJoined
+        && $job->title === 'Ruang Bersama'
+        && $job->body === 'Pasangan sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh.'
+        && $job->spaceId === $space->id);
+});
+
+it('creates a new shared space when the partners closed theirs more than 30 days ago', function () {
+    Queue::fake([SendPushNotification::class]);
+    [$owner, , $space] = partnersWhoClosedTheirSpace();
+    $this->travelTo('2026-10-31 08:00:01');
+    SpaceInvitation::factory()->for($owner, 'creator')->create(['code' => 'K7M2QX']);
+
+    $response = $this->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX']);
+
+    $response->assertCreated();
+    expect($response->json('data.id'))->not->toBe($space->id);
+    $this->assertSoftDeleted($space);
+    Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->body === 'Pasangan sudah bergabung. Ruang Bersama kalian siap.');
+});
+
+it('creates a new shared space with someone other than the partner of the closed one', function (bool $memberMadeTheCode) {
+    Queue::fake([SendPushNotification::class]);
+    [, $member, $space] = partnersWhoClosedTheirSpace();
+    $this->travelTo('2026-10-02 08:00:00');
+    $newPartner = User::factory()->withPersonalSpace()->create();
+    [$inviter, $joiner] = $memberMadeTheCode ? [$member, $newPartner] : [$newPartner, $member];
+    SpaceInvitation::factory()->for($inviter, 'creator')->create(['code' => 'K7M2QX']);
+
+    $response = $this->actingAs($joiner, 'sanctum')->postJson('/api/v1/invitations/accept', ['code' => 'K7M2QX']);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.members.0.id', $inviter->id)
+        ->assertJsonPath('data.members.1.id', $joiner->id);
+    expect($response->json('data.id'))->not->toBe($space->id);
+    $this->assertSoftDeleted($space);
+})->with([
+    'a code from the new partner' => [false],
+    'a code from the member of the closed space' => [true],
+]);

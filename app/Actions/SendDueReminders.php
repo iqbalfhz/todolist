@@ -72,8 +72,9 @@ class SendDueReminders
     /**
      * Get the open reminders that have arrived, for tasks that are still to be done.
      *
-     * A completed task or a task in an archived list keeps its reminder open,
-     * so it is still sent if the task comes back within the grace period.
+     * A completed task, a task in an archived list, or a task in a shared
+     * space that was closed keeps its reminder open, so it is still sent if
+     * the task comes back within the grace period.
      *
      * @return Builder<Task>
      */
@@ -86,7 +87,8 @@ class SendDueReminders
                 $this->format($now),
             ])
             ->whereNull('completed_at')
-            ->whereHas('taskList', fn (Builder $list) => $list->active());
+            ->whereHas('taskList', fn (Builder $list) => $list->active())
+            ->whereHas('space');
     }
 
     /**

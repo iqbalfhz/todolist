@@ -12,6 +12,7 @@ use App\Jobs\SendPushNotification;
 use App\Models\Space;
 use App\Models\SpaceInvitation;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -75,7 +76,11 @@ class AcceptInvitation
     }
 
     /**
-     * Create the shared space owned by the inviter and close every open invitation of both partners.
+     * Give the partners their shared space and close every open invitation of both.
+     *
+     * Partners who closed a shared space together less than
+     * Space::RESTORABLE_DAYS ago get that space back; everyone else gets a
+     * new one, owned by the inviter.
      */
     private function createSharedSpace(SpaceInvitation $invitation, User $joiner): Space
     {
@@ -83,6 +88,39 @@ class AcceptInvitation
 
         $this->keepColorsDistinct($joiner, $inviter);
 
+        $closedSpace = $this->recentlyClosedSpaceOf($inviter, $joiner);
+
+        $space = $closedSpace !== null
+            ? $this->restore($closedSpace)
+            : $this->createSpace($inviter, $joiner);
+
+        $invitation->update([
+            'accepted_at' => now(),
+            'accepted_by' => $joiner->id,
+            'space_id' => $space->id,
+        ]);
+
+        SpaceInvitation::query()
+            ->whereIn('created_by', [$inviter->id, $joiner->id])
+            ->active()
+            ->update(['revoked_at' => now()]);
+
+        SendPushNotification::dispatch(
+            $inviter->id,
+            PushType::PartnerJoined,
+            $space->name,
+            __($closedSpace !== null ? 'push.partner_joined.restored_body' : 'push.partner_joined.body', ['name' => $joiner->name]),
+            $space->id,
+        )->afterCommit();
+
+        return $space;
+    }
+
+    /**
+     * Create a shared space owned by the inviter, with both partners and the first list.
+     */
+    private function createSpace(User $inviter, User $joiner): Space
+    {
         $space = Space::query()->create([
             'name' => 'Ruang Bersama',
             'type' => SpaceType::Shared,
@@ -103,24 +141,42 @@ class AcceptInvitation
             'created_by' => $inviter->id,
         ]);
 
-        $invitation->update([
-            'accepted_at' => now(),
-            'accepted_by' => $joiner->id,
-            'space_id' => $space->id,
-        ]);
+        return $space;
+    }
 
-        SpaceInvitation::query()
-            ->whereIn('created_by', [$inviter->id, $joiner->id])
-            ->active()
-            ->update(['revoked_at' => now()]);
+    /**
+     * Find the shared space the two partners closed together recently enough to get it back.
+     *
+     * The row is locked, so the daily purge cannot delete it while it is being restored.
+     */
+    private function recentlyClosedSpaceOf(User $inviter, User $joiner): ?Space
+    {
+        return Space::onlyTrashed()
+            ->where('type', SpaceType::Shared)
+            ->where('deleted_at', '>=', now()->subDays(Space::RESTORABLE_DAYS))
+            ->whereHas('members', fn (Builder $members) => $members->whereKey($inviter->id))
+            ->whereHas('members', fn (Builder $members) => $members->whereKey($joiner->id))
+            ->latest('deleted_at')
+            ->lockForUpdate()
+            ->first();
+    }
 
-        SendPushNotification::dispatch(
-            $inviter->id,
-            PushType::PartnerJoined,
-            $space->name,
-            __('push.partner_joined.body', ['name' => $joiner->name]),
-            $space->id,
-        )->afterCommit();
+    /**
+     * Open a closed shared space again, with everything it held when it was closed.
+     *
+     * The phones removed the content when the space closed, and a sync from
+     * their cursor would skip rows that have not changed since. Bumping
+     * updated_at on every row that is still there sends it all again.
+     */
+    private function restore(Space $space): Space
+    {
+        $space->restore();
+
+        foreach (Space::CONTENT_MODELS as $model) {
+            $model::query()
+                ->where('space_id', $space->id)
+                ->update(['updated_at' => (new $model)->freshTimestampString()]);
+        }
 
         return $space;
     }

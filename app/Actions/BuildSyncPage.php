@@ -47,12 +47,17 @@ class BuildSyncPage
     public function handle(User $user, ?CarbonImmutable $since = null, ?array $cursor = null): array
     {
         $state = $cursor ?? $this->start($since);
-        $spaceIds = $this->spaceIds($user, $state['with_deleted']);
+        $openSpaceIds = $this->spaceIds($user, withClosed: false);
+        $spaceIds = $state['with_deleted'] ? $this->spaceIds($user, withClosed: true) : $openSpaceIds;
         $changes = [];
         $hasMore = false;
 
         foreach (SyncCursor::COLLECTIONS as $collection) {
-            $rows = $this->query($collection, $spaceIds, $state['with_deleted'], $state['positions'][$collection])
+            // A closed shared space reaches the phone once more, with deleted_at,
+            // so the phone removes it. What it held is never sent again.
+            $collectionSpaceIds = $collection === 'spaces' ? $spaceIds : $openSpaceIds;
+
+            $rows = $this->query($collection, $collectionSpaceIds, $state['with_deleted'], $state['positions'][$collection])
                 ->limit(self::PAGE_SIZE + 1)
                 ->get();
 
@@ -103,18 +108,18 @@ class BuildSyncPage
     }
 
     /**
-     * Get the IDs of the spaces the user is a member of.
+     * Get the IDs of the spaces the user is a member of, and of the shared spaces they closed when asked.
      *
      * The partner's personal space is never among them, which is what keeps
      * its content out of every collection.
      *
      * @return Collection<int, string>
      */
-    private function spaceIds(User $user, bool $withDeleted): Collection
+    private function spaceIds(User $user, bool $withClosed): Collection
     {
         $spaces = $user->spaces();
 
-        if ($withDeleted) {
+        if ($withClosed) {
             $spaces->withTrashed();
         }
 

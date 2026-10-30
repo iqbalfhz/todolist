@@ -11,9 +11,10 @@ return [
     | partner_joined texts come from the API contract. The owner approved
     | the others as they are written here on 11 October 2026, the
     | special_date_reminder, trip_reminder, and savings_reminder texts on
-    | 22 October 2026, the memory_created text on 23 October 2026, and the
+    | 22 October 2026, the memory_created text on 23 October 2026, the
     | savings_withdrawal, comment_created, and reaction_created texts on
-    | 29 October 2026.
+    | 29 October 2026, and the partner_left text and the partner_joined text
+    | for a restored space on 30 October 2026.
     |
     */
 
@@ -44,6 +45,11 @@ return [
 
     'partner_joined' => [
         'body' => ':name sudah bergabung. Ruang Bersama kalian siap.',
+        'restored_body' => ':name sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh.',
+    ],
+
+    'partner_left' => [
+        'body' => ':name keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi.',
     ],
 
     'special_date_reminder' => [

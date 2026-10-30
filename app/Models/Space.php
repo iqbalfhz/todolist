@@ -22,6 +22,34 @@ class Space extends Model
     use HasFactory, HasMicrosecondTimestamps, HasUlids, NotifiesSpaceChanges, SoftDeletes;
 
     /**
+     * How many days a closed shared space is kept, so the same two partners
+     * can get it back by pairing again. After that it is deleted for good.
+     */
+    public const RESTORABLE_DAYS = 30;
+
+    /**
+     * The models that hold what a space contains, in an order in which they
+     * can be deleted for good without breaking a foreign key: a model comes
+     * before every model it points to.
+     *
+     * Every collection GET /sync sends besides the spaces themselves is here.
+     *
+     * @var list<class-string<Model>>
+     */
+    public const CONTENT_MODELS = [
+        Comment::class,
+        Reaction::class,
+        MemoryPhoto::class,
+        Memory::class,
+        SavingsEntry::class,
+        Task::class,
+        TaskList::class,
+        Trip::class,
+        SavingsGoal::class,
+        SpecialDate::class,
+    ];
+
+    /**
      * Get the ID of the space the row belongs to, which for a space is its own.
      */
     public function changedSpaceId(): string

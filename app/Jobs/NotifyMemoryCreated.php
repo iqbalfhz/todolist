@@ -25,14 +25,14 @@ class NotifyMemoryCreated implements ShouldQueue
 
     /**
      * Queue the push for every member of the space except the creator,
-     * unless the memory was deleted in the meantime.
+     * unless the memory was deleted or its shared space closed in the meantime.
      */
     public function handle(): void
     {
-        $memory = Memory::query()->find($this->memoryId);
+        $memory = Memory::query()->with('space')->find($this->memoryId);
         $actor = User::query()->find($this->actorId);
 
-        if ($memory === null || $actor === null) {
+        if ($memory === null || $memory->space === null || $actor === null) {
             return;
         }
 

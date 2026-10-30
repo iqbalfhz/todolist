@@ -48,6 +48,7 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/devices/{token}', [DeviceController::class, 'destroy'])->name('devices.destroy');
 
         Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
+        Route::delete('/spaces/{id}', [SpaceController::class, 'destroy'])->name('spaces.destroy');
         Route::post('/invitations', [InvitationController::class, 'store'])->name('invitations.store');
         Route::post('/invitations/accept', [AcceptedInvitationController::class, 'store'])
             ->middleware('throttle:invitation-accept')

@@ -135,3 +135,21 @@ it('marks a reminder that is more than 30 minutes late as sent without a push or
     'for a deleted task' => [fn () => tap(Task::factory()->create(['due_date' => '2026-10-09', 'remind_at' => '2026-10-09 01:00:00']))->delete()],
     'for a task in an archived list' => [fn () => Task::factory()->for(TaskList::factory()->archived())->create(['due_date' => '2026-10-09', 'remind_at' => '2026-10-09 01:00:00'])],
 ]);
+
+it('sends no reminder for a task in a shared space that was closed', function () {
+    Queue::fake([SendPushNotification::class]);
+    $owner = User::factory()->create();
+    $space = sharedSpaceBetween($owner, User::factory()->create());
+    $task = Task::factory()
+        ->for(TaskList::factory()->for($space))
+        ->hasAttached($owner, [], 'assignees')
+        ->create(['due_date' => '2026-10-09', 'remind_at' => '2026-10-09 01:00:00']);
+    $space->delete();
+    $this->travelTo('2026-10-09 01:00:00');
+
+    $result = app(SendDueReminders::class)->handle();
+
+    expect($result)->toBe(['sent' => 0, 'late' => 0]);
+    expect($task->fresh()->reminder_sent_at)->toBeNull();
+    Queue::assertNothingPushed();
+});

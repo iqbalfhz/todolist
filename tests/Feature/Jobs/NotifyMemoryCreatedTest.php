@@ -37,3 +37,15 @@ it('sends nothing when the memory was deleted before the push went out', functio
 
     Queue::assertNothingPushed();
 });
+
+it('sends nothing when the shared space was closed before the push went out', function () {
+    Queue::fake([SendPushNotification::class]);
+    $creator = User::factory()->create();
+    $space = sharedSpaceBetween($creator, User::factory()->create());
+    $memory = Memory::factory()->for($space)->create(['created_by' => $creator->id]);
+    $space->delete();
+
+    NotifyMemoryCreated::dispatchSync($memory->id, $creator->id);
+
+    Queue::assertNothingPushed();
+});
