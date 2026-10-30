@@ -18,7 +18,7 @@ Belum beres:
 - Di server, alur daftar, undangan, tugas, tabungan, sync, keluar, dan masuk sudah diuji dengan dua akun uji pada 11 Oktober 2026 dan lolos; pengingat terjadwal dan antrean juga terbukti jalan. Unggah, ganti, dan hapus foto profil lewat R2 (bucket `todolist-avatar`) juga sudah lolos di sana.
 - Unggah foto kenangan ke R2 belum diuji di server, begitu pula batas unggah PHP yang dinaikkan untuk itu (`upload_max_filesize` 12M, `post_max_size` 16M di `docker/php.ini`), yang sudah ikut ter-deploy bersama v0.3.
 - Rilis keamanan Oktober 2026 di luar repo ini: Coolify sudah v4.5.0 dengan PHP 8.4.27 (PHP2Shell), dan container tunnel sudah memakai cloudflared 2026.10.3 (keduanya dicek di server 25 Oktober 2026). Yang masih menunggu: app Flutter dibangun ulang dengan Flutter 3.47.8 (CA eMudhra yang bocor), yang sedang dikerjakan sesi Flutter. Rinciannya di `TASKS.md`.
-- Masuk dengan Google belum dicoba dengan token sungguhan dari HP; itu menunggu tombolnya di app Flutter. `GOOGLE_CLIENT_ID` juga harus sudah diisi di Coolify, karena tanpa itu `POST /auth/google` membalas 500.
+- Masuk dengan Google belum dicoba dengan token sungguhan dari HP; itu menunggu tombolnya di app Flutter. `GOOGLE_CLIENT_ID` sudah diisi di Coolify (30 Oktober 2026): di produksi, token asal dibalas 422 `google_token_invalid`, dan server bisa mengambil kunci publik Google.
 - Docker tidak terpasang di mesin pengembang, jadi perubahan pada `Dockerfile` atau folder `docker/` baru teruji saat di-deploy.
 - `personal_access_tokens.id` tetap bigint bawaan Sanctum, mengikuti contoh token `"1|abc..."` di kontrak; hanya `tokenable_id` yang ULID.
 

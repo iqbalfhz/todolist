@@ -4,8 +4,7 @@
 
 ## Waiting On
 
-- [ ] **Isi `GOOGLE_CLIENT_ID` di Coolify, lalu deploy ulang** - oleh pemilik, since 2026-10-30; nilainya `878969336009-091frg25m4lc24jlfmt8b3iu3qea4cq3.apps.googleusercontent.com` (client ID klien Web, bukan rahasia). Tanpa itu `POST /auth/google` membalas 500. Ceknya: `POST /auth/google` dengan token asal membalas 422 `google_token_invalid`, bukan 500
-- [ ] **Masuk dengan Google di app Flutter** - oleh sesi Flutter, since 2026-10-30; kontraknya di bagian "Masuk dengan Google (v1.x)" pada Akun di `docs/kontrak-api.md`: paket `google_sign_in` dengan `serverClientId` berisi client ID di atas, dan tombol di layar Masuk dan Daftar
+- [ ] **Masuk dengan Google di app Flutter** - oleh sesi Flutter, since 2026-10-30; kontraknya di bagian "Masuk dengan Google (v1.x)" pada Akun di `docs/kontrak-api.md`: paket `google_sign_in` dengan `serverClientId` berisi client ID klien Web (`878969336009-091frg25m4lc24jlfmt8b3iu3qea4cq3.apps.googleusercontent.com`, sama dengan `GOOGLE_CLIENT_ID` di server), dan tombol di layar Masuk dan Daftar. Server produksi sudah siap
 - [ ] **Uji masuk dengan Google di dua HP** - oleh pemilik, since 2026-10-30; setelah app punya tombolnya: masuk dengan akun Google yang emailnya sama dengan akun Denly Days, pastikan masuk ke akun yang sama dan Ruang Bersama tetap ada, lalu ulangi di HP pasangan
 
 - [ ] **Reaksi dan komentar di app Flutter** - oleh sesi Flutter, since 2026-10-29; kontraknya di bagian "Reaksi dan komentar (v1.x)" pada `docs/kontrak-api.md`: dua koleksi sync baru (`comments` dan `reactions`, jadi sync penuh sekali), lima endpoint lewat antrean, dan push `comment_created` serta `reaction_created`
@@ -122,3 +121,4 @@
 - [x] ~~Persiapan masuk dengan Google (oleh pemilik): layar persetujuan Google Auth Platform berstatus Testing dengan pengguna uji pemilik dan pasangan, klien Web `Denly Days server`, klien Android rilis dan debug untuk `id.my.iqbalfhz.denlydays` (SHA-1 rilis `4E:22:F8:AE:D5:9D:DD:2B:39:6F:1A:C9:6A:D1:1E:B4:CC:A0:63:74`, debug `2A:80:3F:B0:D4:4A:B3:9D:24:73:00:21:4B:C8:99:39:77:87:31:46`), dan kedua SHA-1 di app Android Firebase~~ (2026-10-29)
 - [x] ~~Client secret klien Web `Denly Days server` yang sempat ditempel ke percakapan dihapus pemilik; server dan app tidak memakai secret~~ (2026-10-29)
 - [x] ~~Masuk dengan Google (v1.x): `POST /auth/google` memeriksa ID token Google sendiri (kunci publik Google di-cache, `firebase/php-jwt` sebagai dependensi langsung), mencari akun lewat `google_id` lalu email, atau membuat akun baru tanpa kata sandi; kode error baru 422 `google_token_invalid`. Kontraknya disetujui 30 Oktober~~ (2026-10-30)
+- [x] ~~`GOOGLE_CLIENT_ID` diisi pemilik di Coolify lalu deploy ulang: di produksi, `POST /auth/google` dengan token asal membalas 422 `google_token_invalid` (sebelumnya 500), dan token berheader lengkap juga dibalas 422, bukan 503, jadi server bisa mengambil kunci publik Google~~ (2026-10-30)
