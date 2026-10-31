@@ -13,7 +13,7 @@ return [
     | special_date_reminder, trip_reminder, and savings_reminder texts on
     | 22 October 2026, the memory_created text on 23 October 2026, the
     | savings_withdrawal, comment_created, and reaction_created texts on
-    | 29 October 2026, and the partner_left text and the partner_joined text
+    | 29 October 2026, and the partner_left texts and the partner_joined text
     | for a restored space on 30 October 2026.
     |
     */
@@ -50,6 +50,7 @@ return [
 
     'partner_left' => [
         'body' => ':name keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi.',
+        'account_deleted_body' => ':name menghapus akunnya, jadi Ruang Bersama kalian ditutup.',
     ],
 
     'special_date_reminder' => [

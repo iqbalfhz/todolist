@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Filament\Resources\Users\Actions\DeleteAccountAction;
 use App\Filament\Resources\Users\Actions\ResetPasswordAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -30,6 +31,7 @@ class UsersTable
             ->recordActions([
                 ViewAction::make(),
                 ResetPasswordAction::make(),
+                DeleteAccountAction::make(),
             ]);
     }
 }

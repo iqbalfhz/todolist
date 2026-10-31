@@ -41,6 +41,9 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/me', [MeController::class, 'show'])->name('me.show');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');
+        Route::delete('/me', [MeController::class, 'destroy'])
+            ->middleware('throttle:account-delete')
+            ->name('me.destroy');
         Route::post('/me/avatar', [AvatarController::class, 'store'])->name('me.avatar.store');
         Route::delete('/me/avatar', [AvatarController::class, 'destroy'])->name('me.avatar.destroy');
 

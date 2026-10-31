@@ -66,6 +66,14 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Determine whether the user is the admin, the one account the admin panel lets in.
+     */
+    public function isAdmin(): bool
+    {
         $adminEmail = config('admin.email');
 
         return filled($adminEmail) && Str::lower($this->email) === Str::lower($adminEmail);

@@ -37,6 +37,11 @@ return [
         'email_unverified' => 'Email akun Google ini belum terverifikasi.',
     ],
 
+    'account' => [
+        'wrong_password' => 'Kata sandi salah.',
+        'other_google_account' => 'Pilih akun Google yang tersambung ke akun ini.',
+    ],
+
     'parent_deleted' => [
         'task_list' => 'Daftar ini sudah dihapus.',
         'savings_goal' => 'Target ini sudah dihapus.',

@@ -3,16 +3,14 @@
 namespace App\Actions;
 
 use App\Enums\SpaceType;
-use App\Jobs\DeleteStoredDirectory;
-use App\Models\MemoryPhoto;
 use App\Models\Space;
-use App\Models\SpaceInvitation;
-use App\Models\Task;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class PurgeClosedSpaces
 {
+    public function __construct(private PurgeSpaceContent $purgeSpaceContent) {}
+
     /**
      * Delete for good every shared space that was closed more than
      * Space::RESTORABLE_DAYS ago, with everything it held and its photos.
@@ -33,9 +31,6 @@ class PurgeClosedSpaces
 
     /**
      * Delete one closed space for good, unless the partners got it back in the meantime.
-     *
-     * Every row is deleted from the database, the ones deleted earlier
-     * included, and the photo files are removed from R2 once that is saved.
      */
     private function purge(string $spaceId, CarbonInterface $cutoff): bool
     {
@@ -53,18 +48,9 @@ class PurgeClosedSpaces
                 return false;
             }
 
-            // A task points at the task that followed it, so those links go first.
-            Task::withTrashed()->where('space_id', $spaceId)->update(['next_task_id' => null]);
-
-            foreach (Space::CONTENT_MODELS as $model) {
-                $model::withTrashed()->where('space_id', $spaceId)->forceDelete();
-            }
-
-            SpaceInvitation::query()->where('space_id', $spaceId)->update(['space_id' => null]);
+            $this->purgeSpaceContent->handle($spaceId);
 
             $space->forceDelete();
-
-            DeleteStoredDirectory::dispatch(MemoryPhoto::DISK, MemoryPhoto::directoryFor($spaceId))->afterCommit();
 
             return true;
         });

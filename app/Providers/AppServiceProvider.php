@@ -76,5 +76,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         RateLimiter::for('places', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?: $request->ip()));
+
+        // Deleting the account asks for the password again, so this keeps it from being guessed here.
+        RateLimiter::for('account-delete', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?: $request->ip()));
     }
 }
