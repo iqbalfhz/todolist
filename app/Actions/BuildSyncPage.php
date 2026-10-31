@@ -2,17 +2,6 @@
 
 namespace App\Actions;
 
-use App\Models\Comment;
-use App\Models\Memory;
-use App\Models\MemoryPhoto;
-use App\Models\Reaction;
-use App\Models\SavingsEntry;
-use App\Models\SavingsGoal;
-use App\Models\Space;
-use App\Models\SpecialDate;
-use App\Models\Task;
-use App\Models\TaskList;
-use App\Models\Trip;
 use App\Models\User;
 use App\Rules\SyncCursor;
 use Carbon\CarbonImmutable;
@@ -33,6 +22,8 @@ class BuildSyncPage
      * change that was still being saved at that moment is not missed.
      */
     public const REWIND_SECONDS = 5;
+
+    public function __construct(private QuerySyncCollection $querySyncCollection) {}
 
     /**
      * Collect one page of the rows in the user's spaces.
@@ -139,19 +130,7 @@ class BuildSyncPage
      */
     private function query(string $collection, Collection $spaceIds, bool $withDeleted, ?array $position): Builder
     {
-        $query = match ($collection) {
-            'spaces' => Space::query()->whereKey($spaceIds)->with('members'),
-            'task_lists' => TaskList::query()->whereIn('space_id', $spaceIds),
-            'tasks' => Task::query()->whereIn('space_id', $spaceIds)->with('assignees:id'),
-            'savings_goals' => SavingsGoal::query()->whereIn('space_id', $spaceIds),
-            'savings_entries' => SavingsEntry::query()->whereIn('space_id', $spaceIds),
-            'special_dates' => SpecialDate::query()->whereIn('space_id', $spaceIds),
-            'trips' => Trip::query()->whereIn('space_id', $spaceIds),
-            'memories' => Memory::query()->whereIn('space_id', $spaceIds),
-            'memory_photos' => MemoryPhoto::query()->whereIn('space_id', $spaceIds),
-            'comments' => Comment::query()->whereIn('space_id', $spaceIds),
-            'reactions' => Reaction::query()->whereIn('space_id', $spaceIds),
-        };
+        $query = $this->querySyncCollection->handle($collection, $spaceIds);
 
         if ($withDeleted) {
             $query->withTrashed();
