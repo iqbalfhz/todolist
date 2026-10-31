@@ -2,11 +2,11 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 30 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama dan hapus akun, yang masing-masing menambah satu endpoint. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama, hapus akun, dan ekspor data, yang masing-masing menambah satu endpoint. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
 
 ## Ringkasan endpoint
 
-Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Google. Hanya lima yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, dan `GET /places` sejak v1.x); sisanya menulis.
+Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Google. Hanya enam yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, `GET /places` sejak v1.x, dan `GET /me/export` sejak v1.0); sisanya menulis.
 
 | Modul | Method | Endpoint | Fungsi |
 | --- | --- | --- | --- |
@@ -19,6 +19,7 @@ Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Goog
 | Akun | POST | `/me/avatar` | Unggah foto profil |
 | Akun | DELETE | `/me/avatar` | Hapus foto profil |
 | Akun | DELETE | `/me` | Hapus akun beserta semua datanya (v1.0) |
+| Akun | GET | `/me/export` | Unduh salinan semua data akun sebagai satu file JSON (v1.0) |
 | Perangkat | POST | `/devices` | Daftarkan token FCM HP ini |
 | Perangkat | DELETE | `/devices/{token}` | Hapus token FCM |
 | Ruang | GET | `/spaces` | Ruang tempatmu menjadi anggota, beserta profil anggotanya |
@@ -134,6 +135,7 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | Lainnya | 120 per menit per akun, cukup untuk antrean yang menumpuk setelah offline |
 | `/places` | 20 per menit per akun (v1.x) |
 | `DELETE /me` | 5 per menit per akun (v1.0) |
+| `GET /me/export` | 5 per jam per akun (v1.0) |
 
 Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
@@ -297,7 +299,7 @@ Akun bisa dihapus dari app kapan saja. Semua datanya langsung dihapus permanen, 
 | `DELETE /me` | `{"password": "..."}`, atau `{"id_token": "..."}` dari Masuk dengan Google untuk akun yang tersambung ke Google | 204 | 422 `invalid_credentials` ("Kata sandi salah."), 422 `google_token_invalid`, 422 `validation_failed` (keduanya kosong), 429 `too_many_requests` |
 
 - Endpoint ini tidak lewat antrean dan butuh koneksi. Kalau keduanya dikirim, server memakai kata sandi. Token Google harus dari akun Google yang tersambung ke akun ini; token dari akun Google lain dibalas `google_token_invalid` ("Pilih akun Google yang tersambung ke akun ini.").
-- Di app, hapus akun memakai konfirmasi yang menyebut akibatnya: semua data hilang permanen dan tidak bisa dibatalkan, dan Ruang Bersama ditutup dengan isinya ikut terhapus untuk pasangan.
+- Di app, hapus akun memakai konfirmasi yang menyebut akibatnya: semua data hilang permanen dan tidak bisa dibatalkan, dan Ruang Bersama ditutup dengan isinya ikut terhapus untuk pasangan. Konfirmasi itu juga menyarankan ekspor data dulu.
 - Yang langsung dihapus permanen: akun dan profil, foto profil, Ruang Pribadi beserta seluruh isi dan fotonya, token di semua HP, token perangkat, dan kode undangan.
 - Ruang Bersama ditutup untuk kalian berdua seperti keluar, tetapi isinya beserta foto langsung dihapus permanen, tanpa masa 30 hari, karena tidak bisa dipulihkan tanpa akun itu. Ruang Bersama lama yang sudah ditutup juga ikut dikosongkan. Ruangnya sendiri tetap ada tanpa isi sampai dihapus `spaces:purge`, supaya HP pasangan menghapusnya lewat sync.
 - Pasangan menerima push `partner_left` dengan teks "{nama} menghapus akunnya, jadi Ruang Bersama kalian ditutup."
@@ -305,6 +307,49 @@ Akun bisa dihapus dari app kapan saja. Semua datanya langsung dihapus permanen, 
 - Email dan akun Google yang sama bisa dipakai lagi untuk daftar sebagai akun baru, tanpa data lama.
 - Cadangan database tidak diubah, jadi data yang dihapus baru hilang dari sana saat cadangan lama terhapus otomatis, paling lama 30 hari kemudian.
 - **Tanpa app:** halaman publik `GET /hapus-akun`, yang dibutuhkan Google Play, menjelaskan cara menghapus dari app dan cara memintanya lewat email dari alamat akun ke alamat kontak di `SUPPORT_EMAIL`. Admin memprosesnya paling lambat 3 × 24 jam lewat aksi "Hapus akun" di panel, dengan proses yang sama.
+
+### Ekspor data (v1.0)
+
+Salinan semua data yang bisa kamu lihat di app bisa diunduh kapan saja sebagai satu file JSON, misalnya sebelum keluar dari Ruang Bersama atau menghapus akun.
+
+| Endpoint | Berhasil | Ditolak |
+| --- | --- | --- |
+| `GET /me/export` | 200 berisi file JSON, dengan `Content-Disposition: attachment; filename="denly-days-2026-10-31.json"`; tanggalnya di zona waktu akun | 429 `too_many_requests` (lebih dari 5 per jam) |
+
+```json
+{
+  "app": "Denly Days",
+  "format_version": 1,
+  "exported_at": "2026-10-31T08:00:00.000000Z",
+  "user": {},
+  "devices": [
+    {
+      "platform": "android",
+      "created_at": "2026-10-08T10:20:00.000000Z",
+      "updated_at": "2026-10-08T10:20:00.000000Z"
+    }
+  ],
+  "spaces": [],
+  "task_lists": [],
+  "tasks": [],
+  "savings_goals": [],
+  "savings_entries": [],
+  "special_dates": [],
+  "trips": [],
+  "memories": [],
+  "memory_photos": [],
+  "comments": [],
+  "reactions": []
+}
+```
+
+- Endpoint ini tidak lewat antrean dan butuh koneksi. Balasannya langsung berupa file, tanpa pembungkus `data`, supaya file yang disimpan app bisa berdiri sendiri. `format_version` naik kalau bentuk file berubah.
+- `user` memakai sumber user. `spaces` berisi ruang yang masih terbuka beserta profil anggotanya, dan koleksi lain memakai sumber yang sama dengan sync, diurutkan menurut waktu dibuat.
+- Isinya sama dengan yang terlihat di app: Ruang Pribadi dan Ruang Bersama beserta seluruh isinya yang belum dihapus, termasuk data buatan pasangan di Ruang Bersama. Isi Ruang Pribadi pasangan, data yang sudah dihapus, dan Ruang Bersama yang sudah ditutup tidak ikut.
+- Kata sandi, token masuk, token FCM, dan ID akun Google tidak ikut. `devices` hanya menyebut platform dan waktunya.
+- Foto tidak ikut sebagai file. Setiap baris `memory_photos` membawa `url` dan `thumb_url` baru yang berlaku 7 hari, jadi app bisa menawarkan unduh semua foto. Foto profil ikut lewat `avatar_url` di `user`.
+- Di app, Pengaturan > Ekspor data menyimpan file itu ke HP, lalu menawarkan unduh fotonya. Konfirmasi keluar dari Ruang Bersama dan hapus akun menyarankan ekspor dulu, dan halaman `/hapus-akun` juga menyebutnya.
+- File ini memenuhi hak atas salinan data (Pasal 7 UU PDP) dalam format yang dapat dibaca sistem elektronik (Pasal 13), langsung tanpa menunggu batas 3 × 24 jam di Pasal 32. Impor dari file ini belum ada.
 
 ## Ruang dan undangan
 
@@ -379,7 +424,7 @@ Salah satu dari kalian bisa keluar kapan saja, tanpa persetujuan pasangan. Ruang
 | `DELETE /spaces/{id}` | kosong | 204, juga saat diulang dan saat pasangan sudah lebih dulu keluar | 404 `not_found` (bukan ruangmu), 422 `validation_failed` (Ruang Pribadi) |
 
 - Endpoint ini tidak lewat antrean dan butuh koneksi. Sebelum memanggilnya, app mengirim isi antreannya dulu, supaya perubahan terakhir ikut tersimpan.
-- Di app, keluar memakai konfirmasi yang menyebut akibatnya: Ruang Bersama ditutup untuk kalian berdua, isinya disimpan 30 hari dan kembali utuh kalau kalian bergabung lagi, lalu dihapus permanen beserta fotonya.
+- Di app, keluar memakai konfirmasi yang menyebut akibatnya: Ruang Bersama ditutup untuk kalian berdua, isinya disimpan 30 hari dan kembali utuh kalau kalian bergabung lagi, lalu dihapus permanen beserta fotonya. Konfirmasi itu juga menyarankan ekspor data dulu (v1.0).
 - Server mengisi `deleted_at` ruang itu. Sejak saat itu ruang dan semua isinya tidak ada lagi untuk kalian berdua: `GET /spaces` tidak menampilkannya, dan setiap tulis ke sana dibalas 404. Operasi antrean di HP mana pun yang belum terkirim ikut hilang, karena app membuangnya setelah 404.
 - Setelah 204, app menghapus ruang itu beserta isinya dari cache. HP lain milikmu dan HP pasangan mendapat ruang itu dengan `deleted_at` terisi lewat sync, lalu melakukan hal yang sama.
 - Pasangan menerima push `partner_left`. Pengingat dan push lain untuk ruang itu berhenti, dan yang terlewat selama ditutup tidak dikirim menyusul.
@@ -1251,3 +1296,18 @@ Sepuluh butir ini merancang hapus akun, bagian "Ekspor data + hapus akun" di lin
 - [x] Cadangan database tidak diubah: data yang dihapus ikut hilang saat cadangan lama terhapus otomatis, paling lama 30 hari, dan halaman hapus akun menyebutnya.
 - [x] Email dan akun Google yang sama bisa dipakai lagi untuk daftar sebagai akun baru, tanpa data lama.
 - [x] Ekspor data dikerjakan sesudah ini sebagai kontrak sendiri.
+
+### Ekspor data (v1.0)
+
+Sepuluh butir ini merancang ekspor data, bagian "Ekspor data + hapus akun" di lingkup fitur dan syarat sebelum rilis publik di tab utama, dan disetujui pada 31 Oktober 2026. Butir pertama adalah pilihan pemilik soal bentuk file.
+
+- [x] Ekspor lewat `GET /me/export`, yang langsung membalas satu file JSON, tanpa antrean atau menunggu. Pemilik memilih JSON dengan tautan foto, bukan ZIP berisi foto yang disiapkan di belakang layar; ZIP bisa ditambah nanti.
+- [x] Isinya sama dengan yang terlihat di app: profil, Ruang Pribadi, Ruang Bersama yang masih terbuka beserta profil anggotanya, dan semua isinya yang belum dihapus, termasuk data buatan pasangan di Ruang Bersama.
+- [x] Isi Ruang Pribadi pasangan, data yang sudah dihapus, dan Ruang Bersama yang sudah ditutup tidak ikut.
+- [x] Setiap koleksi memakai bentuk sumber yang sama dengan sync, jadi tidak ada bentuk data baru. Filenya tanpa pembungkus `data`, dengan `app`, `format_version` 1, dan `exported_at`.
+- [x] Foto ikut lewat tautan baru yang berlaku 7 hari, batas terlama R2, bukan sebagai file.
+- [x] Kata sandi, token masuk, token FCM, dan ID akun Google tidak ikut; `devices` hanya menyebut platform dan waktunya.
+- [x] Batasnya 5 per jam per akun, karena satu ekspor membaca seluruh data akun.
+- [x] Nama filenya `denly-days-{tanggal}.json`, dengan tanggal di zona waktu akun.
+- [x] Halaman `/hapus-akun` dan konfirmasi keluar serta hapus akun di app menyarankan ekspor dulu.
+- [x] Panel admin tidak punya ekspor, karena admin tidak boleh melihat isi data pengguna. Impor dari file ekspor belum ada.
