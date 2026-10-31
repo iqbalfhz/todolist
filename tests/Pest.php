@@ -1,7 +1,9 @@
 <?php
 
+use App\Actions\VerifyGoogleIdToken;
 use App\Models\Space;
 use App\Models\User;
+use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
@@ -149,4 +151,75 @@ function jpegWithExifEntry(string $entry, string $data = ''): string
     $payload = "Exif\0\0".$tiff;
 
     return substr($jpeg, 0, 2)."\xFF\xE1".pack('n', strlen($payload) + 2).$payload.substr($jpeg, 2);
+}
+
+/**
+ * The client ID of the Web client that the Google sign-in tests stand in for.
+ */
+const GOOGLE_TEST_CLIENT_ID = '878969336009-web.apps.googleusercontent.com';
+
+/**
+ * Get an RSA key that stands in for one of Google's signing keys, made once per run.
+ *
+ * @return array{private: OpenSSLAsymmetricKey, jwk: array<string, string>}
+ */
+function googleSigningKey(string $keyId): array
+{
+    static $keys = [];
+
+    if (! isset($keys[$keyId])) {
+        // PHP on Windows has no default OpenSSL config, and key generation needs one.
+        $config = sys_get_temp_dir().'/denlydays-test-openssl.cnf';
+        file_put_contents($config, "[req]\ndistinguished_name = req_dn\n[req_dn]\n");
+
+        $private = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA, 'config' => $config]);
+        $rsa = openssl_pkey_get_details($private)['rsa'];
+        $base64Url = fn (string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+
+        $keys[$keyId] = [
+            'private' => $private,
+            'jwk' => ['kty' => 'RSA', 'alg' => 'RS256', 'use' => 'sig', 'kid' => $keyId, 'n' => $base64Url($rsa['n']), 'e' => $base64Url($rsa['e'])],
+        ];
+    }
+
+    return $keys[$keyId];
+}
+
+/**
+ * Build an ID token the way Google signs one for the app; a claim set to null is left out.
+ *
+ * @param  array<string, mixed>  $claims
+ */
+function googleIdToken(array $claims = [], string $keyId = 'google-key-1', ?string $signedWith = null): string
+{
+    $now = now()->getTimestamp();
+
+    $payload = array_filter([
+        'iss' => 'https://accounts.google.com',
+        'azp' => '878969336009-android.apps.googleusercontent.com',
+        'aud' => GOOGLE_TEST_CLIENT_ID,
+        'sub' => '110248495921238986420',
+        'email' => 'chika@gmail.com',
+        'email_verified' => true,
+        'name' => 'Chika',
+        'iat' => $now,
+        'exp' => $now + 3600,
+        ...$claims,
+    ], fn (mixed $value): bool => $value !== null);
+
+    return JWT::encode($payload, googleSigningKey($signedWith ?? $keyId)['private'], 'RS256', $keyId);
+}
+
+/**
+ * Answer the request for Google's signing keys with the given keys.
+ *
+ * @param  list<string>  $keyIds
+ */
+function fakeGoogleKeys(array $keyIds = ['google-key-1'], int $maxAge = 21600): void
+{
+    Http::fake([VerifyGoogleIdToken::KEYS_URL => Http::response(
+        ['keys' => array_map(fn (string $keyId): array => googleSigningKey($keyId)['jwk'], $keyIds)],
+        200,
+        ['Cache-Control' => "public, max-age={$maxAge}, must-revalidate, no-transform"],
+    )]);
 }
