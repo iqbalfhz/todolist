@@ -7,6 +7,7 @@ it('shows how to delete an account in the app and by email to the support addres
 
     $response->assertOk()
         ->assertSee('Hapus akun Denly Days')
+        ->assertSee('Pengaturan &gt; Ekspor data', false)
         ->assertSee('Pilih Hapus akun.')
         ->assertSee('mailto:bantuan@contoh.test?subject=Hapus%20akun', false)
         ->assertSee('paling lambat 3 &times; 24 jam', false)

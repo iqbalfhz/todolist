@@ -26,6 +26,7 @@
 <body>
     <h1>Hapus akun {{ config('app.name') }}</h1>
     <p>Kamu bisa menghapus akun {{ config('app.name') }} kapan saja. Semua data akunmu dihapus permanen dan tidak bisa dikembalikan.</p>
+    <p>Sebelum menghapus, kamu bisa menyimpan salinan datamu lewat Pengaturan &gt; Ekspor data di app.</p>
 
     <h2>Dari app</h2>
     <ol>

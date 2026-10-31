@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AcceptedInvitationController;
 use App\Http\Controllers\Api\V1\AccessTokenController;
 use App\Http\Controllers\Api\V1\AvatarController;
 use App\Http\Controllers\Api\V1\CommentController;
+use App\Http\Controllers\Api\V1\DataExportController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\GoogleAccessTokenController;
 use App\Http\Controllers\Api\V1\InvitationController;
@@ -44,6 +45,9 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/me', [MeController::class, 'destroy'])
             ->middleware('throttle:account-delete')
             ->name('me.destroy');
+        Route::get('/me/export', [DataExportController::class, 'show'])
+            ->middleware('throttle:data-export')
+            ->name('me.export');
         Route::post('/me/avatar', [AvatarController::class, 'store'])->name('me.avatar.store');
         Route::delete('/me/avatar', [AvatarController::class, 'destroy'])->name('me.avatar.destroy');
 
