@@ -2,7 +2,7 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 30 Oktober 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama, yang menambah satu endpoint. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama dan hapus akun, yang masing-masing menambah satu endpoint. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token.
 
 ## Ringkasan endpoint
 
@@ -18,6 +18,7 @@ Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Goog
 | Akun | PATCH | `/me` | Ubah nama, warna diri, zona waktu, mata uang, preferensi, tanggal lahir |
 | Akun | POST | `/me/avatar` | Unggah foto profil |
 | Akun | DELETE | `/me/avatar` | Hapus foto profil |
+| Akun | DELETE | `/me` | Hapus akun beserta semua datanya (v1.0) |
 | Perangkat | POST | `/devices` | Daftarkan token FCM HP ini |
 | Perangkat | DELETE | `/devices/{token}` | Hapus token FCM |
 | Ruang | GET | `/spaces` | Ruang tempatmu menjadi anggota, beserta profil anggotanya |
@@ -132,8 +133,9 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `/invitations/accept` | 10 per menit per akun dan per IP |
 | Lainnya | 120 per menit per akun, cukup untuk antrean yang menumpuk setelah offline |
 | `/places` | 20 per menit per akun (v1.x) |
+| `DELETE /me` | 5 per menit per akun (v1.0) |
 
-Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
+Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
 ## Error
 
@@ -164,7 +166,7 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
 | 410 | `resource_deleted` | Sudah dihapus, biasanya oleh pasangan | Buang dari antrean, hapus data itu dari cache |
 | 422 | `validation_failed`, `invalid_credentials`, `invitation_invalid` | Isi request tidak valid | Tampilkan pesan; kalau dari antrean, buang dan pakai `current` |
-| 422 | `google_token_invalid` (v1.x) | Token Google salah, kedaluwarsa, untuk app lain, atau emailnya belum terverifikasi | Tampilkan pesan; pengguna bisa mencoba masuk dengan Google lagi |
+| 422 | `google_token_invalid` (v1.x) | Token Google salah, kedaluwarsa, untuk app lain, emailnya belum terverifikasi, atau saat hapus akun bukan dari akun Google yang tersambung (v1.0) | Tampilkan pesan; pengguna bisa mencoba masuk dengan Google lagi |
 | 429 | `too_many_requests` | Terlalu sering | Tunggu sesuai header `Retry-After`, lalu coba lagi |
 | 5xx, tanpa koneksi, atau balasan bukan JSON | `server_error` atau tidak ada | Server, proxy, atau jaringan bermasalah | Coba lagi dengan jeda 2, 4, 8 detik dan seterusnya, maksimal 5 menit |
 | 503 | `places_unavailable` (v1.x) | Pencarian tempat sedang tidak tersedia: layanannya gangguan atau dimatikan di server | Tampilkan pesan; pin tetap bisa dipasang langsung di peta |
@@ -286,6 +288,24 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 - App mengirim ulang setiap kali FCM memberi token baru.
 - `DELETE /devices/{token}` → 204, hanya untuk token milik akunmu sendiri. Server juga menghapus token yang ditolak FCM sebagai `UNREGISTERED` atau sebagai token yang tidak valid.
 
+### Hapus akun (v1.0)
+
+Akun bisa dihapus dari app kapan saja. Semua datanya langsung dihapus permanen, bukan dinonaktifkan, termasuk isi Ruang Bersama, yang ikut hilang untuk pasangan.
+
+| Endpoint | Body | Berhasil | Ditolak |
+| --- | --- | --- | --- |
+| `DELETE /me` | `{"password": "..."}`, atau `{"id_token": "..."}` dari Masuk dengan Google untuk akun yang tersambung ke Google | 204 | 422 `invalid_credentials` ("Kata sandi salah."), 422 `google_token_invalid`, 422 `validation_failed` (keduanya kosong), 429 `too_many_requests` |
+
+- Endpoint ini tidak lewat antrean dan butuh koneksi. Kalau keduanya dikirim, server memakai kata sandi. Token Google harus dari akun Google yang tersambung ke akun ini; token dari akun Google lain dibalas `google_token_invalid` ("Pilih akun Google yang tersambung ke akun ini.").
+- Di app, hapus akun memakai konfirmasi yang menyebut akibatnya: semua data hilang permanen dan tidak bisa dibatalkan, dan Ruang Bersama ditutup dengan isinya ikut terhapus untuk pasangan.
+- Yang langsung dihapus permanen: akun dan profil, foto profil, Ruang Pribadi beserta seluruh isi dan fotonya, token di semua HP, token perangkat, dan kode undangan.
+- Ruang Bersama ditutup untuk kalian berdua seperti keluar, tetapi isinya beserta foto langsung dihapus permanen, tanpa masa 30 hari, karena tidak bisa dipulihkan tanpa akun itu. Ruang Bersama lama yang sudah ditutup juga ikut dikosongkan. Ruangnya sendiri tetap ada tanpa isi sampai dihapus `spaces:purge`, supaya HP pasangan menghapusnya lewat sync.
+- Pasangan menerima push `partner_left` dengan teks "{nama} menghapus akunnya, jadi Ruang Bersama kalian ditutup."
+- Setelah 204, app menghapus semua data lokal akun itu (database, antrean, dan cache foto) lalu kembali ke layar Masuk. HP lain milikmu mendapat 401 pada request berikutnya. Kalau balasan 204 hilang dan app mengirim ulang, server membalas 401; app yang sudah meminta hapus akun menganggapnya selesai.
+- Email dan akun Google yang sama bisa dipakai lagi untuk daftar sebagai akun baru, tanpa data lama.
+- Cadangan database tidak diubah, jadi data yang dihapus baru hilang dari sana saat cadangan lama terhapus otomatis, paling lama 30 hari kemudian.
+- **Tanpa app:** halaman publik `GET /hapus-akun`, yang dibutuhkan Google Play, menjelaskan cara menghapus dari app dan cara memintanya lewat email dari alamat akun ke alamat kontak di `SUPPORT_EMAIL`. Admin memprosesnya paling lambat 3 × 24 jam lewat aksi "Hapus akun" di panel, dengan proses yang sama.
+
 ## Ruang dan undangan
 
 Ruang Bersama baru dibuat saat pasangan memakai kode undangan, jadi ruang itu selalu berisi tepat 2 orang. Setiap akun punya tepat satu Ruang Pribadi dan, di v0.1, paling banyak satu Ruang Bersama. Ruang Bersama yang sudah ditutup (v1.0) tidak dihitung.
@@ -367,6 +387,7 @@ Salah satu dari kalian bisa keluar kapan saja, tanpa persetujuan pasangan. Ruang
 - **Dipulihkan:** kalau kalian berdua bergabung lagi lewat kode undangan dalam 30 hari, siapa pun pembuat kodenya, server memulihkan ruang lama, bukan membuat yang baru. Isinya kembali seperti saat ditutup; yang sudah dihapus sebelumnya tetap terhapus.
 - **Dihapus permanen:** lewat 30 hari, server menghapus ruang beserta seluruh isinya dari database dan semua fotonya dari R2, paling lambat sehari kemudian. Setelah itu tidak bisa dipulihkan, juga oleh admin.
 - Ruang Pribadi kalian tidak berubah.
+- Hapus akun (v1.0) juga menutup Ruang Bersama, tetapi isinya langsung dihapus permanen; rinciannya di Hapus akun.
 
 ## Daftar dan tugas
 
@@ -998,7 +1019,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `savings_withdrawal` | Penarikan baru dicatat (v1.x) | Anggota lain | `savings_activity` | `aktivitas` | Normal |
 | `comment_created` | Komentar baru dibuat (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `reaction_created` | Reaksi baru disimpan, paling banyak satu per subjek per 10 menit (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
-| `partner_left` | Pasangan keluar dari Ruang Bersama (v1.0) | Anggota lain | Selalu dikirim | `aktivitas` | Normal |
+| `partner_left` | Pasangan keluar dari Ruang Bersama atau menghapus akunnya (v1.0) | Anggota lain | Selalu dikirim | `aktivitas` | Normal |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -1032,6 +1053,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `comment_created` dan `reaction_created` (v1.x) membawa `subject_type` dan `subject_id`, ditambah `savings_goal_id` untuk setoran, dengan `tag` `comment-{subject_id}` atau `reaction-{subject_id}`; saat diketuk app membuka detail subjeknya beserta komentarnya. Rinciannya di bagian Reaksi dan komentar.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - `partner_left` (v1.0) membawa `space_id`, dengan `tag` `space-{id}`. Judulnya "Ruang Bersama", isinya "{nama} keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi." Saat diketuk, app menjalankan sync lalu membuka Beranda. Saat ruang dipulihkan, `partner_joined` berbunyi "{nama} sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh."
+- Saat pasangan menghapus akunnya (v1.0), `partner_left` berbunyi "{nama} menghapus akunnya, jadi Ruang Bersama kalian ditutup.", dengan data dan `tag` yang sama.
 - Notifikasi tabungan memakai `visibility` `PRIVATE`, jadi nominalnya tidak tampil di layar kunci.
 - Saat notifikasi diketuk, app menjalankan sync paling lama 3 detik, lalu membuka detail tugas, detail target, atau Beranda. Kalau datanya belum ada, app membuka layar induknya dengan pesan singkat.
 - Saat pertama dibuka, app membuat dua channel: `pengingat` (penting, bersuara) dan `aktivitas` (normal). Keduanya bisa dimatikan terpisah dari pengaturan Android.
@@ -1214,3 +1236,18 @@ Sepuluh butir ini merancang keluar dari Ruang Bersama, salah satu syarat sebelum
 - [x] Pengingat dan push lain untuk ruang yang ditutup berhenti, dan yang terlewat selama ditutup tidak dikirim menyusul setelah dipulihkan.
 - [x] Ruang yang ditutup tiba lewat sync dengan `deleted_at` terisi, tanpa isinya, dan app menghapus semuanya dari cache. Saat dipulihkan, server memperbarui `updated_at` semua isinya supaya terkirim lagi lewat `since`. Tidak ada koleksi atau kolom baru, jadi app tidak perlu sync penuh.
 - [x] Hapus akun (v1.0) belum termasuk. Nasib Ruang Bersama saat akun dihapus diputuskan di kontraknya sendiri, karena pasangan tidak bisa bergabung kembali dengan akun yang sudah dihapus.
+
+### Hapus akun (v1.0)
+
+Sepuluh butir ini merancang hapus akun, bagian "Ekspor data + hapus akun" di lingkup fitur dan syarat sebelum rilis publik di tab utama, dan disetujui pada 30 Oktober 2026. Ekspor data menyusul sebagai kontrak sendiri.
+
+- [x] Hapus akun lewat `DELETE /me` dengan `password`, atau `id_token` dari akun Google yang tersambung, supaya orang yang memegang HP yang tidak terkunci tidak bisa menghapus akun. Salah konfirmasi dibalas 422 `invalid_credentials` ("Kata sandi salah.") atau `google_token_invalid`, jadi tidak ada kode error baru. Batasnya 5 per menit per akun.
+- [x] Semua data dihapus permanen saat itu juga, tanpa masa tenggang dan tanpa pembatalan: profil, foto profil, Ruang Pribadi beserta isi dan fotonya, perangkat, token di semua HP, dan kode undangan.
+- [x] Ruang Bersama ikut ditutup untuk kalian berdua, dan isinya beserta foto langsung dihapus permanen tanpa masa 30 hari, karena tidak bisa dipulihkan tanpa akun itu. Ini akibat pilihan "ditutup untuk berdua", jadi konfirmasi di app menyebutnya. Ruang Bersama lama yang sudah ditutup juga ikut dikosongkan.
+- [x] Ruangnya sendiri tetap ada tanpa isi sampai `spaces:purge`, supaya HP pasangan menghapusnya lewat sync seperti saat keluar.
+- [x] Pasangan menerima `partner_left` dengan teks "{nama} menghapus akunnya, jadi Ruang Bersama kalian ditutup.", tanpa jenis push baru.
+- [x] Halaman publik `GET /hapus-akun` untuk Google Play: cara menghapus dari app, atau lewat email dari alamat akun ke alamat di variabel baru `SUPPORT_EMAIL`, yang diisi pemilik di Coolify. Permintaan lewat email diproses paling lambat 3 × 24 jam, sejalan dengan batas menghentikan pemrosesan di Pasal 40 UU PDP.
+- [x] Aksi baru "Hapus akun" di panel admin untuk permintaan lewat email, dengan proses yang sama. Akun admin sendiri tidak bisa dihapus dari panel.
+- [x] Cadangan database tidak diubah: data yang dihapus ikut hilang saat cadangan lama terhapus otomatis, paling lama 30 hari, dan halaman hapus akun menyebutnya.
+- [x] Email dan akun Google yang sama bisa dipakai lagi untuk daftar sebagai akun baru, tanpa data lama.
+- [x] Ekspor data dikerjakan sesudah ini sebagai kontrak sendiri.
