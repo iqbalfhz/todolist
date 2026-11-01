@@ -500,6 +500,7 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
   "due_time": "17:00",
   "repeat_frequency": "weekly",
   "repeat_interval": 1,
+  "repeat_days": null,
   "priority": 0,
   "position": 2048,
   "assignee_ids": ["01m4dga4y03c5ratqsc31zc916"],
@@ -528,6 +529,7 @@ Setiap ruang selalu punya minimal satu daftar aktif (tidak diarsipkan). Tambah c
 | `completed_at` | opsional | Waktu dicentang di HP, dengan `Z` atau offset; `null` berarti batal selesai. Server mengisi `completed_by` |
 | `repeat_frequency` | opsional | `daily`, `weekly`, `monthly`, `yearly`, atau `null` (tidak berulang, bawaan); butuh `due_date` (v1.0) |
 | `repeat_interval` | opsional | Setiap berapa hari, minggu, bulan, atau tahun: 1–99, bawaan 1; `null` kalau tidak berulang (v1.0) |
+| `repeat_days` | opsional | Hari ISO 1–7 (1 = Senin) untuk tugas `weekly`, urut naik tanpa duplikat, atau `null` untuk hari tenggat patokan (v1.x) |
 | `next_task_id` | – | Diisi server: tugas berikutnya yang dibuat saat tugas berulang ini selesai (v1.0) |
 
 ### Pengingat
@@ -552,14 +554,34 @@ Tugas berulang dibuat ulang oleh server: begitu satu kejadian diselesaikan, serv
 - Tugas berikutnya dibuat server, sekali saja, saat tugas berulang menjadi selesai: `completed_at` berubah dari kosong menjadi terisi, lewat `PATCH` atau `PUT`. Server mengunci baris tugasnya, jadi dua HP yang mencentang tugas yang sama tidak membuat dua tugas berikutnya. Saat offline, tugas berikutnya baru muncul setelah centangnya terkirim.
 - Tenggat berikutnya adalah kejadian pertama sesudah tanggal yang lebih akhir antara `due_date` tugas itu dan tanggal selesainya, menurut zona waktu ruang. Kejadian yang terlewat tidak menumpuk: tugas harian bertenggat 20 Oktober yang baru selesai 24 Oktober berikutnya bertenggat 25 Oktober.
 - Kejadian dihitung dari tanggal patokan, yaitu `due_date` terakhir yang dipilih pengguna. Tanggal yang tidak ada di bulan yang lebih pendek jatuh ke hari terakhir bulan itu, lalu kembali ke tanggal aslinya: 31 Januari, 28 Februari, 31 Maret. 29 Februari jatuh ke 28 Februari di tahun biasa.
-- Mengubah `due_date`, `repeat_frequency`, atau `repeat_interval` menjadikan `due_date` saat itu patokan baru.
+- Mengubah `due_date`, `repeat_frequency`, `repeat_interval`, atau `repeat_days` (v1.x) menjadikan `due_date` saat itu patokan baru.
 - Tugas berikutnya masuk ke daftar yang sama dan membawa judul, catatan, prioritas, penanggung jawab, `due_time`, `position`, dan aturan ulangnya. `created_by` tetap pembuat aslinya, `updated_by` diisi orang yang menyelesaikan, dan `remind_at` dihitung seperti biasa. Tugas berikutnya tidak memicu push `task_assigned`.
 - Balasan `PUT` dan `PATCH /tasks/{id}` berbentuk `{"data": {...}, "next_task": {...}}`. `next_task` adalah tugas berikutnya kalau ada dan belum dihapus, dalam bentuk sumber tugas, atau `null`. App langsung menampilkannya tanpa menunggu sync.
 - Urungkan setelah centangnya terkirim: app mengirim `completed_at: null`. Kalau tugas berikutnya belum disentuh siapa pun (belum diubah, belum selesai, dan sejak v1.x belum diberi komentar atau reaksi), server ikut menghapusnya dan mengosongkan `next_task_id`, jadi centang ulang membuat tugas berikutnya yang baru. Kalau sudah disentuh, tugas berikutnya dibiarkan, dan centang ulang tidak membuat yang kedua.
 - Pengulangan berhenti kalau `repeat_frequency` dikosongkan, atau tugas yang belum selesai dihapus. Tugas yang sudah selesai tetap ada sebagai riwayat, dan mengubah aturan ulangnya tidak membuat apa-apa lagi.
-- Mengosongkan `due_date` ikut mengosongkan `repeat_frequency` dan `repeat_interval`. Mengisi `repeat_frequency` di tugas tanpa `due_date`, dicek bersama yang sudah tersimpan, ditolak 422.
+- Mengosongkan `due_date` ikut mengosongkan `repeat_frequency`, `repeat_interval`, dan `repeat_days`. Mengisi `repeat_frequency` di tugas tanpa `due_date`, dicek bersama yang sudah tersimpan, ditolak 422.
 - Checklist perjalanan tidak bisa berulang: aturan ulang di daftar dengan `trip_id` ditolak 422, termasuk saat tugas berulang dipindah ke checklist.
 - Kolom baru di sumber tugas berarti app versi baru menjalankan sync penuh sekali, seperti saat ada koleksi baru (lihat Aturan di HP).
+
+### Tugas berulang di beberapa hari (v1.x)
+
+Tugas mingguan bisa berulang di beberapa hari sekaligus, misalnya setiap Selasa dan Jumat, lewat `repeat_days`.
+
+```json
+{
+  "repeat_frequency": "weekly",
+  "repeat_interval": 2,
+  "repeat_days": [2, 5]
+}
+```
+
+- `repeat_days` berisi hari ISO 1–7 (1 = Senin, 7 = Minggu), urut naik tanpa duplikat, minimal satu hari. `null`, yaitu bawaannya, berarti hari yang sama dengan tenggat patokan, seperti tugas mingguan sebelumnya, jadi tugas yang sudah ada tidak berubah.
+- Minggu dihitung Senin–Minggu dari minggu tenggat patokan. Dengan `repeat_interval` N, tugas berulang di setiap hari terpilih pada minggu ke-0, N, 2N, dan seterusnya. Contoh di atas berarti Selasa dan Jumat, dua minggu sekali.
+- Tugas berikutnya jatuh di hari terpilih pertama sesudah tanggal yang lebih akhir antara `due_date` dan tanggal selesai. Tenggat sekarang tidak harus jatuh di hari terpilih: tugas bertenggat Rabu dengan hari Selasa dan Jumat berikutnya bertenggat Jumat.
+- Setiap kejadian tetap satu tugas, jadi menyelesaikannya membuat satu tugas berikutnya, bukan semua hari sekaligus.
+- `repeat_days` hanya untuk `weekly`. Dikirim untuk frekuensi lain atau di tugas yang tidak berulang, ditolak 422. Mengganti frekuensi ke selain mingguan atau mengosongkan aturan ulang ikut mengosongkan `repeat_days`.
+- Mengubah `repeat_days` menjadikan `due_date` saat itu patokan baru, seperti aturan ulang lainnya. Tugas berikutnya membawa `repeat_days` yang sama.
+- Ini kolom baru di sumber tugas, jadi app versi baru menjalankan sync penuh sekali. App lama tetap aman, karena tugas berikutnya dihitung server.
 
 ## Tabungan
 
@@ -1024,7 +1046,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Ruang adalah induk dari semua isinya (v1.0). Saat Ruang Bersama tiba dengan `deleted_at` terisi, app menghapus ruang itu beserta semua daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto, komentar, dan reaksinya dari cache, dengan pengecualian yang sama.
 - Sync penuh hanya menambah dan memperbarui.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, saat push masuk ketika app terbuka, termasuk push sinkron (v1.x), dan tiap 30 detik selama app tampil (v1.x).
-- App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`; v1.x: lokasi di `memories`, lalu `comments` dan `reactions`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
+- App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`; v1.x: lokasi di `memories`, lalu `comments` dan `reactions`, lalu `repeat_days` di `tasks`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
 
 ### Antrean di HP
 
@@ -1342,3 +1364,16 @@ Sepuluh butir ini merancang kebijakan privasi dan syarat layanan, syarat sebelum
 - [x] Kebocoran data diberitahukan ke pengguna dan lembaga yang berwenang paling lambat 3 × 24 jam, sesuai Pasal 46 UU PDP.
 - [x] Tanggal berlaku ditulis di kedua halaman, dan perubahan penting diberitahukan lewat app sebelum berlaku.
 - [x] Teks ini disusun dari cara app benar-benar bekerja, bukan nasihat hukum. Sebaiknya diperiksa ahli hukum sebelum rilis publik.
+
+### Tugas berulang di beberapa hari (v1.x)
+
+Delapan butir ini menambah pilihan beberapa hari di tugas mingguan, yang ditunda di Tugas berulang (v1.0), dan disetujui pada 1 November 2026.
+
+- [x] Hari dipilih lewat kolom baru `repeat_days` di tugas mingguan, berisi hari ISO 1–7 (1 = Senin). `null` berarti hari tenggat patokan, jadi tugas mingguan yang sudah ada tidak berubah.
+- [x] Minggu Senin–Minggu dihitung dari minggu tenggat patokan, dan "setiap N minggu" berlaku per minggu, bukan per kejadian. "Setiap 2 minggu, Selasa dan Jumat" berarti Selasa dan Jumat di minggu ke-0, 2, 4, dan seterusnya.
+- [x] Tugas berikutnya jatuh di hari terpilih pertama sesudah tenggat lama atau tanggal selesai, mana yang lebih akhir, jadi yang terlewat tidak menumpuk. Tenggat sekarang tidak harus jatuh di hari terpilih.
+- [x] Setiap kejadian tetap satu tugas, dan menyelesaikannya membuat satu tugas berikutnya, seperti tugas berulang lain.
+- [x] Minimal satu hari, tanpa duplikat, dan disimpan urut naik. `repeat_days` di frekuensi selain mingguan atau di tugas yang tidak berulang ditolak 422.
+- [x] Mengganti frekuensi ke selain mingguan, mengosongkan aturan ulang, atau mengosongkan `due_date` ikut mengosongkan `repeat_days`. Mengubah `repeat_days` menjadikan `due_date` saat itu patokan baru.
+- [x] Sumber tugas punya kolom baru `repeat_days`, jadi app versi baru sync penuh sekali. App lama tetap aman, karena tugas berikutnya tetap dihitung server dengan hari yang tersimpan.
+- [x] Checklist perjalanan tetap tidak bisa berulang.

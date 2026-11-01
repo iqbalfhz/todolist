@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Tugas berulang di beberapa hari (v1.x)** - since 2026-11-01; kontraknya di bagian "Tugas berulang di beberapa hari (v1.x)" pada Daftar dan tugas di `docs/kontrak-api.md`, disetujui pemilik 1 November 2026. Branch `feat/tugas-berulang-beberapa-hari`
+
 ## Waiting On
 
 - [ ] **Baca teks kebijakan privasi dan syarat layanan** - oleh pemilik, since 2026-11-01; buka `https://denlydays.iqbalfhz.my.id/privasi` dan `/syarat`, lalu kabari kalau ada yang ingin diubah. Sebelum rilis publik, sebaiknya keduanya diperiksa ahli hukum
