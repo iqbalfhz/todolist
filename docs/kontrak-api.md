@@ -137,7 +137,7 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `DELETE /me` | 5 per menit per akun (v1.0) |
 | `GET /me/export` | 5 per jam per akun (v1.0) |
 
-Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
+Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), `GET /privasi` dan `GET /syarat` untuk kebijakan privasi dan syarat layanan (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
 ## Error
 
@@ -350,6 +350,22 @@ Salinan semua data yang bisa kamu lihat di app bisa diunduh kapan saja sebagai s
 - Foto tidak ikut sebagai file. Setiap baris `memory_photos` membawa `url` dan `thumb_url` baru yang berlaku 7 hari, jadi app bisa menawarkan unduh semua foto. Foto profil ikut lewat `avatar_url` di `user`.
 - Di app, Pengaturan > Ekspor data menyimpan file itu ke HP, lalu menawarkan unduh fotonya. Konfirmasi keluar dari Ruang Bersama dan hapus akun menyarankan ekspor dulu, dan halaman `/hapus-akun` juga menyebutnya.
 - File ini memenuhi hak atas salinan data (Pasal 7 UU PDP) dalam format yang dapat dibaca sistem elektronik (Pasal 13), langsung tanpa menunggu batas 3 × 24 jam di Pasal 32. Impor dari file ini belum ada.
+
+### Kebijakan privasi dan syarat layanan (v1.0)
+
+Dua halaman publik di server menjelaskan data apa yang dipakai Denly Days dan aturan memakainya. Isinya ditulis dari cara app dan server benar-benar bekerja.
+
+| Halaman | Isi pokok |
+| --- | --- |
+| `GET /privasi` | Pengelola data dan kontak, data yang disimpan dan yang tidak, tujuannya, dasar pemrosesan, siapa yang bisa melihat, penyedia layanan, masa simpan, hak pengguna, keamanan, usia, dan perubahan kebijakan |
+| `GET /syarat` | Siapa yang boleh memakai, akun, Ruang Bersama, kepemilikan isi, larangan, layanan dan ketersediaannya, penghentian, batas tanggung jawab, hukum yang berlaku, dan perubahan syarat |
+
+- Keduanya berbahasa Indonesia, satu gaya dengan `/hapus-akun`, dan saling bertaut di bagian bawah. Setiap halaman menulis tanggal berlakunya.
+- Pengelola data adalah Iqbal Fahrozi, dengan kontak di `SUPPORT_EMAIL`. Pertanyaan dan permintaan hak dijawab paling lambat 3 × 24 jam.
+- Denly Days untuk pengguna berusia 18 tahun ke atas.
+- Yang disebut tidak dipakai: lokasi GPS (app tidak meminta izin lokasi), kontak, iklan, dan analytics.
+- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
+- URL `/privasi` dipakai di Play Console, layar persetujuan Google, dan app. Di app, layar Daftar dan Masuk menulis "Dengan mendaftar atau masuk dengan Google, kamu menyetujui Syarat layanan dan Kebijakan privasi" dengan tautan ke kedua halaman, dan Pengaturan menautkan keduanya.
 
 ## Ruang dan undangan
 
@@ -1311,3 +1327,18 @@ Sepuluh butir ini merancang ekspor data, bagian "Ekspor data + hapus akun" di li
 - [x] Nama filenya `denly-days-{tanggal}.json`, dengan tanggal di zona waktu akun.
 - [x] Halaman `/hapus-akun` dan konfirmasi keluar serta hapus akun di app menyarankan ekspor dulu.
 - [x] Panel admin tidak punya ekspor, karena admin tidak boleh melihat isi data pengguna. Impor dari file ekspor belum ada.
+
+### Kebijakan privasi dan syarat layanan (v1.0)
+
+Sepuluh butir ini merancang kebijakan privasi dan syarat layanan, syarat sebelum rilis publik di tab utama, dan disetujui pada 1 November 2026. Butir kedua dan ketiga adalah pilihan pemilik.
+
+- [x] Dua halaman publik di server, `GET /privasi` dan `GET /syarat`, berbahasa Indonesia dan satu gaya dengan `/hapus-akun`. URL `/privasi` dipakai di Play Console, layar persetujuan Google, dan app.
+- [x] Pengelola data disebut dengan nama lengkap, Iqbal Fahrozi, dengan kontak di `SUPPORT_EMAIL`. Pertanyaan dan permintaan hak dijawab paling lambat 3 × 24 jam.
+- [x] Denly Days untuk pengguna berusia 18 tahun ke atas, jadi tidak perlu izin orang tua untuk data anak.
+- [x] Kebijakan menyebut data yang benar-benar disimpan dan yang tidak dipakai (lokasi GPS, kontak, iklan, analytics), serta penyedia layanannya: Cloudflare, Google, OpenStreetMap, dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
+- [x] Masa simpan ditulis apa adanya. Data yang dihapus di app tetap tersimpan sebagai catatan sinkron sampai akun dihapus, sedangkan fotonya langsung dihapus dari penyimpanan. Ruang Bersama yang ditutup disimpan 30 hari, dan cadangan database 30 hari. Penghapusan otomatis catatan lama bisa jadi fitur berikutnya.
+- [x] Dasar pemrosesannya pelaksanaan perjanjian layanan, ditambah kepentingan yang sah untuk keamanan, jadi server tidak menyimpan kolom persetujuan baru. App menulis kalimat persetujuan beserta tautan kedua halaman di layar Daftar dan Masuk.
+- [x] Syarat layanan mengatur akun, Ruang Bersama (tepat dua orang, keluar menutup ruang untuk berdua), kepemilikan isi oleh pengguna, larangan, layanan gratis tanpa jaminan selalu tersedia, penghentian akun, batas tanggung jawab (tabungan hanya catatan, bukan uang sungguhan), dan hukum Indonesia.
+- [x] Kebocoran data diberitahukan ke pengguna dan lembaga yang berwenang paling lambat 3 × 24 jam, sesuai Pasal 46 UU PDP.
+- [x] Tanggal berlaku ditulis di kedua halaman, dan perubahan penting diberitahukan lewat app sebelum berlaku.
+- [x] Teks ini disusun dari cara app benar-benar bekerja, bukan nasihat hukum. Sebaiknya diperiksa ahli hukum sebelum rilis publik.
