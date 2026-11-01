@@ -1,29 +1,4 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hapus akun {{ config('app.name') }}</title>
-    <style>
-        body {
-            margin: 0 auto;
-            max-width: 40rem;
-            padding: 2rem 1rem 3rem;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.6;
-            color: #2b2330;
-            background: #fffafc;
-        }
-        h1 { font-size: 1.6rem; line-height: 1.3; }
-        h2 { font-size: 1.15rem; margin-top: 2rem; }
-        a { color: #a8326e; }
-        @media (prefers-color-scheme: dark) {
-            body { color: #f3e9ef; background: #1d171b; }
-            a { color: #f08cbf; }
-        }
-    </style>
-</head>
-<body>
+<x-public-page :title="'Hapus akun '.config('app.name')">
     <h1>Hapus akun {{ config('app.name') }}</h1>
     <p>Kamu bisa menghapus akun {{ config('app.name') }} kapan saja. Semua data akunmu dihapus permanen dan tidak bisa dikembalikan.</p>
     <p>Sebelum menghapus, kamu bisa menyimpan salinan datamu lewat Pengaturan &gt; Ekspor data di app.</p>
@@ -50,5 +25,4 @@
 
     <h2>Yang masih tersimpan sementara</h2>
     <p>Salinan cadangan database tidak diubah. Datamu ikut hilang dari sana saat cadangan lama terhapus otomatis, paling lama 30 hari setelah akun dihapus.</p>
-</body>
-</html>
+</x-public-page>

@@ -12,3 +12,12 @@ Route::get('/', fn () => redirect()->route('filament.admin.auth.login'));
 Route::get('/hapus-akun', fn () => view('account-deletion', [
     'supportEmail' => config('admin.support_email'),
 ]))->name('account-deletion');
+
+// Linked from the app, Play Console, and the Google sign-in consent screen.
+Route::get('/privasi', fn () => view('privacy-policy', [
+    'supportEmail' => config('admin.support_email'),
+]))->name('privacy-policy');
+
+Route::get('/syarat', fn () => view('terms', [
+    'supportEmail' => config('admin.support_email'),
+]))->name('terms');
