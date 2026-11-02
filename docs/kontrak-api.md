@@ -252,7 +252,8 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
     "savings_activity": true,
     "special_dates": true,
     "trip_reminders": true,
-    "savings_reminders": true
+    "savings_reminders": true,
+    "memory_flashbacks": true
   },
   "avatar_url": null,
   "avatar_version": 0,
@@ -901,6 +902,21 @@ Foto diunggah lewat `POST /memory-photos/{id}` dengan `multipart/form-data`:
 - Hanya dikirim kalau `notification_prefs.partner_activity` penerima menyala, tanpa kunci baru.
 - Judul push adalah judul kenangan, isinya "{nama} menyimpan kenangan baru".
 
+### Kenangan hari ini (v1.x)
+
+Pagi hari, server mengingatkan kenangan yang terjadi di tanggal yang sama pada tahun-tahun sebelumnya, seperti "Hari ini setahun lalu".
+
+- Push baru `memory_flashback` dikirim pukul 08.00 di zona waktu ruang kalau ruang itu punya kenangan yang `visited_on`-nya jatuh di tanggal dan bulan hari ini pada tahun sebelumnya. Penerimanya kedua anggota Ruang Bersama, atau pemilik Ruang Pribadi.
+- Kenangan 29 Februari diingatkan 28 Februari di tahun biasa, seperti ulang tahun anggota.
+- Satu push per ruang per hari, walau kenangannya lebih dari satu. Yang ditampilkan adalah kenangan dari tahun paling dekat; kalau ada beberapa di tahun yang sama, yang paling dulu dibuat.
+- Judulnya "Hari ini setahun lalu", atau "Hari ini {n} tahun lalu" untuk 2 tahun atau lebih, menurut kenangan yang ditampilkan. Isinya judul kenangan itu, ditambah "dan {k} kenangan lain" kalau ada lebih dari satu, misalnya "Liburan ke Bali dan 2 kenangan lain".
+- Data push berisi `type`, `space_id`, dan `memory_id` kenangan yang ditampilkan, dengan `tag` `memory-{id}`, channel `pengingat`, dan prioritas tinggi seperti pengingat pukul 08.00 lain. Saat diketuk, app membuka Detail kenangan itu.
+- Hanya dikirim kalau `notification_prefs.memory_flashbacks` penerima menyala. Kunci baru ini bawaannya menyala, juga untuk akun lama, dan app menambah sakelar "Kenangan hari ini" di Pengaturan > Notifikasi.
+- Kenangan yang sudah dihapus dan Ruang Bersama yang ditutup tidak diingatkan. Setiap ruang diklaim sekali sehari di `daily_reminders` dengan kunci `flashback:{space_id}`, jadi push tidak terkirim dua kali, dan yang terlewat lebih dari 30 menit, misalnya karena server mati, tidak dikirim menyusul.
+- Notifikasi tidak membawa foto, supaya foto kenangan tidak ikut dikirim ke Google. Judul kenangan sudah dikirim lewat `memory_created`, jadi kebijakan privasi tidak berubah.
+- Perintah terjadwal baru `memories:remind` berjalan tiap menit, seperti pengingat pukul 08.00 lain.
+- App lama tetap menampilkan push ini, hanya saja sakelarnya belum ada dan mengetuknya cuma membuka app. Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh.
+
 ## Reaksi dan komentar (v1.x)
 
 Tugas, setoran, dan kenangan di Ruang Bersama bisa diberi komentar dan reaksi emoji. Keduanya memakai ID dari HP dan lewat antrean, jadi bisa dibuat saat offline dan aman dikirim ulang.
@@ -1122,6 +1138,7 @@ Server mengirim push lewat FCM HTTP v1 dari job antrean, ke semua token perangka
 | `comment_created` | Komentar baru dibuat (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `reaction_created` | Reaksi baru disimpan, paling banyak satu per subjek per 10 menit (v1.x) | Anggota lain | `partner_activity` | `aktivitas` | Normal |
 | `partner_left` | Pasangan keluar dari Ruang Bersama atau menghapus akunnya (v1.0) | Anggota lain | Selalu dikirim | `aktivitas` | Normal |
+| `memory_flashback` | Ada kenangan di tanggal dan bulan yang sama pada tahun sebelumnya, pukul 08.00 (v1.x) | Kedua anggota; pemilik ruang untuk Ruang Pribadi | `memory_flashbacks` | `pengingat` | Tinggi |
 
 Isi pesan yang diterima app, disederhanakan:
 
@@ -1152,6 +1169,7 @@ Isi pesan yang diterima app, disederhanakan:
 - `trip_reminder` (v0.2) membawa `trip_id`, dengan `tag` `trip-{id}`; saat diketuk app membuka Detail perjalanan.
 - `savings_reminder` (v0.2) membawa `savings_goal_id`, dengan `tag` `goal-{id}` dan `visibility` `PRIVATE` seperti push tabungan lain; saat diketuk app membuka Detail target.
 - `memory_created` (v0.3) membawa `memory_id`, dengan `tag` `memory-{id}`; saat diketuk app membuka Detail kenangan. Judulnya judul kenangan, isinya "{nama} menyimpan kenangan baru".
+- `memory_flashback` (v1.x) membawa `memory_id`, dengan `tag` `memory-{id}`; saat diketuk app membuka Detail kenangan. Judulnya "Hari ini setahun lalu" atau "Hari ini {n} tahun lalu", isinya judul kenangan, ditambah "dan {k} kenangan lain" kalau lebih dari satu. Rinciannya di bagian Kenangan hari ini.
 - `comment_created` dan `reaction_created` (v1.x) membawa `subject_type` dan `subject_id`, ditambah `savings_goal_id` untuk setoran, dengan `tag` `comment-{subject_id}` atau `reaction-{subject_id}`; saat diketuk app membuka detail subjeknya beserta komentarnya. Rinciannya di bagian Reaksi dan komentar.
 - Pengingat tanpa jam berbunyi "Tenggat hari ini". Teks `partner_joined`: "{nama} sudah bergabung. Ruang Bersama kalian siap."
 - `partner_left` (v1.0) membawa `space_id`, dengan `tag` `space-{id}`. Judulnya "Ruang Bersama", isinya "{nama} keluar dari Ruang Bersama. Isinya disimpan 30 hari kalau kalian ingin bergabung lagi." Saat diketuk, app menjalankan sync lalu membuka Beranda. Saat ruang dipulihkan, `partner_joined` berbunyi "{nama} sudah bergabung lagi. Isi Ruang Bersama kalian kembali utuh."
@@ -1410,3 +1428,16 @@ Sembilan butir ini merancang penghapusan otomatis catatan lama, yang disebut seb
 - [x] Ikut dibersihkan: pengingat harian yang terkirim dan kode undangan yang kedaluwarsa lebih dari 30 hari lalu, cache yang sudah kedaluwarsa, dan push yang gagal terkirim beserta judul dan isinya setelah 30 hari.
 - [x] Teks masa simpan di `/privasi` diperbarui seperti di atas, dengan tanggal berlaku baru.
 - [x] Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh; yang baru di app hanya penanganan `sync_expired`.
+
+### Kenangan hari ini (v1.x)
+
+Delapan butir ini merancang push "hari ini setahun lalu" untuk kenangan di lingkup v1.x, dan disetujui pada 2 November 2026.
+
+- [x] Push baru `memory_flashback` pukul 08.00 di zona waktu ruang, untuk kenangan yang `visited_on`-nya jatuh di tanggal dan bulan hari ini pada tahun sebelumnya, ke kedua anggota Ruang Bersama atau pemilik Ruang Pribadi.
+- [x] Satu push per ruang per hari. Yang ditampilkan kenangan dari tahun paling dekat, dan sisanya disebut jumlahnya.
+- [x] Teks: judul "Hari ini setahun lalu" atau "Hari ini {n} tahun lalu", isi "{judul}" atau "{judul} dan {k} kenangan lain".
+- [x] Preferensi baru `memory_flashbacks` di `notification_prefs`, bawaannya menyala untuk semua akun, dengan sakelar "Kenangan hari ini" di app.
+- [x] Channel `pengingat` dan prioritas tinggi seperti pengingat pukul 08.00 lain; saat diketuk app membuka Detail kenangan.
+- [x] Kenangan 29 Februari diingatkan 28 Februari di tahun biasa.
+- [x] Notifikasi tanpa foto, jadi kebijakan privasi tidak berubah.
+- [x] Tidak ada kolom atau koleksi baru. App lama tetap menampilkan push ini dan hanya membuka app saat diketuk.

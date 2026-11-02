@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Kenangan hari ini (v1.x)** - since 2026-11-02; kontraknya di bagian "Kenangan hari ini (v1.x)" pada Kenangan dan foto di `docs/kontrak-api.md`, disetujui pemilik 2 November 2026. Branch `feat/kenangan-hari-ini`
+
 ## Waiting On
 
 - [ ] **Tangani `sync_expired` di app Flutter** - oleh sesi Flutter, since 2026-11-02; kontraknya di bagian "Penghapusan permanen catatan lama (v1.0)" pada Sinkron di `docs/kontrak-api.md`: kalau `GET /sync` (halaman pertama atau dengan `cursor`) dibalas 410 `sync_expired`, kosongkan cache akun itu kecuali baris yang masih punya operasi di antrean, hapus `since` tersimpan, lalu sync penuh tanpa `since`
