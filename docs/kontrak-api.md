@@ -6,13 +6,17 @@ Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pi
 
 ## Ringkasan endpoint
 
-Semua endpoint butuh token Sanctum, kecuali daftar, masuk, dan masuk dengan Google. Hanya enam yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, `GET /places` sejak v1.x, dan `GET /me/export` sejak v1.0); sisanya menulis.
+Semua endpoint butuh token Sanctum, kecuali daftar, masuk, masuk dengan Google, dan atur ulang kata sandi (v1.0). Hanya enam yang membaca data (`GET /me`, `GET /spaces`, `GET /sync`, `GET /memories/{id}/photos` sejak v0.3, `GET /places` sejak v1.x, dan `GET /me/export` sejak v1.0); sisanya menulis.
 
 | Modul | Method | Endpoint | Fungsi |
 | --- | --- | --- | --- |
 | Akun | POST | `/auth/register` | Daftar, membuat Ruang Pribadi, menerima token |
 | Akun | POST | `/auth/login` | Masuk, menerima token |
 | Akun | POST | `/auth/google` | Masuk atau daftar dengan akun Google, menerima token (v1.x) |
+| Akun | POST | `/auth/forgot-password` | Minta kode atur ulang kata sandi lewat email (v1.0) |
+| Akun | POST | `/auth/reset-password` | Atur ulang kata sandi dengan kode, menerima token (v1.0) |
+| Akun | POST | `/me/email-verification` | Kirim kode verifikasi email (v1.0) |
+| Akun | POST | `/me/email-verification/confirm` | Verifikasi email dengan kode (v1.0) |
 | Akun | POST | `/auth/logout` | Mencabut token HP ini dan menghapus token FCM-nya |
 | Akun | GET | `/me` | Profil sendiri, preferensi notifikasi, dan kode undangan aktif |
 | Akun | PATCH | `/me` | Ubah nama, warna diri, zona waktu, mata uang, preferensi, tanggal lahir |
@@ -68,7 +72,7 @@ Semua request dan balasan memakai JSON dengan nama kolom `snake_case`, sama deng
 | Header | Isi | Kapan |
 | --- | --- | --- |
 | `Accept` | `application/json` | Selalu |
-| `Authorization` | `Bearer <token>` | Semua endpoint kecuali daftar, masuk, dan masuk dengan Google |
+| `Authorization` | `Bearer <token>` | Semua endpoint kecuali daftar, masuk, masuk dengan Google, dan atur ulang kata sandi (v1.0) |
 | `Content-Type` | `application/json` | Request yang punya body; `multipart/form-data` untuk foto profil dan foto kenangan |
 
 Pesan error selalu berbahasa Indonesia (`APP_LOCALE=id`, terjemahan dari paket laravel-lang). Semua route `api/*` dibalas JSON walau header `Accept` terlewat, lewat `shouldRenderJsonWhen()` di `bootstrap/app.php`.
@@ -136,6 +140,10 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `/places` | 20 per menit per akun (v1.x) |
 | `DELETE /me` | 5 per menit per akun (v1.0) |
 | `GET /me/export` | 5 per jam per akun (v1.0) |
+| `/auth/forgot-password` | 3 per 15 menit per email, dan 10 per jam per IP (v1.0) |
+| `/auth/reset-password` | 10 per menit per IP (v1.0) |
+| `POST /me/email-verification` | 3 per 15 menit per akun (v1.0) |
+| `POST /me/email-verification/confirm` | 10 per menit per akun (v1.0) |
 
 Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), `GET /privasi` dan `GET /syarat` untuk kebijakan privasi dan syarat layanan (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
@@ -226,14 +234,36 @@ Request `POST /auth/google`, tanpa token Sanctum:
     2. Akun yang emailnya sama dengan email Google: akun itu disambungkan ke akun Google tersebut, lalu masuk. Kata sandinya tetap berlaku.
     3. Belum ada: akun baru dibuat seperti daftar, dengan Ruang Pribadi berisi daftar "Tugas", nama dari Google (paling banyak 50 karakter; bagian email sebelum @ kalau Google tidak memberi nama), dan tanpa kata sandi.
 - Kalau email Google berbeda dari email akun lama, server membuat akun baru yang terpisah. App sebaiknya menyebut akun Google yang sedang dipakai di layar Masuk.
-- Akun tanpa kata sandi bisa memakai semua fitur, tetapi hanya bisa masuk dengan Google; masuk dengan kata sandi dibalas `invalid_credentials`. Sampai ada fitur kata sandi di app, admin bisa membuatkannya lewat "Reset kata sandi".
+- Akun tanpa kata sandi bisa memakai semua fitur, tetapi hanya bisa masuk dengan Google; masuk dengan kata sandi dibalas `invalid_credentials`. Kata sandi bisa dibuat lewat lupa kata sandi di app (v1.0), atau oleh admin lewat "Reset kata sandi".
 - Server hanya menyimpan ID akun Google (`sub`). Nama dan email diambil saat akun dibuat, dan email akun tidak ikut berubah kalau email Google berubah. Foto profil Google tidak diambil.
 - Sumber user tidak berubah, jadi fitur ini tidak membuat app perlu sync penuh.
 - Batasnya 5 per menit per IP.
 - Server membaca client ID dari `GOOGLE_CLIENT_ID`, dan app memakai nilai yang sama untuk `serverClientId`. Selama layar persetujuan Google berstatus Testing, hanya pengguna uji (pemilik dan pasangan) yang bisa masuk dengan Google.
 
-### Sumber user
+### Lupa kata sandi dan verifikasi email (v1.0)
 
+Server mengirim email berisi kode 6 angka untuk mengatur ulang kata sandi dan untuk memverifikasi email akun. Kode diketik di app, jadi email tidak berisi tautan.
+
+| Endpoint | Body | Berhasil | Ditolak |
+| --- | --- | --- | --- |
+| `POST /auth/forgot-password` | `{"email": "..."}` | 202 tanpa isi, juga untuk email yang tidak terdaftar | 422 `validation_failed`, 429 `too_many_requests` |
+| `POST /auth/reset-password` | `{"email": "...", "code": "482913", "password": "...", "device_name": "..."}` | 200, bentuknya sama dengan `POST /auth/login` | 422 `validation_failed`, dengan kode yang salah atau kedaluwarsa di `errors.code`; 429 `too_many_requests` |
+| `POST /me/email-verification` | Tanpa body | 202, kode baru dikirim; 204 kalau email sudah terverifikasi | 429 `too_many_requests` |
+| `POST /me/email-verification/confirm` | `{"code": "482913"}` | 200, sumber user dengan `email_verified_at` terisi | 422 `validation_failed` di `errors.code`, 429 `too_many_requests` |
+
+- Kode berisi 6 angka acak, berlaku 60 menit, dan hanya bisa dipakai sekali. Server menyimpannya sebagai hash, bukan angka aslinya. Meminta kode baru membatalkan kode lama untuk keperluan yang sama, dan lima kali salah memasukkan kode membuat kode itu batal, jadi pengguna perlu meminta kode baru.
+- `forgot-password` selalu membalas 202, terdaftar atau tidak, supaya orang lain tidak bisa mengecek email siapa yang punya akun. Email hanya dikirim kalau akunnya ada. App lalu menulis "Kalau email itu terdaftar, kode sudah dikirim. Cek juga folder spam."
+- `reset-password` mengganti kata sandi, mencabut token di semua HP beserta token FCM-nya (jadi HP lain berhenti menerima push), menandai email terverifikasi, lalu membalas token baru untuk HP ini. App mendaftarkan token FCM-nya lagi seperti setelah masuk. Akun dari Masuk dengan Google yang belum punya kata sandi juga bisa memakainya untuk membuat kata sandi. `password` minimal 8 karakter, sama dengan daftar.
+- Saat daftar dengan email dan kata sandi, server langsung mengirim kode verifikasi. Akun dari Masuk dengan Google, termasuk akun lama yang baru disambungkan ke Google, langsung terverifikasi karena Google sudah memeriksa emailnya.
+- Sumber user punya kolom baru `email_verified_at`. Selama `null`, app menampilkan ajakan verifikasi di Pengaturan, dengan tombol kirim kode dan kolom kode. Email yang belum diverifikasi tidak membatasi apa pun.
+- Email dikirim lewat antrean, jadi balasan tidak menunggu pengiriman, dan pengiriman yang gagal dicoba lagi. Pengirimnya "Denly Days <noreply@denlydays.iqbalfhz.my.id>" lewat SMTP Resend, diatur dengan variabel `MAIL_*` di Coolify, tanpa paket baru. Sebelum variabel itu diisi, email hanya ditulis ke log server, jadi app yang memakai fitur ini dirilis setelah pemilik memastikan email sampai.
+- Email kode atur ulang: subjek "Kode atur ulang kata sandi Denly Days", isi "Kode untuk mengatur ulang kata sandi Denly Days: {kode}. Kode ini berlaku 60 menit. Kalau kamu tidak memintanya, abaikan email ini; kata sandimu tidak berubah."
+- Email verifikasi: subjek "Kode verifikasi email Denly Days", isi "Kode untuk memverifikasi email akun Denly Days: {kode}. Kode ini berlaku 60 menit. Kalau kamu tidak membuat akun Denly Days, abaikan email ini."
+- Kode yang kedaluwarsa dihapus `records:purge`, dan semua kode ikut terhapus saat akunnya dihapus.
+- Halaman `/privasi` diperbarui dengan tanggal berlaku baru. Resend ditambahkan ke penyedia layanan ("Resend mengirim email berisi kode verifikasi dan kode atur ulang kata sandi, jadi menerima alamat emailmu dan isi email itu."), dan masa simpan ditambah "Kode verifikasi dan kode atur ulang kata sandi disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa."
+- Mengubah email dan mengubah kata sandi dari Pengaturan belum ada. Reset manual oleh admin lewat panel tetap bisa.
+
+### Sumber user
 Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 
 ```json
@@ -241,6 +271,7 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
   "id": "01m4dg5jegv6sp4xav8efqzcqe",
   "name": "Iqbal",
   "email": "nama@email.com",
+  "email_verified_at": null,
   "color": "mawar",
   "timezone": "Asia/Jakarta",
   "locale": "id",
@@ -278,6 +309,8 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 - `invitation` adalah kode undanganmu yang masih berlaku, atau `null`. Rinciannya di bagian Ruang dan undangan.
 - `birth_date` dicek dengan pola dan kalender (`--02-30` ditolak, `--02-29` boleh), lalu disimpan sebagai teks. Pengingat v0.2 memakai bagian `MM-DD`; 29 Februari diingatkan 28 Februari di tahun biasa.
 - Email dan kata sandi belum bisa diubah di v0.1. Tema (Mawar atau Anggrek, terang atau gelap) disimpan di HP saja.
+
+`email_verified_at` (v1.0) berisi waktu email diverifikasi, atau `null` selama belum. Rinciannya di bagian Lupa kata sandi dan verifikasi email.
 
 ### Foto profil
 
@@ -366,7 +399,7 @@ Dua halaman publik di server menjelaskan data apa yang dipakai Denly Days dan at
 - Pengelola data adalah Iqbal Fahrozi, dengan kontak di `SUPPORT_EMAIL`. Pertanyaan dan permintaan hak dijawab paling lambat 3 × 24 jam.
 - Denly Days untuk pengguna berusia 18 tahun ke atas.
 - Yang disebut tidak dipakai: lokasi GPS (app tidak meminta izin lokasi), kontak, iklan, dan analytics.
-- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
+- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), Resend (email berisi kode verifikasi dan kode atur ulang kata sandi, v1.0), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
 - URL `/privasi` dipakai di Play Console, layar persetujuan Google, dan app. Di app, layar Daftar dan Masuk menulis "Dengan mendaftar atau masuk dengan Google, kamu menyetujui Syarat layanan dan Kebijakan privasi" dengan tautan ke kedua halaman, dan Pengaturan menautkan keduanya.
 
 ## Ruang dan undangan
@@ -1441,3 +1474,18 @@ Delapan butir ini merancang push "hari ini setahun lalu" untuk kenangan di lingk
 - [x] Kenangan 29 Februari diingatkan 28 Februari di tahun biasa.
 - [x] Notifikasi tanpa foto, jadi kebijakan privasi tidak berubah.
 - [x] Tidak ada kolom atau koleksi baru. App lama tetap menampilkan push ini dan hanya membuka app saat diketuk.
+
+### Lupa kata sandi dan verifikasi email (v1.0)
+
+Sepuluh butir ini merancang lupa kata sandi di app, yang sejak v0.1 masih lewat reset manual oleh admin, dan verifikasi email, dan disetujui pada 2 November 2026. Butir ketujuh adalah pilihan pemilik soal penyedia dan alamat pengirim email.
+
+- [x] Email berisi kode 6 angka yang diketik di app, bukan tautan, karena app tidak memakai tautan dalam (deep link).
+- [x] Kode berlaku 60 menit, sekali pakai, disimpan sebagai hash, dan batal setelah 5 kali salah. Kode baru membatalkan kode lama.
+- [x] `POST /auth/forgot-password` selalu membalas 202, supaya tidak membocorkan email mana yang terdaftar.
+- [x] Atur ulang kata sandi mencabut token di semua HP, menandai email terverifikasi, dan langsung memberi token baru untuk HP ini. Akun Google tanpa kata sandi bisa membuat kata sandi lewat jalur ini.
+- [x] Verifikasi email tidak membatasi apa pun; app hanya mengajak. Kode dikirim otomatis saat daftar, dan akun dari Masuk dengan Google langsung terverifikasi.
+- [x] Sumber user punya kolom baru `email_verified_at`. Tidak ada kode error baru: kode yang salah dibalas 422 `validation_failed` di `errors.code`.
+- [x] Email dikirim lewat SMTP Resend dari "Denly Days <noreply@denlydays.iqbalfhz.my.id>", tanpa paket baru. Pemilik membuat akun Resend, memverifikasi domain di DNS Cloudflare, lalu mengisi `MAIL_*` di Coolify.
+- [x] Batas baru: `forgot-password` 3 per 15 menit per email dan 10 per jam per IP, `reset-password` 10 per menit per IP, kirim kode verifikasi 3 per 15 menit per akun, dan `confirm` 10 per menit per akun.
+- [x] Teks kedua email dan perubahan `/privasi` seperti di atas, dengan tanggal berlaku baru.
+- [x] Ubah email dan ubah kata sandi dari Pengaturan belum termasuk.

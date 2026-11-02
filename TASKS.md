@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Lupa kata sandi dan verifikasi email (v1.0)** - since 2026-11-02; kontraknya di bagian "Lupa kata sandi dan verifikasi email (v1.0)" pada Akun di `docs/kontrak-api.md`, disetujui pemilik 2 November 2026 dengan Resend dan pengirim `noreply@denlydays.iqbalfhz.my.id`. Branch `feat/lupa-kata-sandi-verifikasi-email`
+
 ## Waiting On
 
 - [ ] **Kenangan hari ini di app Flutter** - oleh sesi Flutter, since 2026-11-02; kontraknya di bagian "Kenangan hari ini (v1.x)" pada Kenangan dan foto di `docs/kontrak-api.md`: push `memory_flashback` masuk channel `pengingat` dan saat diketuk membuka Detail kenangan dari `memory_id`, serta sakelar "Kenangan hari ini" di Pengaturan > Notifikasi untuk `notification_prefs.memory_flashbacks`
