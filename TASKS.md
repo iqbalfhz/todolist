@@ -2,9 +2,9 @@
 
 ## Active
 
-- [ ] **Kenangan hari ini (v1.x)** - since 2026-11-02; kontraknya di bagian "Kenangan hari ini (v1.x)" pada Kenangan dan foto di `docs/kontrak-api.md`, disetujui pemilik 2 November 2026. Branch `feat/kenangan-hari-ini`
-
 ## Waiting On
+
+- [ ] **Kenangan hari ini di app Flutter** - oleh sesi Flutter, since 2026-11-02; kontraknya di bagian "Kenangan hari ini (v1.x)" pada Kenangan dan foto di `docs/kontrak-api.md`: push `memory_flashback` masuk channel `pengingat` dan saat diketuk membuka Detail kenangan dari `memory_id`, serta sakelar "Kenangan hari ini" di Pengaturan > Notifikasi untuk `notification_prefs.memory_flashbacks`
 
 - [ ] **Tangani `sync_expired` di app Flutter** - oleh sesi Flutter, since 2026-11-02; kontraknya di bagian "Penghapusan permanen catatan lama (v1.0)" pada Sinkron di `docs/kontrak-api.md`: kalau `GET /sync` (halaman pertama atau dengan `cursor`) dibalas 410 `sync_expired`, kosongkan cache akun itu kecuali baris yang masih punya operasi di antrean, hapus `since` tersimpan, lalu sync penuh tanpa `since`
 
@@ -148,3 +148,4 @@
 - [x] ~~Kebijakan privasi dan syarat layanan (v1.0): halaman publik `/privasi` dan `/syarat` berbahasa Indonesia, satu gaya dengan `/hapus-akun` lewat komponen `<x-public-page>`. Pengelola data Iqbal Fahrozi dan usia 18 tahun ke atas, sesuai pilihan pemilik; isinya ditulis dari cara app benar-benar bekerja (tanpa GPS, kontak, iklan, dan analytics; Cloudflare, Google, OpenStreetMap; masa simpan apa adanya). Kontraknya disetujui 1 November~~ (2026-11-01)
 - [x] ~~Tugas berulang di beberapa hari (v1.x): kolom `repeat_days` (hari ISO 1–7, urut naik) untuk tugas mingguan, misalnya setiap 2 minggu Selasa dan Jumat. Minggu Senin–Minggu dihitung dari minggu tenggat patokan, tugas berikutnya jatuh di hari terpilih pertama sesudah tenggat lama atau tanggal selesai, dan frekuensi lain ditolak 422. Tugas mingguan yang sudah ada tidak berubah (`repeat_days` `null`). Kontraknya disetujui 1 November~~ (2026-11-02)
 - [x] ~~Penghapusan permanen catatan lama (v1.0): perintah harian `records:purge` (00.30 UTC) menghapus permanen data yang dihapus pengguna lebih dari 30 hari lalu, dengan baris yang masih ditunjuk baris lain menunggu anaknya dan `next_task_id` yang dikosongkan, membuang ulang file foto, serta menghapus pengingat harian, kode undangan, dan cache database yang sudah lama. `queue:prune-failed` menghapus push gagal setelah 30 hari, `since` yang lebih tua dari 29 hari dibalas 410 `sync_expired`, dan `/privasi` diperbarui (berlaku 2 November 2026). Kontraknya disetujui 2 November~~ (2026-11-02)
+- [x] ~~Kenangan hari ini (v1.x): push `memory_flashback` pukul 08.00 di zona waktu ruang, satu per ruang per hari, untuk kenangan yang `visited_on`-nya jatuh di tanggal dan bulan hari ini pada tahun sebelumnya ("Hari ini setahun lalu", isi judul kenangan dari tahun paling dekat dan jumlah kenangan lain), dengan preferensi baru `memory_flashbacks` (bawaan menyala) dan perintah `memories:remind`. 29 Februari diingatkan 28 Februari di tahun biasa. Kontraknya disetujui 2 November~~ (2026-11-02)
