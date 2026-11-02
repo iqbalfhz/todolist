@@ -24,6 +24,7 @@ return [
         'trip_checklist' => 'Checklist ini ikut perjalanannya. Hapus perjalanannya kalau ingin menghapus checklist.',
         'shared_space_exists' => 'Kamu sudah punya Ruang Bersama.',
         'resource_deleted' => 'Data ini sudah dihapus.',
+        'sync_expired' => 'Data di HP ini sudah lama tidak diperbarui, jadi dimuat ulang dari awal.',
         'validation_failed' => 'Data yang dikirim tidak valid.',
         'invalid_credentials' => 'Email atau kata sandi salah.',
         'invitation_invalid' => 'Kode tidak berlaku, minta kode baru.',

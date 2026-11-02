@@ -1,12 +1,14 @@
 <?php
 
 use App\Actions\PurgeClosedSpaces;
+use App\Actions\PurgeDeletedRecords;
 use App\Actions\SendDueReminders;
 use App\Actions\SendSavingsReminders;
 use App\Actions\SendSpecialDateReminders;
 use App\Actions\SendTripReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -61,3 +63,17 @@ Artisan::command('spaces:purge', function (PurgeClosedSpaces $purgeClosedSpaces)
 })->purpose('Delete for good the shared spaces that were closed more than 30 days ago')
     ->daily()
     ->withoutOverlapping(60);
+
+// Runs once a day, half an hour after spaces:purge, so a deleted row goes at
+// most a day after its 30 days run out. A run that is cut short leaves the
+// rest for the next day.
+Artisan::command('records:purge', function (PurgeDeletedRecords $purgeDeletedRecords) {
+    ['records' => $records, 'reminders' => $reminders, 'invitations' => $invitations, 'cache' => $cache] = $purgeDeletedRecords->handle();
+
+    $this->info("Deleted records purged: {$records}. Old reminders: {$reminders}. Old invitations: {$invitations}. Expired cache entries: {$cache}.");
+})->purpose('Delete for good the records deleted more than 30 days ago, and the old records of the server')
+    ->dailyAt('00:30')
+    ->withoutOverlapping(60);
+
+// A push that failed for good keeps its title and body, which hold the user's content.
+Schedule::command('queue:prune-failed', ['--hours' => 24 * PurgeDeletedRecords::RETENTION_DAYS])->daily();

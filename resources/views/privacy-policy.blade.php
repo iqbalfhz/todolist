@@ -1,6 +1,6 @@
 <x-public-page :title="'Kebijakan privasi '.config('app.name')">
     <h1>Kebijakan privasi {{ config('app.name') }}</h1>
-    <p>Berlaku sejak 1 November 2026.</p>
+    <p>Berlaku sejak 2 November 2026.</p>
     <p>{{ config('app.name') }} adalah aplikasi untuk mengatur tugas, tabungan, rencana liburan, dan kenangan, sendiri atau berdua dengan pasangan. Halaman ini menjelaskan data apa yang kami simpan, untuk apa, siapa yang bisa melihatnya, dan hak kamu atas data itu.</p>
 
     <h2>Pengelola data</h2>
@@ -50,10 +50,10 @@
     <h2>Berapa lama data disimpan</h2>
     <ul>
         <li>Data akun dan isinya disimpan selama akunmu ada.</li>
-        <li>Yang kamu hapus di app ditandai terhapus dan tetap tersimpan sebagai catatan sinkron sampai akunmu dihapus, supaya HP lain ikut menghapusnya. Foto yang dihapus langsung dibuang dari penyimpanan.</li>
+        <li>Yang kamu hapus di app ditandai terhapus dan disimpan 30 hari sebagai catatan sinkron, supaya HP lain ikut menghapusnya, lalu dihapus permanen. Foto yang dihapus langsung dibuang dari penyimpanan.</li>
         <li>Ruang Bersama yang ditutup karena salah satu keluar disimpan 30 hari, supaya kembali utuh kalau kalian bergabung lagi, lalu dihapus permanen.</li>
         <li>Saat akun dihapus, semua datanya langsung dihapus permanen. Salinan di cadangan database ikut hilang paling lama 30 hari kemudian.</li>
-        <li>Catatan teknis seperti alamat IP hanya disimpan selama dibutuhkan untuk keamanan dan memperbaiki gangguan.</li>
+        <li>Catatan teknis seperti alamat IP hanya disimpan selama dibutuhkan untuk keamanan dan memperbaiki gangguan. Notifikasi yang gagal terkirim, beserta isinya, dihapus paling lama 30 hari kemudian.</li>
     </ul>
 
     <h2>Hak kamu</h2>

@@ -15,6 +15,7 @@ enum ErrorCode: string
     case TripChecklist = 'trip_checklist';
     case SharedSpaceExists = 'shared_space_exists';
     case ResourceDeleted = 'resource_deleted';
+    case SyncExpired = 'sync_expired';
     case ValidationFailed = 'validation_failed';
     case InvalidCredentials = 'invalid_credentials';
     case InvitationInvalid = 'invitation_invalid';
@@ -33,7 +34,7 @@ enum ErrorCode: string
             self::Forbidden => 403,
             self::NotFound, self::RouteNotFound => 404,
             self::ParentDeleted, self::ParentArchived, self::LastList, self::IdConflict, self::TripChecklist, self::SharedSpaceExists => 409,
-            self::ResourceDeleted => 410,
+            self::ResourceDeleted, self::SyncExpired => 410,
             self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid, self::GoogleTokenInvalid => 422,
             self::TooManyRequests => 429,
             self::ServerError => 500,

@@ -297,15 +297,56 @@ it('reaches back 5 seconds before since', function (string $now, string $since, 
     'a since ahead of the server clock counts as now' => ['2026-10-08 10:00:04', '2030-01-01T00:00:00Z', 1],
 ]);
 
-it('returns every row for a since older than the oldest row', function (string $since) {
+it('returns 410 with the sync_expired code for a since older than 29 days, since deleted rows go after 30', function (string $since) {
+    $this->travelTo('2026-11-30 12:00:00');
     actingAsApiUser();
 
     $response = $this->getJson('/api/v1/sync?'.http_build_query(['since' => $since]));
 
-    $response->assertOk()->assertJsonCount(1, 'data.spaces')->assertJsonCount(1, 'data.task_lists');
+    $response->assertStatus(410)->assertExactJson([
+        'message' => 'Data di HP ini sudah lama tidak diperbarui, jadi dimuat ulang dari awal.',
+        'code' => 'sync_expired',
+    ]);
 })->with([
+    'a microsecond past the limit' => ['2026-11-01T11:59:59.999999Z'],
+    'with an offset' => ['2026-11-01T18:59:59+07:00'],
     'the Unix epoch' => ['1970-01-01T00:00:00Z'],
     'the year 0000' => ['0000-01-01T00:00:00Z'],
+]);
+
+it('still answers a since of exactly 29 days ago, rewinding 5 seconds as always', function () {
+    $this->travelTo('2026-11-01 11:59:55');
+    $user = actingAsApiUser();
+    $this->travelTo('2026-11-30 12:00:00');
+
+    $response = $this->getJson('/api/v1/sync?'.http_build_query(['since' => '2026-11-01T12:00:00Z']));
+
+    $response->assertOk()
+        ->assertJsonPath('data.spaces.*.id', [$user->personalSpace()->id])
+        ->assertJsonPath('meta.server_time', '2026-11-30T12:00:00.000000Z');
+});
+
+it('returns 410 with the sync_expired code for a cursor that still reaches back further than 29 days', function (bool $withDeleted, array $positions, int $status) {
+    $this->travelTo('2026-11-30 12:00:00');
+    actingAsApiUser();
+    $cursor = SyncCursor::encode([
+        'server_time' => '2026-11-30 11:59:00.000000',
+        'with_deleted' => $withDeleted,
+        'positions' => [...array_fill_keys(SyncCursor::COLLECTIONS, ['2026-11-30 11:00:00.000000', '']), ...$positions],
+    ]);
+
+    $response = $this->getJson('/api/v1/sync?'.http_build_query(['cursor' => $cursor]));
+
+    $response->assertStatus($status);
+
+    if ($status === 410) {
+        $response->assertJsonPath('code', 'sync_expired');
+    }
+})->with([
+    'one collection a microsecond past the limit and its rewind' => [true, ['trips' => ['2026-11-01 11:59:54.999999', '']], 410],
+    'one collection exactly at the limit and its rewind' => [true, ['trips' => ['2026-11-01 11:59:55.000000', '']], 200],
+    'one collection without a position' => [true, ['trips' => null], 410],
+    'a sync without since, which reads no deleted rows' => [false, array_fill_keys(SyncCursor::COLLECTIONS, null), 200],
 ]);
 
 it('never sends the content of the personal space of the partner', function (array $query) {

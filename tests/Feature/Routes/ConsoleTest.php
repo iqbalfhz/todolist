@@ -119,3 +119,32 @@ it('runs spaces:purge once a day without overlapping', function () {
         ->and($event->withoutOverlapping)->toBeTrue()
         ->and($event->expiresAt)->toBe(60);
 });
+
+it('purges the records deleted more than 30 days ago and reports what it removed', function () {
+    $this->travelTo('2026-10-01 00:00:00');
+    $task = tap(Task::factory()->create())->delete();
+    $this->travelTo('2026-11-05 00:00:00');
+
+    $this->artisan('records:purge')
+        ->expectsOutput('Deleted records purged: 1. Old reminders: 0. Old invitations: 0. Expired cache entries: 0.')
+        ->assertSuccessful();
+
+    $this->assertModelMissing($task);
+});
+
+it('runs records:purge once a day at 00.30 without overlapping', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->sole(fn (Event $event) => str_contains($event->command, 'records:purge'));
+
+    expect($event->expression)->toBe('30 0 * * *')
+        ->and($event->withoutOverlapping)->toBeTrue()
+        ->and($event->expiresAt)->toBe(60);
+});
+
+it('prunes the failed jobs older than 30 days once a day, since a failed push keeps its text', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->sole(fn (Event $event) => str_contains($event->command, 'queue:prune-failed'));
+
+    expect($event->command)->toEndWith('queue:prune-failed --hours=720')
+        ->and($event->expression)->toBe('0 0 * * *');
+});

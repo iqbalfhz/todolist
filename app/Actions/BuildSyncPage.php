@@ -2,6 +2,8 @@
 
 namespace App\Actions;
 
+use App\Enums\ErrorCode;
+use App\Exceptions\ApiException;
 use App\Models\User;
 use App\Rules\SyncCursor;
 use Carbon\CarbonImmutable;
@@ -23,6 +25,15 @@ class BuildSyncPage
      */
     public const REWIND_SECONDS = 5;
 
+    /**
+     * How many days back a sync with since may reach.
+     *
+     * Deleted rows are purged after PurgeDeletedRecords::RETENTION_DAYS. The
+     * day in between keeps a purge that runs while the pages are fetched from
+     * taking a row the sync still has to send.
+     */
+    public const SINCE_LIMIT_DAYS = PurgeDeletedRecords::RETENTION_DAYS - 1;
+
     public function __construct(private QuerySyncCollection $querySyncCollection) {}
 
     /**
@@ -30,13 +41,16 @@ class BuildSyncPage
      *
      * Without a cursor a sync starts: everything active when $since is null,
      * otherwise everything changed since then, deleted rows included. A
-     * cursor continues the sync it came from, and $since is not read.
+     * cursor continues the sync it came from, and $since is not read. A sync
+     * that reaches back more than SINCE_LIMIT_DAYS is refused with 410.
      *
      * @param  array{server_time: string, with_deleted: bool, positions: array<string, array{0: string, 1: string}|null>}|null  $cursor
      * @return array{changes: array<string, EloquentCollection<int, Model>>, server_time: CarbonImmutable, next_cursor: string|null}
      */
     public function handle(User $user, ?CarbonImmutable $since = null, ?array $cursor = null): array
     {
+        $this->ensureNotExpired($since, $cursor);
+
         $state = $cursor ?? $this->start($since);
         $openSpaceIds = $this->spaceIds($user, withClosed: false);
         $spaceIds = $state['with_deleted'] ? $this->spaceIds($user, withClosed: true) : $openSpaceIds;
@@ -75,6 +89,35 @@ class BuildSyncPage
     }
 
     /**
+     * Refuse a sync that reaches back further than deleted rows are kept, so
+     * the phone rebuilds its cache instead of missing a deletion.
+     *
+     * A cursor reaches back as far as its earliest position, because the
+     * positions start at since minus the rewind and only move forward. A
+     * sync without since reads no deleted rows, so it never expires.
+     *
+     * @param  array{server_time: string, with_deleted: bool, positions: array<string, array{0: string, 1: string}|null>}|null  $cursor
+     */
+    private function ensureNotExpired(?CarbonImmutable $since, ?array $cursor): void
+    {
+        $limit = now()->toImmutable()->subDays(self::SINCE_LIMIT_DAYS);
+
+        if ($cursor === null) {
+            $expired = $since !== null && $since->lessThan($limit);
+        } else {
+            $earliest = $limit->subSeconds(self::REWIND_SECONDS)->format(SyncCursor::TIME_FORMAT);
+
+            $expired = $cursor['with_deleted'] && collect($cursor['positions'])->contains(
+                fn (?array $position): bool => $position === null || $position[0] < $earliest,
+            );
+        }
+
+        if ($expired) {
+            throw new ApiException(ErrorCode::SyncExpired);
+        }
+    }
+
+    /**
      * Get the state a sync starts from.
      *
      * The server time is taken before any row is read, so a change saved
@@ -85,11 +128,7 @@ class BuildSyncPage
      */
     private function start(?CarbonImmutable $since): array
     {
-        // No row is older than the Unix epoch, and MySQL rejects a time before the year 0000.
-        $from = $since?->utc()
-            ->subSeconds(self::REWIND_SECONDS)
-            ->max(CarbonImmutable::createFromTimestampUTC(0))
-            ->format(SyncCursor::TIME_FORMAT);
+        $from = $since?->utc()->subSeconds(self::REWIND_SECONDS)->format(SyncCursor::TIME_FORMAT);
 
         return [
             'server_time' => now()->format(SyncCursor::TIME_FORMAT),
