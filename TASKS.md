@@ -2,9 +2,9 @@
 
 ## Active
 
-- [ ] **Tugas berulang di beberapa hari (v1.x)** - since 2026-11-01; kontraknya di bagian "Tugas berulang di beberapa hari (v1.x)" pada Daftar dan tugas di `docs/kontrak-api.md`, disetujui pemilik 1 November 2026. Branch `feat/tugas-berulang-beberapa-hari`
-
 ## Waiting On
+
+- [ ] **Tugas berulang di beberapa hari di app Flutter** - oleh sesi Flutter, since 2026-11-01; kontraknya di bagian "Tugas berulang di beberapa hari (v1.x)" pada Daftar dan tugas di `docs/kontrak-api.md`: pilihan hari Senin–Minggu saat pengulangan mingguan, `repeat_days` di PUT dan PATCH tugas, teks pengulangan seperti "Setiap 2 minggu, Selasa dan Jumat", dan sync penuh sekali karena kolom baru di `tasks`
 
 - [ ] **Baca teks kebijakan privasi dan syarat layanan** - oleh pemilik, since 2026-11-01; buka `https://denlydays.iqbalfhz.my.id/privasi` dan `/syarat`, lalu kabari kalau ada yang ingin diubah. Sebelum rilis publik, sebaiknya keduanya diperiksa ahli hukum
 - [ ] **Isi tautan kebijakan di layar persetujuan Google** - oleh pemilik, since 2026-11-01; di Google Auth Platform > Branding: Application home page `https://denlydays.iqbalfhz.my.id`, Privacy policy `https://denlydays.iqbalfhz.my.id/privasi`, dan Terms of service `https://denlydays.iqbalfhz.my.id/syarat`. Ini juga syarat verifikasi brand sebelum status diubah ke In production
@@ -40,7 +40,7 @@
 
 ## Someday
 
-- [ ] **v1.0** - ekspor data, hapus akun, lupa kata sandi di app, tugas berulang di beberapa hari dalam seminggu
+- [ ] **v1.0** - lupa kata sandi di app
 - [ ] **Sebelum rilis publik** - isi URL `https://denlydays.iqbalfhz.my.id/hapus-akun` di Play Console (Data safety, bagian penghapusan data) dan URL `https://denlydays.iqbalfhz.my.id/privasi` sebagai kebijakan privasi app, ubah status Google Auth Platform dari Testing ke In production beserta verifikasi brand (selama Testing hanya pengguna uji yang bisa masuk dengan Google), tambahkan SHA-1 kunci Play App Signing ke klien Android dan Firebase kalau rilis lewat Play Store, pasang lagi "Application restrictions" (Android apps) pada API key Android Firebase, yang dilepas ke None pada 22 Oktober 2026 karena membuat pendaftaran token FCM gagal (pembatasan per API tetap), jalankan proses di container sebagai user non-root, deploy tanpa jeda (sekarang setiap deploy membuat server membalas 502 sekitar 17 detik saat container diganti), dan pertimbangkan mode worker FrankenPHP lewat Laravel Octane
 
 ## Done
@@ -142,3 +142,4 @@
 - [x] ~~`SUPPORT_EMAIL` diisi pemilik di Coolify lalu deploy ulang: halaman `/hapus-akun` di produksi menampilkan bagian "Tanpa app" dengan alamat `iqbalfahrozi284@gmail.com`. Cloudflare menyamarkan alamat itu di HTML (Email Address Obfuscation), dan skrip `email-decode.min.js` dari Cloudflare menampilkannya kembali di browser; alamat dan tautan `mailto:` yang disamarkan sudah dicek benar~~ (2026-10-31)
 - [x] ~~Ekspor data (v1.0): pemilik memilih JSON dengan tautan foto, bukan ZIP. `GET /me/export` langsung membalas `denly-days-{tanggal}.json` berisi profil, perangkat tanpa token, ruang yang terbuka, dan semua isinya dalam bentuk sumber sync (termasuk data pasangan di Ruang Bersama), dengan tautan foto 7 hari; 5 per jam per akun. Halaman `/hapus-akun` menyarankan ekspor dulu. Kontraknya disetujui 31 Oktober~~ (2026-10-31)
 - [x] ~~Kebijakan privasi dan syarat layanan (v1.0): halaman publik `/privasi` dan `/syarat` berbahasa Indonesia, satu gaya dengan `/hapus-akun` lewat komponen `<x-public-page>`. Pengelola data Iqbal Fahrozi dan usia 18 tahun ke atas, sesuai pilihan pemilik; isinya ditulis dari cara app benar-benar bekerja (tanpa GPS, kontak, iklan, dan analytics; Cloudflare, Google, OpenStreetMap; masa simpan apa adanya). Kontraknya disetujui 1 November~~ (2026-11-01)
+- [x] ~~Tugas berulang di beberapa hari (v1.x): kolom `repeat_days` (hari ISO 1–7, urut naik) untuk tugas mingguan, misalnya setiap 2 minggu Selasa dan Jumat. Minggu Senin–Minggu dihitung dari minggu tenggat patokan, tugas berikutnya jatuh di hari terpilih pertama sesudah tenggat lama atau tanggal selesai, dan frekuensi lain ditolak 422. Tugas mingguan yang sudah ada tidak berubah (`repeat_days` `null`). Kontraknya disetujui 1 November~~ (2026-11-02)
