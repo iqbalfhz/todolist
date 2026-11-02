@@ -167,6 +167,7 @@ Contoh untuk `PUT /tasks/{id}` yang belum ada di server, sehingga `current` bern
 | 409 | `trip_checklist` (v0.2) | Checklist perjalanan dihapus atau diarsipkan sendiri | Buang dari antrean, pakai `current`, tampilkan pesan |
 | 409 | `shared_space_exists` | Sudah punya Ruang Bersama dengan orang lain | Tampilkan pesan; endpoint undangan tidak lewat antrean |
 | 410 | `resource_deleted` | Sudah dihapus, biasanya oleh pasangan | Buang dari antrean, hapus data itu dari cache |
+| 410 | `sync_expired` (v1.0) | `since` atau `cursor` lebih tua dari 29 hari, jadi sebagian catatan terhapus sudah dihapus permanen | Kosongkan cache akun itu kecuali yang masih di antrean, hapus `since` tersimpan, lalu sync penuh |
 | 422 | `validation_failed`, `invalid_credentials`, `invitation_invalid` | Isi request tidak valid | Tampilkan pesan; kalau dari antrean, buang dan pakai `current` |
 | 422 | `google_token_invalid` (v1.x) | Token Google salah, kedaluwarsa, untuk app lain, emailnya belum terverifikasi, atau saat hapus akun bukan dari akun Google yang tersambung (v1.0) | Tampilkan pesan; pengguna bisa mencoba masuk dengan Google lagi |
 | 429 | `too_many_requests` | Terlalu sering | Tunggu sesuai header `Retry-After`, lalu coba lagi |
@@ -1033,6 +1034,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Ruang Bersama yang ditutup (v1.0) tiba di `spaces` dengan `deleted_at` terisi, tetapi isinya tidak dikirim lagi. Ruang yang dipulihkan tiba lagi dengan `deleted_at` kosong, dan semua isinya ikut terkirim lewat `since`, karena server memperbarui `updated_at`-nya saat memulihkan.
 - `cursor` yang bukan buatan server dibalas 422 `validation_failed`. App lalu mengulang sync dari `since` yang tersimpan.
 - Kalau `cursor` dikirim, `since` tidak dibaca.
+- `since` yang lebih tua dari 29 hari, atau `cursor` dari sync seperti itu, dibalas 410 `sync_expired` (v1.0), karena catatan terhapus yang lebih tua dari 30 hari sudah dihapus permanen. Lihat Penghapusan permanen catatan lama.
 - Saat koleksi baru ditambahkan (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.x: `comments` dan `reactions`), `cursor` yang dibuat sebelum deploy ditolak sekali dengan 422, lalu app mengulang dari `since`.
 
 ### Aturan di HP
@@ -1045,6 +1047,7 @@ Halaman pertama: `GET /sync?since=<server_time tersimpan>`, atau tanpa `since` u
 - Saat induk tiba dengan `deleted_at` terisi, app ikut menghapus anak-anaknya di cache, kecuali anak yang masih punya operasi di antrean; nasibnya ditentukan balasan server (`parent_deleted`).
 - Ruang adalah induk dari semua isinya (v1.0). Saat Ruang Bersama tiba dengan `deleted_at` terisi, app menghapus ruang itu beserta semua daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto, komentar, dan reaksinya dari cache, dengan pengecualian yang sama.
 - Sync penuh hanya menambah dan memperbarui.
+- Kalau `GET /sync` dibalas 410 `sync_expired` (v1.0), app mengosongkan cache akun itu kecuali baris yang masih punya operasi di antrean, menghapus `since` yang tersimpan, lalu menjalankan sync penuh.
 - Sync berjalan saat app dibuka atau kembali aktif, saat layar ditarik untuk menyegarkan, saat push masuk ketika app terbuka, termasuk push sinkron (v1.x), dan tiap 30 detik selama app tampil (v1.x).
 - App versi baru yang mengenal koleksi atau kolom baru (v0.2: `special_dates`, lalu `trips`; v0.3: `memories` dan `memory_photos`; v1.0: aturan ulang di `tasks`; v1.x: lokasi di `memories`, lalu `comments` dan `reactions`, lalu `repeat_days` di `tasks`) menjalankan sync penuh sekali sebelum kembali memakai `since`. Tanpa itu, data yang dibuat atau diubah pasangan selama app masih versi lama tidak pernah sampai lengkap, karena `since` sudah melewatinya.
 
@@ -1081,6 +1084,22 @@ Push `sync` memberi tahu HP pasangan bahwa ada data baru di Ruang Bersama, supay
 - Push ini hanya mempercepat. FCM tidak menjamin setiap pesan sampai, jadi app tetap sync saat dibuka, saat kembali aktif, dan tiap 30 detik selama tampil.
 - Sesekali push bisa datang tanpa ada yang baru, misalnya saat penyimpanan dibatalkan di tengah jalan. App cukup menjalankan sync seperti biasa.
 - Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh.
+
+### Penghapusan permanen catatan lama (v1.0)
+
+Data yang dihapus di app hanya ditandai terhapus (`deleted_at` terisi), supaya HP lain ikut menghapusnya lewat `since`. Catatan itu dihapus permanen 30 hari kemudian, jadi tidak tersimpan selamanya di server.
+
+- Setiap hari pukul 00.30 UTC, perintah terjadwal `records:purge` menghapus permanen daftar, tugas, target, setoran, tanggal penting, perjalanan, kenangan, foto kenangan, komentar, dan reaksi yang `deleted_at`-nya lebih dari 30 hari lalu, termasuk yang ikut terhapus berantai.
+- Baris yang masih menjadi induk baris lain, termasuk induk dari baris yang juga sudah terhapus, menunggu sampai anaknya ikut dihapus permanen, jadi tidak ada data yang kehilangan induknya. Biasanya keduanya terhapus pada hari yang sama.
+- Saat tugas berikutnya dari tugas berulang dihapus permanen, `next_task_id` tugas sebelumnya kembali `null` dengan `updated_at` baru. Membatalkan lalu mencentang ulang tugas lama itu sesudahnya membuat tugas berikutnya lagi.
+- File foto kenangan sudah dibuang dari penyimpanan saat fotonya dihapus. Saat barisnya dihapus permanen, server mencoba membuangnya sekali lagi, untuk berjaga kalau penghapusan pertama gagal.
+- Perintah yang sama membersihkan catatan server yang sudah tidak dipakai: pengingat harian yang terkirim lebih dari 30 hari lalu, kode undangan yang kedaluwarsa lebih dari 30 hari lalu (terpakai atau tidak), dan cache yang sudah kedaluwarsa. Push yang gagal terkirim, yang menyimpan judul dan isi notifikasinya, dihapus 30 hari kemudian lewat `queue:prune-failed`.
+- Ruang Bersama yang ditutup tetap dihapus `spaces:purge` 30 hari setelah ditutup, dan hapus akun tetap langsung menghapus semuanya.
+- `since` yang lebih tua dari 29 hari, atau `cursor` dari sync seperti itu, dibalas 410 `sync_expired`. Batasnya sehari lebih awal dari penghapusan permanen, supaya sync yang sedang berjalan tidak kehilangan catatan. Sync tanpa `since` tidak terpengaruh.
+- Saat menerima `sync_expired`, app menghapus semua data akun itu dari cache lokal kecuali baris yang masih punya operasi di antrean, menghapus `since` yang tersimpan, lalu menjalankan sync penuh tanpa `since`. Tanpa langkah ini, data yang dihapus selama HP itu tidak sync tetap tampil, karena sync penuh hanya menambah dan memperbarui. Ini hanya terjadi kalau HP itu tidak sync lebih dari 29 hari, misalnya app tidak dibuka selama itu atau masuk lagi setelah lama keluar. Foto yang sudah tersimpan di HP boleh dipakai lagi kalau barisnya masih ada.
+- Antrean dari HP yang offline lebih dari 30 hari bisa mengenai data yang sudah dihapus permanen. Server tidak lagi mengenal ID-nya, jadi `PATCH` dan `DELETE` dibalas 404 `not_found`, data baru untuk induk yang sudah dihapus permanen juga dibalas 404 (bukan 409 `parent_deleted`), sehingga app membuangnya, dan `PUT` ulang untuk data yang pernah terkirim lalu dihapus membuatnya lagi (201). Server sengaja tidak menyimpan daftar ID yang sudah dihapus permanen, supaya memang tidak ada yang tersisa.
+- Halaman `/privasi` ikut diperbarui dengan tanggal berlaku baru. Butir masa simpan untuk data yang dihapus menjadi "Yang kamu hapus di app ditandai terhapus dan disimpan 30 hari sebagai catatan sinkron, supaya HP lain ikut menghapusnya, lalu dihapus permanen. Foto yang dihapus langsung dibuang dari penyimpanan.", dan butir catatan teknis ditambah "Notifikasi yang gagal terkirim, beserta isinya, dihapus paling lama 30 hari kemudian."
+- Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh. Yang baru di app hanya penanganan `sync_expired`.
 
 ## Notifikasi push
 
@@ -1377,3 +1396,17 @@ Delapan butir ini menambah pilihan beberapa hari di tugas mingguan, yang ditunda
 - [x] Mengganti frekuensi ke selain mingguan, mengosongkan aturan ulang, atau mengosongkan `due_date` ikut mengosongkan `repeat_days`. Mengubah `repeat_days` menjadikan `due_date` saat itu patokan baru.
 - [x] Sumber tugas punya kolom baru `repeat_days`, jadi app versi baru sync penuh sekali. App lama tetap aman, karena tugas berikutnya tetap dihitung server dengan hari yang tersimpan.
 - [x] Checklist perjalanan tetap tidak bisa berulang.
+
+### Penghapusan permanen catatan lama (v1.0)
+
+Sembilan butir ini merancang penghapusan otomatis catatan lama, yang disebut sebagai fitur berikutnya di Kebijakan privasi dan syarat layanan (v1.0), dan disetujui pada 2 November 2026. Butir pertama adalah pilihan pemilik soal masa simpan.
+
+- [x] Catatan yang dihapus di app disimpan 30 hari, lalu dihapus permanen oleh perintah harian `records:purge`. Ini sama dengan masa simpan Ruang Bersama yang ditutup dan cadangan database, jadi semua yang dihapus hilang dari server dalam 30 hari dan dari cadangan 30 hari sesudahnya.
+- [x] Baris yang masih menjadi induk baris lain menunggu anaknya ikut dihapus permanen, jadi tidak ada data yang kehilangan induk.
+- [x] Saat tugas berikutnya dihapus permanen, `next_task_id` tugas sebelumnya kembali `null`, jadi mencentang ulang tugas lama sesudahnya membuat tugas berikutnya lagi.
+- [x] Kode error baru 410 `sync_expired` untuk `since` atau `cursor` yang lebih tua dari 29 hari. App lalu mengosongkan cache akun itu kecuali yang masih di antrean, dan menjalankan sync penuh. App lama yang belum mengenal kode ini tidak bisa sync sampai diperbarui, tetapi itu hanya terjadi kalau HP tidak sync lebih dari 29 hari.
+- [x] Server tidak menyimpan daftar ID yang sudah dihapus permanen. Akibatnya, antrean dari HP yang offline lebih dari 30 hari untuk data seperti itu dibalas 404 dan dibuang, dan `PUT` ulang untuk data yang pernah terkirim lalu dihapus membuatnya lagi.
+- [x] File foto kenangan dicoba dibuang sekali lagi saat barisnya dihapus permanen.
+- [x] Ikut dibersihkan: pengingat harian yang terkirim dan kode undangan yang kedaluwarsa lebih dari 30 hari lalu, cache yang sudah kedaluwarsa, dan push yang gagal terkirim beserta judul dan isinya setelah 30 hari.
+- [x] Teks masa simpan di `/privasi` diperbarui seperti di atas, dengan tanggal berlaku baru.
+- [x] Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh; yang baru di app hanya penanganan `sync_expired`.

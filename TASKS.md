@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **Penghapusan permanen catatan lama (v1.0)** - since 2026-11-02; kontraknya di bagian "Penghapusan permanen catatan lama (v1.0)" pada Sinkron di `docs/kontrak-api.md`, disetujui pemilik 2 November 2026 dengan masa simpan 30 hari. Branch `feat/hapus-permanen-catatan-lama`
+
 ## Waiting On
 
 - [ ] **Tugas berulang di beberapa hari di app Flutter** - oleh sesi Flutter, since 2026-11-01; kontraknya di bagian "Tugas berulang di beberapa hari (v1.x)" pada Daftar dan tugas di `docs/kontrak-api.md`: pilihan hari Senin–Minggu saat pengulangan mingguan, `repeat_days` di PUT dan PATCH tugas, teks pengulangan seperti "Setiap 2 minggu, Selasa dan Jumat", dan sync penuh sekali karena kolom baru di `tasks`
