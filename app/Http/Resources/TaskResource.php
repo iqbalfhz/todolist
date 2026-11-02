@@ -31,6 +31,7 @@ class TaskResource extends JsonResource
             'due_time' => $this->due_time === null ? null : substr($this->due_time, 0, 5),
             'repeat_frequency' => $this->repeat_frequency,
             'repeat_interval' => $this->repeat_interval,
+            'repeat_days' => $this->repeat_days,
             'priority' => $this->priority,
             'position' => $this->position($this->resource->position),
             'assignee_ids' => $this->assignees->pluck('id')->sort()->values(),

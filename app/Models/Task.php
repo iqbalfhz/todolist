@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'due_time',
     'repeat_frequency',
     'repeat_interval',
+    'repeat_days',
     'repeat_anchor',
     'priority',
     'position',
@@ -98,6 +99,7 @@ class Task extends Model
         return [
             'repeat_frequency' => RepeatFrequency::class,
             'repeat_interval' => 'integer',
+            'repeat_days' => 'array',
             'priority' => 'integer',
             'position' => 'float',
             'remind_at' => 'datetime',

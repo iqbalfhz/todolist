@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\RepeatFrequency;
 use Illuminate\Validation\ValidationException;
 
 class CheckTaskRepeat
@@ -21,5 +22,28 @@ class CheckTaskRepeat
         if ($tripId !== null) {
             throw ValidationException::withMessages([$field => __('api.validation.repeat_in_trip_checklist')]);
         }
+    }
+
+    /**
+     * Get the weekdays a task repeats on in ascending order, or null for the weekday of its anchor.
+     *
+     * Only a weekly task picks its weekdays.
+     *
+     * @param  list<int>|null  $days  ISO weekdays, 1 being Monday
+     * @return list<int>|null
+     */
+    public function weekdays(?string $frequency, ?array $days): ?array
+    {
+        if ($days === null) {
+            return null;
+        }
+
+        if ($frequency !== RepeatFrequency::Weekly->value) {
+            throw ValidationException::withMessages(['repeat_days' => __('api.validation.repeat_days_weekly_only')]);
+        }
+
+        sort($days);
+
+        return $days;
     }
 }

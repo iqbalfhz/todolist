@@ -49,6 +49,8 @@ class CreateTask
                 $task->repeat_anchor = $task->due_date;
             }
 
+            $task->repeat_days = $this->checkTaskRepeat->weekdays($data['repeat_frequency'] ?? null, $data['repeat_days'] ?? null);
+
             if (isset($data['completed_at'])) {
                 $task->completed_at = Iso8601WithOffset::toServerTime($data['completed_at']);
                 $task->completed_by = $actor->id;

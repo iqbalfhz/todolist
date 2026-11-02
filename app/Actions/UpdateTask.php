@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\ErrorCode;
+use App\Enums\RepeatFrequency;
 use App\Exceptions\ApiException;
 use App\Models\Task;
 use App\Models\TaskList;
@@ -122,9 +123,10 @@ class UpdateTask
     /**
      * Change the repeat rule, checked together with the due date and the list the task ends up with.
      *
-     * Clearing the due date clears the rule too. A new due date or rule
-     * makes the due date the anchor the next occurrences are counted from;
-     * otherwise the anchor stays, so a month-end date keeps its day.
+     * Clearing the due date clears the rule too, and a frequency other than
+     * weekly clears the weekdays. A new due date or rule makes the due date
+     * the anchor the next occurrences are counted from; otherwise the anchor
+     * stays, so a month-end date keeps its day.
      *
      * @param  array<string, mixed>  $changes
      */
@@ -149,10 +151,19 @@ class UpdateTask
             $interval = (int) (($changes['repeat_interval'] ?? null) ?? $task->repeat_interval ?? 1);
         }
 
-        $ruleChanged = $frequency !== $task->repeat_frequency?->value || $interval !== $task->repeat_interval;
+        $days = $this->checkTaskRepeat->weekdays($frequency, match (true) {
+            array_key_exists('repeat_days', $changes) => $changes['repeat_days'],
+            $frequency === RepeatFrequency::Weekly->value => $task->repeat_days,
+            default => null,
+        });
+
+        $ruleChanged = $frequency !== $task->repeat_frequency?->value
+            || $interval !== $task->repeat_interval
+            || $days !== $task->repeat_days;
 
         $task->repeat_frequency = $frequency;
         $task->repeat_interval = $interval;
+        $task->repeat_days = $days;
 
         if ($frequency === null) {
             $task->repeat_anchor = null;

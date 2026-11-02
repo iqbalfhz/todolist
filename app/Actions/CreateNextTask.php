@@ -41,9 +41,11 @@ class CreateNextTask
             $task->repeat_interval,
             $task->repeat_anchor ?? $task->due_date,
             max($task->due_date, $completedOn),
+            $task->repeat_days,
         );
         $next->repeat_frequency = $task->repeat_frequency;
         $next->repeat_interval = $task->repeat_interval;
+        $next->repeat_days = $task->repeat_days;
         $next->repeat_anchor = $task->repeat_anchor;
         $next->created_by = $task->created_by;
         $next->updated_by = $actor->id;

@@ -26,6 +26,8 @@ class StoreTaskRequest extends ApiRequest
             'due_time' => ['nullable', 'date_format:H:i'],
             'repeat_frequency' => ['nullable', Rule::enum(RepeatFrequency::class)],
             'repeat_interval' => ['nullable', 'integer', 'between:1,99'],
+            'repeat_days' => ['nullable', 'list', 'min:1', 'max:7'],
+            'repeat_days.*' => ['integer:strict', 'between:1,7', 'distinct'],
             'priority' => ['nullable', 'integer', 'between:0,3'],
             'position' => ['required', 'numeric', new Position],
             'assignee_ids' => ['sometimes', 'required', 'array', 'max:2'],

@@ -39,6 +39,7 @@ describe('store', function () {
                 'due_time' => '17:00',
                 'repeat_frequency' => null,
                 'repeat_interval' => null,
+                'repeat_days' => null,
                 'priority' => 0,
                 'position' => 2048,
                 'assignee_ids' => [$partner->id],
@@ -1034,4 +1035,252 @@ describe('repeat', function () {
         $response->assertCreated()->assertJsonPath('next_task.due_date', '2026-10-21');
         expect($response->json('data.next_task_id'))->toBe($response->json('next_task.id'));
     });
+});
+
+describe('repeat days', function () {
+    it('stores the weekdays of a new weekly task in ascending order', function () {
+        $user = actingAsApiUser();
+        $id = newId();
+
+        $response = $this->putJson("/api/v1/tasks/{$id}", [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Olahraga',
+            'due_date' => '2026-11-03',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 2,
+            'repeat_days' => [5, 2],
+            'position' => 1024,
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.repeat_frequency', 'weekly')
+            ->assertJsonPath('data.repeat_interval', 2)
+            ->assertJsonPath('data.repeat_days', [2, 5]);
+        expect(Task::query()->findOrFail($id)->repeat_days)->toBe([2, 5]);
+    });
+
+    it('returns 422 for weekdays that are not a list of distinct ISO weekdays', function (mixed $days, string $field) {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Olahraga',
+            'due_date' => '2026-11-03',
+            'repeat_frequency' => 'weekly',
+            'repeat_days' => $days,
+            'position' => 1024,
+        ]);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors([$field]);
+        $this->assertDatabaseMissing('tasks', ['title' => 'Olahraga']);
+    })->with([
+        'an empty list' => [[], 'repeat_days'],
+        'more than seven days' => [[1, 2, 3, 4, 5, 6, 7, 1], 'repeat_days'],
+        'a list with keys' => [['senin' => 1], 'repeat_days'],
+        'a single day as text' => ['2', 'repeat_days'],
+        'day 0' => [[0], 'repeat_days.0'],
+        'day 8' => [[8], 'repeat_days.0'],
+        'the same day twice' => [[2, 2], 'repeat_days.0'],
+        'a day as text' => [['2'], 'repeat_days.0'],
+        'a day with a fraction' => [[2.5], 'repeat_days.0'],
+        'a day as true' => [[true], 'repeat_days.0'],
+    ]);
+
+    it('returns 422 for weekdays on a new task that does not repeat weekly', function (array $rule) {
+        $user = actingAsApiUser();
+
+        $response = $this->putJson('/api/v1/tasks/'.newId(), [
+            'task_list_id' => $user->personalSpace()->taskLists()->sole()->id,
+            'title' => 'Olahraga',
+            'due_date' => '2026-11-03',
+            'repeat_days' => [2, 5],
+            'position' => 1024,
+            ...$rule,
+        ]);
+
+        $response->assertUnprocessable()->assertJsonPath('errors.repeat_days.0', 'Hari pengulangan hanya untuk tugas mingguan.');
+        $this->assertDatabaseMissing('tasks', ['title' => 'Olahraga']);
+    })->with([
+        'daily' => [['repeat_frequency' => 'daily']],
+        'monthly' => [['repeat_frequency' => 'monthly']],
+        'not repeating' => [[]],
+    ]);
+
+    it('creates the next occurrence on the next chosen weekday, in the weeks of the series, with the same weekdays', function () {
+        $this->travelTo('2026-11-03 00:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-03',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 2,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-11-03',
+        ]);
+
+        $friday = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-11-03T05:00:00Z'])->json('next_task');
+        $tuesday = $this->patchJson("/api/v1/tasks/{$friday['id']}", ['completed_at' => '2026-11-06T05:00:00Z'])->json('next_task');
+
+        expect($friday['due_date'])->toBe('2026-11-06')
+            ->and($friday['repeat_days'])->toBe([2, 5])
+            ->and($tuesday['due_date'])->toBe('2026-11-17')
+            ->and(Task::query()->findOrFail($tuesday['id'])->repeat_days)->toBe([2, 5]);
+    });
+
+    it('falls on the next chosen weekday when the due date is not one of them', function () {
+        $this->travelTo('2026-11-04 00:00:00');
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-04',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-11-04',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['completed_at' => '2026-11-04T05:00:00Z']);
+
+        $response->assertOk()->assertJsonPath('next_task.due_date', '2026-11-06');
+    });
+
+    it('makes the due date the new anchor when the weekdays change', function (?array $days) {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 2,
+            'repeat_days' => [2],
+            'repeat_anchor' => '2026-10-27',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_days' => $days]);
+
+        $response->assertOk()->assertJsonPath('data.repeat_days', $days);
+        expect($task->fresh()->repeat_anchor)->toBe('2026-11-10');
+    })->with([
+        'other weekdays' => [[2, 5]],
+        'back to the weekday of the due date' => [null],
+    ]);
+
+    it('keeps the anchor when the same weekdays are sent again in another order', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 2,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-10-27',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_days' => [5, 2]]);
+
+        $response->assertOk()->assertJsonPath('data.repeat_days', [2, 5]);
+        expect($task->fresh()->repeat_anchor)->toBe('2026-10-27');
+    });
+
+    it('keeps the weekdays when other fields of a weekly task change', function (array $changes) {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-11-10',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", $changes);
+
+        $response->assertOk()->assertJsonPath('data.repeat_days', [2, 5]);
+        expect($task->fresh()->repeat_days)->toBe([2, 5]);
+    })->with([
+        'the title' => [['title' => 'Lari pagi']],
+        'the frequency sent again with a new interval' => [['repeat_frequency' => 'weekly', 'repeat_interval' => 3]],
+        'the due date' => [['due_date' => '2026-11-13']],
+    ]);
+
+    it('clears the weekdays when the task stops repeating weekly', function (array $changes, ?string $frequency) {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-11-10',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", $changes);
+
+        $response->assertOk()
+            ->assertJsonPath('data.repeat_frequency', $frequency)
+            ->assertJsonPath('data.repeat_days', null);
+        expect($task->fresh()->repeat_days)->toBeNull();
+    })->with([
+        'another frequency' => [['repeat_frequency' => 'daily'], 'daily'],
+        'the rule cleared' => [['repeat_frequency' => null], null],
+        'the due date cleared' => [['due_date' => null], null],
+    ]);
+
+    it('returns 422 for changed weekdays that are not a list of distinct ISO weekdays', function (mixed $days, string $field) {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'weekly',
+            'repeat_interval' => 1,
+            'repeat_days' => [2, 5],
+            'repeat_anchor' => '2026-11-10',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_days' => $days]);
+
+        $response->assertUnprocessable()->assertJsonValidationErrors([$field]);
+        expect($task->fresh()->repeat_days)->toBe([2, 5]);
+    })->with([
+        'an empty list' => [[], 'repeat_days'],
+        'more than seven days' => [[1, 2, 3, 4, 5, 6, 7, 1], 'repeat_days'],
+        'a list with keys' => [['senin' => 1], 'repeat_days'],
+        'day 8' => [[8], 'repeat_days.0'],
+        'the same day twice' => [[2, 2], 'repeat_days.0'],
+        'a day as text' => [['2'], 'repeat_days.0'],
+    ]);
+
+    it('sets the weekdays together with the switch to weekly', function () {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            'repeat_frequency' => 'daily',
+            'repeat_interval' => 1,
+            'repeat_anchor' => '2026-11-10',
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", ['repeat_frequency' => 'weekly', 'repeat_days' => [3, 1]]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.repeat_frequency', 'weekly')
+            ->assertJsonPath('data.repeat_days', [1, 3]);
+    });
+
+    it('returns 422 with the stored task when weekdays are set on a task that does not repeat weekly', function (array $stored, array $changes) {
+        $user = actingAsApiUser();
+        $task = Task::factory()->for($user->personalSpace()->taskLists()->sole())->create([
+            'due_date' => '2026-11-10',
+            ...$stored,
+        ]);
+
+        $response = $this->patchJson("/api/v1/tasks/{$task->id}", $changes);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('errors.repeat_days.0', 'Hari pengulangan hanya untuk tugas mingguan.')
+            ->assertJsonPath('current.repeat_days', $stored['repeat_days'] ?? null);
+        expect($task->fresh()->repeat_days)->toBe($stored['repeat_days'] ?? null);
+    })->with([
+        'a daily task' => [['repeat_frequency' => 'daily', 'repeat_interval' => 1, 'repeat_anchor' => '2026-11-10'], ['repeat_days' => [2]]],
+        'a task that does not repeat' => [[], ['repeat_days' => [2]]],
+        'a weekly task switched to monthly' => [
+            ['repeat_frequency' => 'weekly', 'repeat_interval' => 1, 'repeat_days' => [2, 5], 'repeat_anchor' => '2026-11-10'],
+            ['repeat_frequency' => 'monthly', 'repeat_days' => [2]],
+        ],
+        'a weekly task whose due date is cleared' => [
+            ['repeat_frequency' => 'weekly', 'repeat_interval' => 1, 'repeat_days' => [2, 5], 'repeat_anchor' => '2026-11-10'],
+            ['due_date' => null, 'repeat_days' => [2]],
+        ],
+    ]);
 });

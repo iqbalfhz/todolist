@@ -26,6 +26,8 @@ class UpdateTaskRequest extends ApiRequest
             'due_time' => ['sometimes', 'nullable', 'date_format:H:i'],
             'repeat_frequency' => ['sometimes', 'nullable', Rule::enum(RepeatFrequency::class)],
             'repeat_interval' => ['sometimes', 'nullable', 'integer', 'between:1,99'],
+            'repeat_days' => ['sometimes', 'nullable', 'list', 'min:1', 'max:7'],
+            'repeat_days.*' => ['integer:strict', 'between:1,7', 'distinct'],
             'priority' => ['sometimes', 'required', 'integer', 'between:0,3'],
             'position' => ['sometimes', 'required', 'numeric', new Position],
             'assignee_ids' => ['sometimes', 'required', 'array', 'max:2'],
