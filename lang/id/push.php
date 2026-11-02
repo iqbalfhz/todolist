@@ -13,8 +13,9 @@ return [
     | special_date_reminder, trip_reminder, and savings_reminder texts on
     | 22 October 2026, the memory_created text on 23 October 2026, the
     | savings_withdrawal, comment_created, and reaction_created texts on
-    | 29 October 2026, and the partner_left texts and the partner_joined text
-    | for a restored space on 30 October 2026.
+    | 29 October 2026, the partner_left texts and the partner_joined text for
+    | a restored space on 30 October 2026, and the memory_flashback texts on
+    | 2 November 2026.
     |
     */
 
@@ -74,6 +75,12 @@ return [
 
     'memory_created' => [
         'body' => ':name menyimpan kenangan baru',
+    ],
+
+    'memory_flashback' => [
+        'one_year' => 'Hari ini setahun lalu',
+        'years' => 'Hari ini :years tahun lalu',
+        'with_others' => ':title dan :count kenangan lain',
     ],
 
     'comment_created' => [

@@ -41,7 +41,7 @@ class SendSpecialDateReminders
             $today = $this->window->today($space, $now);
 
             foreach (self::DAYS_BEFORE as $daysBefore => $text) {
-                $monthDays = $this->monthDays($today->addDays($daysBefore));
+                $monthDays = $this->window->monthDays($today->addDays($daysBefore));
 
                 $sent += $this->remindOfSpecialDates($space, $today, $monthDays, $text);
 
@@ -52,20 +52,6 @@ class SendSpecialDateReminders
         });
 
         return $sent;
-    }
-
-    /**
-     * Get the month and day that fall on the given day, as stored after the year.
-     *
-     * 29 February is remembered on 28 February in a year that is not a leap year.
-     *
-     * @return list<string>
-     */
-    private function monthDays(CarbonImmutable $day): array
-    {
-        $monthDay = $day->format('m-d');
-
-        return $monthDay === '02-28' && ! $day->isLeapYear() ? [$monthDay, '02-29'] : [$monthDay];
     }
 
     /**

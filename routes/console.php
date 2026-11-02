@@ -3,6 +3,7 @@
 use App\Actions\PurgeClosedSpaces;
 use App\Actions\PurgeDeletedRecords;
 use App\Actions\SendDueReminders;
+use App\Actions\SendMemoryFlashbacks;
 use App\Actions\SendSavingsReminders;
 use App\Actions\SendSpecialDateReminders;
 use App\Actions\SendTripReminders;
@@ -51,6 +52,16 @@ Artisan::command('savings:remind', function (SendSavingsReminders $sendSavingsRe
 
     $this->info("Savings reminders sent: {$sent}.");
 })->purpose('Send the deposit reminders of the savings goals whose day is today')
+    ->everyMinute()
+    ->withoutOverlapping(5);
+
+// Runs every minute, but sends only in spaces where it is between 08.00 and
+// 08.30, and only once per space per day.
+Artisan::command('memories:remind', function (SendMemoryFlashbacks $sendMemoryFlashbacks) {
+    $sent = $sendMemoryFlashbacks->handle();
+
+    $this->info("Memory flashbacks sent: {$sent}.");
+})->purpose('Send the push reminders of the memories made on this day in earlier years')
     ->everyMinute()
     ->withoutOverlapping(5);
 

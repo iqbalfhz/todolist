@@ -39,6 +39,7 @@ describe('show', function () {
                     'special_dates' => true,
                     'trip_reminders' => true,
                     'savings_reminders' => true,
+                    'memory_flashbacks' => true,
                 ],
                 'avatar_url' => null,
                 'avatar_version' => 0,
@@ -126,6 +127,7 @@ describe('update', function () {
             'special_dates' => true,
             'trip_reminders' => true,
             'savings_reminders' => true,
+            'memory_flashbacks' => true,
         ]);
     });
 
@@ -135,7 +137,7 @@ describe('update', function () {
         $response = $this->patchJson('/api/v1/me', ['notification_prefs' => [$preference => false]]);
 
         $response->assertOk()->assertJsonPath("data.notification_prefs.{$preference}", false);
-    })->with(['special_dates', 'trip_reminders', 'savings_reminders']);
+    })->with(['special_dates', 'trip_reminders', 'savings_reminders', 'memory_flashbacks']);
 
     it('ignores read-only and unknown fields', function () {
         $user = actingAsApiUser();

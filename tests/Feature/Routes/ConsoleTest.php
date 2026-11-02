@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\SendPushNotification;
+use App\Models\Memory;
 use App\Models\SavingsGoal;
 use App\Models\SpecialDate;
 use App\Models\Task;
@@ -91,6 +92,27 @@ it('sends the deposit reminders that are due and reports how many', function () 
 it('runs savings:remind every minute without overlapping', function () {
     $event = collect(app(Schedule::class)->events())
         ->sole(fn (Event $event) => str_contains($event->command, 'savings:remind'));
+
+    expect($event->expression)->toBe('* * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue()
+        ->and($event->expiresAt)->toBe(5);
+});
+
+it('sends the memory flashbacks that are due and reports how many', function () {
+    Queue::fake([SendPushNotification::class]);
+    Memory::factory()->create(['visited_on' => '2025-11-02']);
+    $this->travelTo('2026-11-02 01:00:00');
+
+    $this->artisan('memories:remind')
+        ->expectsOutput('Memory flashbacks sent: 1.')
+        ->assertSuccessful();
+
+    Queue::assertPushedTimes(SendPushNotification::class, 1);
+});
+
+it('runs memories:remind every minute without overlapping', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->sole(fn (Event $event) => str_contains($event->command, 'memories:remind'));
 
     expect($event->expression)->toBe('* * * * *')
         ->and($event->withoutOverlapping)->toBeTrue()

@@ -116,6 +116,7 @@ return [
         'notification_prefs.special_dates' => 'pengingat tanggal penting',
         'notification_prefs.trip_reminders' => 'pengingat perjalanan',
         'notification_prefs.savings_reminders' => 'pengingat setor tabungan',
+        'notification_prefs.memory_flashbacks' => 'kenangan hari ini',
         'photo' => 'foto',
         'token' => 'token',
         'fcm_token' => 'token FCM',

@@ -10,7 +10,8 @@ use Illuminate\Support\LazyCollection;
 
 /**
  * The reminders that go out once a day at 08.00 in the timezone of a space:
- * special dates, member birthdays, and trips.
+ * special dates, member birthdays, trips, deposits, and memories from the
+ * same day in earlier years.
  */
 class DailyReminderWindow
 {
@@ -40,6 +41,20 @@ class DailyReminderWindow
     public function today(Space $space, CarbonImmutable $now): CarbonImmutable
     {
         return $now->setTimezone($space->timezone)->startOfDay();
+    }
+
+    /**
+     * Get the months and days, as MM-DD, whose yearly reminders fall on the given day.
+     *
+     * 29 February is remembered on 28 February in a year that is not a leap year.
+     *
+     * @return list<string>
+     */
+    public function monthDays(CarbonImmutable $day): array
+    {
+        $monthDay = $day->format('m-d');
+
+        return $monthDay === '02-28' && ! $day->isLeapYear() ? [$monthDay, '02-29'] : [$monthDay];
     }
 
     /**

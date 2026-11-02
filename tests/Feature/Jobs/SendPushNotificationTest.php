@@ -137,6 +137,11 @@ it('uses the channel, priority, tag, and visibility of each push type', function
         ['memoryId' => 'id-kenangan'],
         ['priority' => 'normal', 'notification' => ['channel_id' => 'aktivitas', 'tag' => 'memory-id-kenangan']],
     ],
+    'a memory from this day in an earlier year' => [
+        PushType::MemoryFlashback,
+        ['memoryId' => 'id-kenangan'],
+        ['priority' => 'high', 'notification' => ['channel_id' => 'pengingat', 'tag' => 'memory-id-kenangan']],
+    ],
     'a comment on a task' => [
         PushType::CommentCreated,
         ['subjectType' => 'task', 'subjectId' => 'id-tugas'],
@@ -260,6 +265,7 @@ it('sends nothing when the recipient turned that kind of push off', function (Pu
     'trip reminders' => [PushType::TripReminder, 'trip_reminders'],
     'deposit reminders' => [PushType::SavingsReminder, 'savings_reminders'],
     'new memories' => [PushType::MemoryCreated, 'partner_activity'],
+    'memories from this day' => [PushType::MemoryFlashback, 'memory_flashbacks'],
     'comments' => [PushType::CommentCreated, 'partner_activity'],
     'reactions' => [PushType::ReactionCreated, 'partner_activity'],
 ]);

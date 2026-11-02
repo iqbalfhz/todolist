@@ -16,6 +16,7 @@ enum PushType: string
     case TripReminder = 'trip_reminder';
     case SavingsReminder = 'savings_reminder';
     case MemoryCreated = 'memory_created';
+    case MemoryFlashback = 'memory_flashback';
     case CommentCreated = 'comment_created';
     case ReactionCreated = 'reaction_created';
 
@@ -33,6 +34,7 @@ enum PushType: string
             self::SpecialDateReminder => 'special_dates',
             self::TripReminder => 'trip_reminders',
             self::SavingsReminder => 'savings_reminders',
+            self::MemoryFlashback => 'memory_flashbacks',
         };
     }
 
@@ -41,7 +43,7 @@ enum PushType: string
      */
     public function channel(): string
     {
-        return in_array($this, [self::TaskReminder, self::SpecialDateReminder, self::TripReminder, self::SavingsReminder], true) ? 'pengingat' : 'aktivitas';
+        return in_array($this, [self::TaskReminder, self::SpecialDateReminder, self::TripReminder, self::SavingsReminder, self::MemoryFlashback], true) ? 'pengingat' : 'aktivitas';
     }
 
     /**
@@ -50,7 +52,7 @@ enum PushType: string
     public function priority(): string
     {
         return match ($this) {
-            self::TaskReminder, self::TaskAssigned, self::SpecialDateReminder, self::TripReminder, self::SavingsReminder => 'high',
+            self::TaskReminder, self::TaskAssigned, self::SpecialDateReminder, self::TripReminder, self::SavingsReminder, self::MemoryFlashback => 'high',
             default => 'normal',
         };
     }
