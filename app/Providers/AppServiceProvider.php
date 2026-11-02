@@ -82,5 +82,23 @@ class AppServiceProvider extends ServiceProvider
 
         // One export reads every row the account can see.
         RateLimiter::for('data-export', fn (Request $request) => Limit::perHour(5)->by($request->user()?->id ?: $request->ip()));
+
+        // Per email, so one inbox is not flooded, and per IP, so one sender cannot try many inboxes.
+        // The limit runs before validation, so only an email sent as text reaches the string functions.
+        RateLimiter::for('password-forgot', function (Request $request): array {
+            $email = $request->input('email');
+
+            return [
+                Limit::perMinutes(15, 3)->by('email:'.Str::transliterate(Str::lower(is_string($email) ? $email : ''))),
+                Limit::perHour(10)->by('ip:'.$request->ip()),
+            ];
+        });
+
+        // Each code also ends after five wrong tries, so codes cannot be guessed here.
+        RateLimiter::for('password-reset', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
+
+        RateLimiter::for('email-verification', fn (Request $request) => Limit::perMinutes(15, 3)->by($request->user()?->id ?: $request->ip()));
+
+        RateLimiter::for('email-verification-confirm', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
     }
 }

@@ -43,6 +43,7 @@
         <li><strong>Cloudflare</strong> meneruskan semua koneksi ke server, menyimpan foto profil dan foto kenangan, dan menyimpan cadangan database.</li>
         <li><strong>Google</strong> mengirim notifikasi lewat Firebase Cloud Messaging, termasuk isinya seperti judul tugas atau nominal setoran. Kalau kamu masuk dengan Google, Google juga mengirimkan nama, email, dan ID akun Google-mu kepada kami.</li>
         <li><strong>OpenStreetMap</strong> menyediakan peta dan pencarian tempat. Peta dimuat langsung oleh HP-mu, jadi server OpenStreetMap menerima alamat IP HP dan bagian peta yang dibuka. Pencarian tempat lewat server kami, dan hanya kata kuncinya yang dikirim.</li>
+        <li><strong>Resend</strong> mengirim email berisi kode verifikasi dan kode atur ulang kata sandi, jadi menerima alamat emailmu dan isi email itu.</li>
         <li><strong>Penyedia server</strong> tempat aplikasi dan database berjalan.</li>
     </ul>
     <p>Penyedia ini bisa memproses data di luar Indonesia. Kami hanya memberi mereka data yang dibutuhkan untuk tugasnya.</p>
@@ -51,6 +52,7 @@
     <ul>
         <li>Data akun dan isinya disimpan selama akunmu ada.</li>
         <li>Yang kamu hapus di app ditandai terhapus dan disimpan 30 hari sebagai catatan sinkron, supaya HP lain ikut menghapusnya, lalu dihapus permanen. Foto yang dihapus langsung dibuang dari penyimpanan.</li>
+        <li>Kode verifikasi dan kode atur ulang kata sandi disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa.</li>
         <li>Ruang Bersama yang ditutup karena salah satu keluar disimpan 30 hari, supaya kembali utuh kalau kalian bergabung lagi, lalu dihapus permanen.</li>
         <li>Saat akun dihapus, semua datanya langsung dihapus permanen. Salinan di cadangan database ikut hilang paling lama 30 hari kemudian.</li>
         <li>Catatan teknis seperti alamat IP hanya disimpan selama dibutuhkan untuk keamanan dan memperbaiki gangguan. Notifikasi yang gagal terkirim, beserta isinya, dihapus paling lama 30 hari kemudian.</li>

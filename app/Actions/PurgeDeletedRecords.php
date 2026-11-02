@@ -13,6 +13,7 @@ use App\Models\SpaceInvitation;
 use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\Trip;
+use App\Models\VerificationCode;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -60,7 +61,7 @@ class PurgeDeletedRecords
      * Space::CONTENT_MODELS lists a model before the one its rows belong to,
      * so a row and its parent that were deleted together go in the same run.
      *
-     * @return array{records: int, reminders: int, invitations: int, cache: int}
+     * @return array{records: int, reminders: int, invitations: int, codes: int, cache: int}
      */
     public function handle(): array
     {
@@ -70,6 +71,8 @@ class PurgeDeletedRecords
             'records' => collect(Space::CONTENT_MODELS)->sum(fn (string $model): int => $this->purge($model, $cutoff)),
             'reminders' => DailyReminder::query()->where('created_at', '<', $cutoff)->delete(),
             'invitations' => SpaceInvitation::query()->where('expires_at', '<', $cutoff)->delete(),
+            // An unused code is kept a day past its expiry at most.
+            'codes' => VerificationCode::query()->where('expires_at', '<', now()->subDay())->delete(),
             'cache' => $this->deleteExpiredCache(),
         ];
     }

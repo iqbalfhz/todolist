@@ -72,7 +72,8 @@ class SignInWithGoogle
     /**
      * Link the account registered with the same email to the Google account.
      *
-     * The password of that account keeps working.
+     * The password of that account keeps working, and the email counts as
+     * verified, because Google verified it.
      *
      * @param  array{sub: string, email: string, name: string|null}  $identity
      */
@@ -82,6 +83,7 @@ class SignInWithGoogle
 
         if ($user !== null) {
             $user->google_id = $identity['sub'];
+            $user->email_verified_at ??= now();
             $user->save();
         }
 

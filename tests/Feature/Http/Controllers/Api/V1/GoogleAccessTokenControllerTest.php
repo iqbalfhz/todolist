@@ -75,6 +75,34 @@ describe('store', function () {
         ])->assertOk();
     });
 
+    it('marks the email of the account it links verified, since Google verified it', function () {
+        fakeGoogleKeys();
+        $this->travelTo('2026-11-02 10:00:00');
+        $user = User::factory()->unverified()->withPersonalSpace()->create(['email' => 'chika@gmail.com']);
+
+        $response = $this->postJson('/api/v1/auth/google', [
+            'id_token' => googleIdToken(),
+            'device_name' => 'Redmi Note 14 Pro+ 5G',
+        ]);
+
+        $response->assertOk()->assertJsonPath('data.user.email_verified_at', '2026-11-02T10:00:00.000000Z');
+        expect($user->fresh()->email_verified_at)->not->toBeNull();
+    });
+
+    it('keeps the time an email was verified when it links the account', function () {
+        fakeGoogleKeys();
+        $this->travelTo('2026-10-11 08:00:00');
+        $user = User::factory()->withPersonalSpace()->create(['email' => 'chika@gmail.com']);
+        $this->travelTo('2026-11-02 10:00:00');
+
+        $this->postJson('/api/v1/auth/google', [
+            'id_token' => googleIdToken(),
+            'device_name' => 'Redmi Note 14 Pro+ 5G',
+        ])->assertOk();
+
+        expect($user->fresh()->email_verified_at->format('Y-m-d H:i:s'))->toBe('2026-10-11 08:00:00');
+    });
+
     it('prefers the account linked to the Google account over another with the same email', function () {
         fakeGoogleKeys();
         $linked = User::factory()->withPersonalSpace()->create(['email' => 'lama@contoh.test', 'google_id' => '110248495921238986420']);

@@ -87,6 +87,7 @@ return [
         'position' => ':Attribute harus berupa angka antara -10^15 dan 10^15.',
         'discussion_needs_shared_space' => 'Komentar dan reaksi hanya ada di Ruang Bersama.',
         'personal_space_cannot_be_closed' => 'Ruang Pribadi tidak bisa dihapus.',
+        'verification_code' => 'Kode salah atau sudah tidak berlaku. Minta kode baru kalau perlu.',
     ],
 
     /*

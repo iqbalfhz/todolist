@@ -12,6 +12,7 @@ use App\Models\SpaceInvitation;
 use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\User;
+use App\Models\VerificationCode;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -27,6 +28,7 @@ describe('show', function () {
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'email_verified_at' => '2026-10-08T10:15:30.123456Z',
                 'color' => 'mawar',
                 'timezone' => 'Asia/Jakarta',
                 'locale' => 'id',
@@ -253,10 +255,12 @@ describe('destroy', function () {
         DeviceToken::factory()->for($user)->create();
         $user->createToken('hp-lain');
         $invitation = SpaceInvitation::factory()->for($user, 'creator')->create();
+        $code = VerificationCode::factory()->for($user)->create();
 
         $response = $this->deleteJson('/api/v1/me', ['password' => 'password']);
 
         $response->assertNoContent();
+        $this->assertModelMissing($code);
         $this->assertModelMissing($user);
         $this->assertModelMissing($personalSpace);
         $this->assertModelMissing($task);

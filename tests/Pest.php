@@ -1,12 +1,15 @@
 <?php
 
 use App\Actions\VerifyGoogleIdToken;
+use App\Enums\VerificationPurpose;
+use App\Mail\VerificationCodeMail;
 use App\Models\Space;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Kreait\Firebase\Contract\Messaging;
@@ -222,4 +225,24 @@ function fakeGoogleKeys(array $keyIds = ['google-key-1'], int $maxAge = 21600): 
         200,
         ['Cache-Control' => "public, max-age={$maxAge}, must-revalidate, no-transform"],
     )]);
+}
+
+/**
+ * Get the code in the last email queued to the address for the purpose, or null when none was.
+ *
+ * Needs Mail::fake().
+ */
+function sentVerificationCode(string $email, VerificationPurpose $purpose): ?string
+{
+    $code = null;
+
+    Mail::assertQueued(VerificationCodeMail::class, function (VerificationCodeMail $mail) use ($email, $purpose, &$code): bool {
+        if ($mail->hasTo($email) && $mail->purpose === $purpose) {
+            $code = $mail->code;
+        }
+
+        return true;
+    });
+
+    return $code;
 }

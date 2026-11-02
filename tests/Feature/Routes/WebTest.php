@@ -42,6 +42,8 @@ it('shows the privacy policy with its controller, providers, retention, and righ
         ->assertSee('OpenStreetMap')
         ->assertSee('disimpan 30 hari sebagai catatan sinkron, supaya HP lain ikut menghapusnya, lalu dihapus permanen')
         ->assertSee('Notifikasi yang gagal terkirim, beserta isinya, dihapus paling lama 30 hari kemudian.')
+        ->assertSee('<strong>Resend</strong> mengirim email berisi kode verifikasi dan kode atur ulang kata sandi, jadi menerima alamat emailmu dan isi email itu.', false)
+        ->assertSee('Kode verifikasi dan kode atur ulang kata sandi disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa.')
         ->assertSee('Pengaturan &gt; Ekspor data', false)
         ->assertSee('untuk pengguna berusia 18 tahun ke atas');
 });

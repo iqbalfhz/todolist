@@ -15,6 +15,7 @@ use App\Models\Task;
 use App\Models\TaskList;
 use App\Models\Trip;
 use App\Models\User;
+use App\Models\VerificationCode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -183,6 +184,20 @@ it('deletes the reminders sent and the invitations that expired more than 30 day
     $this->assertModelExists($recentReminder);
     $this->assertModelMissing($oldInvitation);
     $this->assertModelExists($recentInvitation);
+});
+
+it('deletes the codes that expired more than a day ago', function () {
+    $this->travelTo('2026-11-01 09:59:59');
+    $old = VerificationCode::factory()->create(['expires_at' => now()]);
+    $this->travelTo('2026-11-01 10:00:00');
+    $recent = VerificationCode::factory()->create(['expires_at' => now()]);
+    $this->travelTo('2026-11-02 10:00:00');
+
+    $purged = app(PurgeDeletedRecords::class)->handle();
+
+    expect($purged['codes'])->toBe(1);
+    $this->assertModelMissing($old);
+    $this->assertModelExists($recent);
 });
 
 it('deletes the cache entries that already expired when the cache lives in the database', function () {

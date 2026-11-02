@@ -1,7 +1,10 @@
 <?php
 
 use App\Enums\SpaceType;
+use App\Enums\VerificationPurpose;
 use App\Models\User;
+use App\Models\VerificationCode;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * A registration payload that passes validation.
@@ -32,6 +35,19 @@ it('registers an account and returns a token with the user', function () {
         ->assertJsonPath('data.user.default_currency', 'IDR');
     $this->assertDatabaseHas('users', ['email' => 'iqbal@contoh.test', 'timezone' => 'Asia/Makassar']);
     $this->assertDatabaseHas('personal_access_tokens', ['name' => 'Redmi Note 13']);
+});
+
+it('emails a code to verify the email of the new account, which starts unverified', function () {
+    Mail::fake();
+
+    $response = $this->postJson('/api/v1/auth/register', registrationPayload(['email' => 'Iqbal@Contoh.test']));
+
+    $response->assertCreated()->assertJsonPath('data.user.email_verified_at', null);
+    $code = sentVerificationCode('iqbal@contoh.test', VerificationPurpose::EmailVerification);
+    expect(VerificationCode::query()->sole())
+        ->user_id->toBe($response->json('data.user.id'))
+        ->purpose->toBe(VerificationPurpose::EmailVerification)
+        ->code_hash->toBe(VerificationCode::hash($code));
 });
 
 it('issues a token that authenticates the new account', function () {

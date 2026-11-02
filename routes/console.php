@@ -79,9 +79,9 @@ Artisan::command('spaces:purge', function (PurgeClosedSpaces $purgeClosedSpaces)
 // most a day after its 30 days run out. A run that is cut short leaves the
 // rest for the next day.
 Artisan::command('records:purge', function (PurgeDeletedRecords $purgeDeletedRecords) {
-    ['records' => $records, 'reminders' => $reminders, 'invitations' => $invitations, 'cache' => $cache] = $purgeDeletedRecords->handle();
+    ['records' => $records, 'reminders' => $reminders, 'invitations' => $invitations, 'codes' => $codes, 'cache' => $cache] = $purgeDeletedRecords->handle();
 
-    $this->info("Deleted records purged: {$records}. Old reminders: {$reminders}. Old invitations: {$invitations}. Expired cache entries: {$cache}.");
+    $this->info("Deleted records purged: {$records}. Old reminders: {$reminders}. Old invitations: {$invitations}. Expired codes: {$codes}. Expired cache entries: {$cache}.");
 })->purpose('Delete for good the records deleted more than 30 days ago, and the old records of the server')
     ->dailyAt('00:30')
     ->withoutOverlapping(60);

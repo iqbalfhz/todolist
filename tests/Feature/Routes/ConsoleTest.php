@@ -148,7 +148,7 @@ it('purges the records deleted more than 30 days ago and reports what it removed
     $this->travelTo('2026-11-05 00:00:00');
 
     $this->artisan('records:purge')
-        ->expectsOutput('Deleted records purged: 1. Old reminders: 0. Old invitations: 0. Expired cache entries: 0.')
+        ->expectsOutput('Deleted records purged: 1. Old reminders: 0. Old invitations: 0. Expired codes: 0. Expired cache entries: 0.')
         ->assertSuccessful();
 
     $this->assertModelMissing($task);
