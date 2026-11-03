@@ -27,7 +27,7 @@ class ResetPassword
 
         // A mismatch returns rather than throws, so the try it used is saved.
         return DB::transaction(function () use ($user, $code, $password, $deviceName): ?string {
-            if (! $this->consumeVerificationCode->handle($user, VerificationPurpose::PasswordReset, $code)) {
+            if ($this->consumeVerificationCode->handle($user, VerificationPurpose::PasswordReset, $code) === null) {
                 return null;
             }
 

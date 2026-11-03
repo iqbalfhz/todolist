@@ -25,7 +25,7 @@ class ConfirmEmail
 
         // A mismatch returns rather than throws, so the try it used is saved.
         return DB::transaction(function () use ($user, $code): bool {
-            if (! $this->consumeVerificationCode->handle($user, VerificationPurpose::EmailVerification, $code)) {
+            if ($this->consumeVerificationCode->handle($user, VerificationPurpose::EmailVerification, $code) === null) {
                 return false;
             }
 

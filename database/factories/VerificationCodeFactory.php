@@ -44,6 +44,17 @@ class VerificationCodeFactory extends Factory
     }
 
     /**
+     * Indicate that the code is for changing the email to the given address.
+     */
+    public function forEmailChange(string $newEmail = 'baru@email.com'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'purpose' => VerificationPurpose::EmailChange,
+            'new_email' => $newEmail,
+        ]);
+    }
+
+    /**
      * Indicate that the code is past its expiry time.
      */
     public function expired(): static

@@ -9,4 +9,5 @@ enum VerificationPurpose: string
 {
     case PasswordReset = 'password_reset';
     case EmailVerification = 'email_verification';
+    case EmailChange = 'email_change';
 }

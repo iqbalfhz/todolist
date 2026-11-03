@@ -15,10 +15,12 @@ class ConsumeVerificationCode
      * A wrong code counts as a try, and the last try allowed removes the
      * code, as its expiry does. The caller must not roll back after a
      * mismatch, or the try would not count.
+     *
+     * @return VerificationCode|null The code that was used up, which still holds its new email, or null when the given one does not work.
      */
-    public function handle(User $user, VerificationPurpose $purpose, string $code): bool
+    public function handle(User $user, VerificationPurpose $purpose, string $code): ?VerificationCode
     {
-        return DB::transaction(function () use ($user, $purpose, $code): bool {
+        return DB::transaction(function () use ($user, $purpose, $code): ?VerificationCode {
             $verification = VerificationCode::query()
                 ->where('user_id', $user->id)
                 ->where('purpose', $purpose)
@@ -26,25 +28,25 @@ class ConsumeVerificationCode
                 ->first();
 
             if ($verification === null) {
-                return false;
+                return null;
             }
 
             if ($verification->expires_at->isPast()) {
                 $verification->delete();
 
-                return false;
+                return null;
             }
 
             if (! hash_equals($verification->code_hash, VerificationCode::hash($code))) {
                 $verification->attempts++;
                 $verification->attempts >= VerificationCode::MAX_ATTEMPTS ? $verification->delete() : $verification->save();
 
-                return false;
+                return null;
             }
 
             $verification->delete();
 
-            return true;
+            return $verification;
         });
     }
 }

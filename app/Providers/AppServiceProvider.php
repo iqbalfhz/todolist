@@ -100,5 +100,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('email-verification', fn (Request $request) => Limit::perMinutes(15, 3)->by($request->user()?->id ?: $request->ip()));
 
         RateLimiter::for('email-verification-confirm', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
+
+        // Both ask for the current password, so this keeps it from being guessed through them.
+        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinutes(15, 5)->by($request->user()?->id ?: $request->ip()));
+
+        RateLimiter::for('email-change', fn (Request $request) => Limit::perMinutes(15, 3)->by($request->user()?->id ?: $request->ip()));
+
+        RateLimiter::for('email-change-confirm', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
     }
 }

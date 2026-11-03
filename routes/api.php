@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AvatarController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\DataExportController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\EmailChangeController;
 use App\Http\Controllers\Api\V1\EmailVerificationController;
 use App\Http\Controllers\Api\V1\ExchangeRateController;
 use App\Http\Controllers\Api\V1\GoogleAccessTokenController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MemoryController;
 use App\Http\Controllers\Api\V1\MemoryPhotoController;
+use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PasswordResetCodeController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PlaceController;
@@ -66,6 +68,15 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/me/email-verification/confirm', [EmailVerificationController::class, 'update'])
             ->middleware('throttle:email-verification-confirm')
             ->name('me.email-verification.confirm');
+        Route::put('/me/password', [PasswordController::class, 'update'])
+            ->middleware('throttle:password-change')
+            ->name('me.password.update');
+        Route::post('/me/email-change', [EmailChangeController::class, 'store'])
+            ->middleware('throttle:email-change')
+            ->name('me.email-change.store');
+        Route::post('/me/email-change/confirm', [EmailChangeController::class, 'update'])
+            ->middleware('throttle:email-change-confirm')
+            ->name('me.email-change.confirm');
         Route::post('/me/avatar', [AvatarController::class, 'store'])->name('me.avatar.store');
         Route::delete('/me/avatar', [AvatarController::class, 'destroy'])->name('me.avatar.destroy');
 

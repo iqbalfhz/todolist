@@ -41,7 +41,12 @@ return [
 
     'account' => [
         'wrong_password' => 'Kata sandi salah.',
+        'wrong_current_password' => 'Kata sandi saat ini salah.',
         'other_google_account' => 'Pilih akun Google yang tersambung ke akun ini.',
+        'admin_email' => 'Email akun admin hanya bisa diganti lewat server.',
+        'admin_delete' => 'Akun admin hanya bisa dihapus lewat server.',
+        'same_email' => 'Email baru sama dengan email sekarang.',
+        'email_taken' => 'Email ini sudah dipakai akun lain.',
     ],
 
     'parent_deleted' => [
@@ -105,6 +110,7 @@ return [
         'name' => 'nama',
         'email' => 'email',
         'password' => 'kata sandi',
+        'current_password' => 'kata sandi saat ini',
         'device_name' => 'nama perangkat',
         'id_token' => 'token Google',
         'timezone' => 'zona waktu',

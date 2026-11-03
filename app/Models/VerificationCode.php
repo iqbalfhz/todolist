@@ -12,9 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A 6-digit code emailed to a user to reset the password or verify the email.
+ * A 6-digit code emailed to a user to reset the password, verify the email,
+ * or change the email, in which case the new address is kept with it.
  */
-#[Fillable(['user_id', 'purpose', 'code_hash', 'attempts', 'expires_at'])]
+#[Fillable(['user_id', 'purpose', 'new_email', 'code_hash', 'attempts', 'expires_at'])]
 class VerificationCode extends Model
 {
     /** @use HasFactory<VerificationCodeFactory> */

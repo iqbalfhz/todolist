@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\ConfirmAccountOwner;
 use App\Actions\DeleteAccount;
 use App\Actions\UpdateProfile;
-use App\Actions\VerifyGoogleIdToken;
-use App\Enums\ErrorCode;
-use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\UpdateMeRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class MeController extends Controller
 {
@@ -37,22 +35,23 @@ class MeController extends Controller
      * Delete the account and everything it holds, once its password or its Google account confirms it.
      *
      * Not sent from the offline queue: the phone wipes its own copy after 204.
+     * The admin account stays, since someone else could otherwise register
+     * its email and sign in to the admin panel.
      */
-    public function destroy(DeleteAccountRequest $request, VerifyGoogleIdToken $verifyGoogleIdToken, DeleteAccount $deleteAccount): Response
+    public function destroy(DeleteAccountRequest $request, ConfirmAccountOwner $confirmAccountOwner, DeleteAccount $deleteAccount): Response
     {
         $user = $request->user();
 
-        if ($request->filled('password')) {
-            if (! Hash::check($request->validated('password'), $user->password)) {
-                throw new ApiException(ErrorCode::InvalidCredentials, __('api.account.wrong_password'));
-            }
-        } else {
-            $googleAccount = $verifyGoogleIdToken->handle($request->validated('id_token'));
-
-            if ($user->google_id === null || $googleAccount['sub'] !== $user->google_id) {
-                throw new ApiException(ErrorCode::GoogleTokenInvalid, __('api.account.other_google_account'));
-            }
+        if ($user->isAdmin()) {
+            throw ValidationException::withMessages(['email' => __('api.account.admin_delete')]);
         }
+
+        $confirmAccountOwner->handle(
+            $user,
+            $request->filled('password') ? $request->validated('password') : null,
+            $request->validated('id_token'),
+            __('api.account.wrong_password'),
+        );
 
         $deleteAccount->handle($user);
 

@@ -29,6 +29,7 @@ describe('show', function () {
                 'name' => $user->name,
                 'email' => $user->email,
                 'email_verified_at' => '2026-10-08T10:15:30.123456Z',
+                'has_password' => true,
                 'color' => 'mawar',
                 'timezone' => 'Asia/Jakarta',
                 'locale' => 'id',
@@ -50,6 +51,15 @@ describe('show', function () {
                 'updated_at' => '2026-10-08T10:15:30.123456Z',
             ],
         ]);
+    });
+
+    it('tells an account from Google that it has no password yet', function () {
+        $user = User::factory()->withPersonalSpace()->create(['google_id' => '110248495921238986420', 'password' => null]);
+        $this->actingAs($user, 'sanctum');
+
+        $response = $this->getJson('/api/v1/me');
+
+        $response->assertOk()->assertJsonPath('data.has_password', false);
     });
 
     it('includes the invitation code that is still active', function () {
@@ -418,6 +428,19 @@ describe('destroy', function () {
         $response->assertUnprocessable()
             ->assertJsonPath('code', 'validation_failed')
             ->assertJsonPath('errors.password.0', 'Kata sandi wajib diisi bila tidak terdapat token Google.');
+        $this->assertModelExists($user);
+    });
+
+    it('returns 422 for the admin account and deletes nothing, so nobody can register its email for the admin panel', function () {
+        config(['admin.email' => 'admin@contoh.test']);
+        $user = User::factory()->withPersonalSpace()->create(['email' => 'Admin@contoh.test']);
+        $this->actingAs($user, 'sanctum');
+
+        $response = $this->deleteJson('/api/v1/me', ['password' => 'password']);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('code', 'validation_failed')
+            ->assertJsonPath('errors.email', ['Akun admin hanya bisa dihapus lewat server.']);
         $this->assertModelExists($user);
     });
 

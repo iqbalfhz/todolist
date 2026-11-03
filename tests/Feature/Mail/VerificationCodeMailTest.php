@@ -17,6 +17,12 @@ dataset('purposes', [
         'Terima kasih sudah memakai Denly Days. Untuk memastikan email ini benar milikmu, masukkan kode berikut di app:',
         'Kalau kamu tidak membuat akun Denly Days, abaikan saja email ini.',
     ],
+    'to change the email' => [
+        VerificationPurpose::EmailChange,
+        'Kode ganti email Denly Days',
+        'Kami menerima permintaan untuk mengganti email akun Denly Days kamu ke alamat ini. Masukkan kode berikut di app untuk menyelesaikannya:',
+        'Kalau kamu tidak meminta penggantian email, abaikan saja email ini. Email akunmu tidak berubah.',
+    ],
 ]);
 
 it('writes the plain text version in the words of the contract', function (VerificationPurpose $purpose, string $subject, string $intro, string $outro) {
