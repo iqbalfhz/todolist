@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\FetchExchangeRates;
 use App\Actions\PurgeClosedSpaces;
 use App\Actions\PurgeDeletedRecords;
 use App\Actions\SendDueReminders;
@@ -85,6 +86,19 @@ Artisan::command('records:purge', function (PurgeDeletedRecords $purgeDeletedRec
 })->purpose('Delete for good the records deleted more than 30 days ago, and the old records of the server')
     ->dailyAt('00:30')
     ->withoutOverlapping(60);
+
+// The ECB publishes new rates once a working day, around 16.00 in Frankfurt.
+// Running every hour picks them up within the hour, and a fetch that fails,
+// or misses its turn during a deploy, is made up an hour later.
+Artisan::command('exchange-rates:fetch', function (FetchExchangeRates $fetchExchangeRates) {
+    $exchangeRate = $fetchExchangeRates->handle();
+
+    $this->info($exchangeRate === null
+        ? 'Exchange rates not updated. The reason is in the log.'
+        : "Exchange rates of {$exchangeRate->rate_date} stored.");
+})->purpose('Fetch the daily reference exchange rates of the ECB for the savings estimates')
+    ->hourly()
+    ->withoutOverlapping(10);
 
 // A push that failed for good keeps its title and body, which hold the user's content.
 Schedule::command('queue:prune-failed', ['--hours' => 24 * PurgeDeletedRecords::RETENTION_DAYS])->daily();

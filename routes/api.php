@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\DataExportController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EmailVerificationController;
+use App\Http\Controllers\Api\V1\ExchangeRateController;
 use App\Http\Controllers\Api\V1\GoogleAccessTokenController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -95,6 +96,8 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/savings-entries/{id}', [SavingsEntryController::class, 'store'])->name('savings-entries.store');
         Route::patch('/savings-entries/{id}', [SavingsEntryController::class, 'update'])->name('savings-entries.update');
         Route::delete('/savings-entries/{id}', [SavingsEntryController::class, 'destroy'])->name('savings-entries.destroy');
+
+        Route::get('/exchange-rates', [ExchangeRateController::class, 'show'])->name('exchange-rates.show');
 
         Route::put('/special-dates/{id}', [SpecialDateController::class, 'store'])->name('special-dates.store');
         Route::patch('/special-dates/{id}', [SpecialDateController::class, 'update'])->name('special-dates.update');

@@ -228,6 +228,35 @@ function fakeGoogleKeys(array $keyIds = ['google-key-1'], int $maxAge = 21600): 
 }
 
 /**
+ * Build the daily reference rate file of the ECB, in the shape it publishes it.
+ *
+ * The default rates are those of 2 November 2026, with GBP and THB the app does not support.
+ *
+ * @param  array<string, string>  $rates
+ */
+function ecbDailyRates(string $date = '2026-11-02', array $rates = [
+    'USD' => '1.1216',
+    'JPY' => '177.10',
+    'GBP' => '0.83580',
+    'IDR' => '20341.45',
+    'MYR' => '4.5655',
+    'SGD' => '1.4344',
+    'THB' => '37.865',
+]): string
+{
+    $cubes = collect($rates)
+        ->map(fn (string $rate, string $currency): string => "<Cube currency='{$currency}' rate='{$rate}'/>")
+        ->implode('');
+
+    return '<?xml version="1.0" encoding="UTF-8"?>'
+        .'<gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">'
+        .'<gesmes:subject>Reference rates</gesmes:subject>'
+        .'<gesmes:Sender><gesmes:name>European Central Bank</gesmes:name></gesmes:Sender>'
+        ."<Cube><Cube time='{$date}'>{$cubes}</Cube></Cube>"
+        .'</gesmes:Envelope>';
+}
+
+/**
  * Get the code in the last email queued to the address for the purpose, or null when none was.
  *
  * Needs Mail::fake().

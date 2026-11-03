@@ -22,6 +22,7 @@ enum ErrorCode: string
     case GoogleTokenInvalid = 'google_token_invalid';
     case TooManyRequests = 'too_many_requests';
     case PlacesUnavailable = 'places_unavailable';
+    case ExchangeRatesUnavailable = 'exchange_rates_unavailable';
     case ServerError = 'server_error';
 
     /**
@@ -38,7 +39,7 @@ enum ErrorCode: string
             self::ValidationFailed, self::InvalidCredentials, self::InvitationInvalid, self::GoogleTokenInvalid => 422,
             self::TooManyRequests => 429,
             self::ServerError => 500,
-            self::PlacesUnavailable => 503,
+            self::PlacesUnavailable, self::ExchangeRatesUnavailable => 503,
         };
     }
 }

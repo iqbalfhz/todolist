@@ -31,6 +31,7 @@ return [
         'google_token_invalid' => 'Masuk dengan Google gagal. Coba lagi.',
         'too_many_requests' => 'Terlalu sering. Coba lagi sebentar lagi.',
         'places_unavailable' => 'Pencarian tempat sedang tidak tersedia. Pin tetap bisa dipasang langsung di peta.',
+        'exchange_rates_unavailable' => 'Kurs belum tersedia. Coba lagi nanti.',
         'server_error' => 'Terjadi kesalahan di server. Coba lagi nanti.',
     ],
 

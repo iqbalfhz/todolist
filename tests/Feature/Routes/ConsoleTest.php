@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\FetchExchangeRates;
 use App\Jobs\SendPushNotification;
 use App\Models\Memory;
 use App\Models\SavingsGoal;
@@ -9,6 +10,7 @@ use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -161,6 +163,35 @@ it('runs records:purge once a day at 00.30 without overlapping', function () {
     expect($event->expression)->toBe('30 0 * * *')
         ->and($event->withoutOverlapping)->toBeTrue()
         ->and($event->expiresAt)->toBe(60);
+});
+
+it('fetches the exchange rates of the ECB and reports the day it stored', function () {
+    Http::fake([FetchExchangeRates::SOURCE_URL => Http::response(ecbDailyRates())]);
+
+    $this->artisan('exchange-rates:fetch')
+        ->expectsOutput('Exchange rates of 2026-11-02 stored.')
+        ->assertSuccessful();
+
+    $this->assertDatabaseHas('exchange_rates', ['base' => 'EUR', 'rate_date' => '2026-11-02']);
+});
+
+it('reports when the exchange rates were not updated', function () {
+    Http::fake([FetchExchangeRates::SOURCE_URL => Http::response('Bad Gateway', 502)]);
+
+    $this->artisan('exchange-rates:fetch')
+        ->expectsOutput('Exchange rates not updated. The reason is in the log.')
+        ->assertSuccessful();
+
+    $this->assertDatabaseCount('exchange_rates', 0);
+});
+
+it('runs exchange-rates:fetch every hour without overlapping', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->sole(fn (Event $event) => str_contains($event->command, 'exchange-rates:fetch'));
+
+    expect($event->expression)->toBe('0 * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue()
+        ->and($event->expiresAt)->toBe(10);
 });
 
 it('prunes the failed jobs older than 30 days once a day, since a failed push keeps its text', function () {
