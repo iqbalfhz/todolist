@@ -2,7 +2,7 @@
 
 > Salinan dari dokumen perencanaan di claude.ai (tab "Kontrak API v0.1"), per 3 November 2026. Kalau berbeda, dokumen itu yang berlaku. Setiap kali kontrak berubah, perbarui salinan ini di repo `api` dan `mobile`.
 
-Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama, hapus akun, dan ekspor data, yang masing-masing menambah satu endpoint. Penghapusan permanen catatan lama tidak menambah endpoint, dan lupa kata sandi serta verifikasi email menambah 4 endpoint, 2 di antaranya tanpa token. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token. Tugas berulang di beberapa hari dan kenangan hari ini tidak menambah endpoint. Perkiraan kurs menambah satu endpoint baca.
+Rilis v0.1 butuh 25 endpoint di bawah `/api/v1`: semua data dibaca lewat satu pintu, `GET /sync`, dan setiap perubahan data dari antrean offline aman dikirim ulang. Laravel membangunnya persis seperti di sini, dan Flutter memanggilnya dengan bentuk data yang sama. Setelah endpoint jadi, dokumentasi otomatis Scramble menjadi acuan harian. Rilis v0.2 menambah 6 endpoint: 3 untuk Tanggal penting dan 3 untuk Perjalanan. Rilis v0.3 menambah 7 endpoint untuk Kenangan dan fotonya. Rilis v1.0 dimulai dari tugas berulang, tanpa endpoint baru, lalu keluar dari Ruang Bersama, hapus akun, dan ekspor data, yang masing-masing menambah satu endpoint. Penghapusan permanen catatan lama tidak menambah endpoint, dan lupa kata sandi serta verifikasi email menambah 4 endpoint, 2 di antaranya tanpa token. Rilis v1.x dimulai dari push sinkron, lalu penarikan tabungan, keduanya tanpa endpoint baru. Pin lokasi kenangan menambah satu endpoint baca untuk mencari tempat, dan reaksi serta komentar menambah 5 endpoint tulis. Masuk dengan Google menambah satu endpoint tanpa token. Tugas berulang di beberapa hari dan kenangan hari ini tidak menambah endpoint. Perkiraan kurs menambah satu endpoint baca. Ganti email dan kata sandi menambah 3 endpoint, dan impor data menambah satu. Ekspor ZIP dan feed aktivitas dibuat di app, tanpa endpoint baru.
 
 ## Ringkasan endpoint
 
@@ -24,6 +24,10 @@ Semua endpoint butuh token Sanctum, kecuali daftar, masuk, masuk dengan Google, 
 | Akun | DELETE | `/me/avatar` | Hapus foto profil |
 | Akun | DELETE | `/me` | Hapus akun beserta semua datanya (v1.0) |
 | Akun | GET | `/me/export` | Unduh salinan semua data akun sebagai satu file JSON (v1.0) |
+| Akun | PUT | `/me/password` | Ganti kata sandi, atau buat untuk akun Google tanpa kata sandi (v1.x) |
+| Akun | POST | `/me/email-change` | Minta kode untuk mengganti email, dikirim ke email baru (v1.x) |
+| Akun | POST | `/me/email-change/confirm` | Ganti email dengan kode (v1.x) |
+| Akun | POST | `/me/import` | Impor isi file ekspor sebagai data baru (v1.x) |
 | Perangkat | POST | `/devices` | Daftarkan token FCM HP ini |
 | Perangkat | DELETE | `/devices/{token}` | Hapus token FCM |
 | Ruang | GET | `/spaces` | Ruang tempatmu menjadi anggota, beserta profil anggotanya |
@@ -145,6 +149,10 @@ Nominal disimpan sebagai bilangan bulat dalam satuan terkecil, ditambah kode ISO
 | `/auth/reset-password` | 10 per menit per IP (v1.0) |
 | `POST /me/email-verification` | 3 per 15 menit per akun (v1.0) |
 | `POST /me/email-verification/confirm` | 10 per menit per akun (v1.0) |
+| `PUT /me/password` | 5 per 15 menit per akun (v1.x) |
+| `POST /me/email-change` | 3 per 15 menit per akun (v1.x) |
+| `POST /me/email-change/confirm` | 10 per menit per akun (v1.x) |
+| `POST /me/import` | 30 per jam per akun (v1.x) |
 
 Di luar `/api/v1` ada `GET /up` (bawaan Laravel) untuk health check Coolify, `GET /` yang mengalihkan ke halaman masuk panel admin, `GET /hapus-akun` yang menjelaskan cara menghapus akun (v1.0), `GET /privasi` dan `GET /syarat` untuk kebijakan privasi dan syarat layanan (v1.0), dan `/docs/api` untuk dokumentasi Scramble, yang secara bawaan hanya terbuka di environment lokal.
 
@@ -263,7 +271,38 @@ Server mengirim email berisi kode 6 angka untuk mengatur ulang kata sandi dan un
 - Email verifikasi bersubjek "Kode verifikasi email Denly Days" dengan pola yang sama, tetapi pembukanya "Terima kasih sudah memakai Denly Days. Untuk memastikan email ini benar milikmu, masukkan kode berikut di app:" dan kalimat sebelum penutupnya "Kalau kamu tidak membuat akun Denly Days, abaikan saja email ini." Kedua email diakhiri catatan kaki "Email ini dikirim otomatis, jadi balasan ke alamat ini tidak dibaca. Butuh bantuan? Hubungi {SUPPORT_EMAIL}."; kalimat bantuan itu tidak ditulis selama SUPPORT_EMAIL kosong.
 - Kode yang kedaluwarsa dihapus `records:purge`, dan semua kode ikut terhapus saat akunnya dihapus.
 - Halaman `/privasi` diperbarui dengan tanggal berlaku baru. Resend ditambahkan ke penyedia layanan ("Resend mengirim email berisi kode verifikasi dan kode atur ulang kata sandi, jadi menerima alamat emailmu dan isi email itu."), dan masa simpan ditambah "Kode verifikasi dan kode atur ulang kata sandi disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa."
-- Mengubah email dan mengubah kata sandi dari Pengaturan belum ada. Reset manual oleh admin lewat panel tetap bisa.
+- Mengubah email dan kata sandi dari Pengaturan dijelaskan di Ganti email dan kata sandi (v1.x). Reset manual oleh admin lewat panel tetap bisa.
+
+### Ganti email dan kata sandi (v1.x)
+
+Dari Pengaturan, kamu bisa mengganti kata sandi dan email akun. Keduanya dipanggil langsung, tidak lewat antrean, dan meminta konfirmasi seperti hapus akun: kata sandi saat ini, atau akun Google yang tersambung.
+
+| Endpoint | Body | Berhasil | Ditolak |
+| --- | --- | --- | --- |
+| `PUT /me/password` | `{"current_password": "...", "password": "...", "fcm_token": "..."}`, atau `id_token` sebagai ganti `current_password` | 204 | 422 `invalid_credentials` ("Kata sandi saat ini salah."), 422 `google_token_invalid`, 422 `validation_failed`, 429 `too_many_requests` |
+| `POST /me/email-change` | `{"email": "baru@email.com", "password": "..."}`, atau `id_token` sebagai ganti `password` | 202, kode dikirim ke email baru | 422 `invalid_credentials` ("Kata sandi salah."), 422 `google_token_invalid`, 422 `validation_failed` di `errors.email`, 429 `too_many_requests` |
+| `POST /me/email-change/confirm` | `{"code": "482913"}` | 200, sumber user dengan email baru dan `email_verified_at` terisi | 422 `validation_failed` di `errors.code` atau `errors.email`, 429 `too_many_requests` |
+
+- Kata sandi dipakai kalau dikirim. Kalau tidak, `id_token` dari Masuk dengan Google harus dari akun Google yang tersambung ke akun ini, seperti hapus akun. Dengan begitu akun Google yang belum punya kata sandi bisa membuatnya dari Pengaturan.
+- Sumber user mendapat kolom `has_password`, supaya app tahu konfirmasi mana yang diminta dan bisa menulis "Buat kata sandi" untuk akun tanpa kata sandi.
+- Kata sandi baru minimal 8 karakter, sama dengan daftar. Setelah diganti, token masuk di HP lain dicabut beserta token FCM-nya, jadi HP lain keluar dan berhenti menerima push. HP ini tetap masuk, dan token FCM yang dikirim di `fcm_token` tetap terdaftar.
+- Email baru mengikuti aturan daftar: format email, paling banyak 255 karakter, dan belum dipakai akun lain. Email yang sama dengan email sekarang juga ditolak di `errors.email`.
+- Kode ganti email berisi 6 angka, dikirim ke email baru, berlaku 60 menit, dan batal setelah lima kali salah, seperti kode lain. Meminta kode baru membatalkan kode dan email baru sebelumnya. Email baru disimpan bersama kodenya sampai dipakai, atau sampai dihapus `records:purge`.
+- Saat kode benar, email akun langsung diganti dan dianggap terverifikasi, dan semua HP tetap masuk. Kalau email baru itu keburu dipakai akun lain, konfirmasi ditolak di `errors.email`.
+- Masuk dengan Google tetap memakai akun Google yang sudah tersambung, walau emailnya berbeda dari email baru.
+- Server mengirim email pemberitahuan lewat antrean: ke email lama setelah email diganti, dan ke email akun setelah kata sandi diganti.
+- Akun admin (email di `ADMIN_EMAIL`) tidak bisa mengganti emailnya lewat app: 422 di `errors.email`, "Email akun admin hanya bisa diganti lewat server." Panel admin mengenali admin dari emailnya, jadi email itu tidak boleh lepas dari akun admin. Kalau akun admin juga dipakai di app, ganti `ADMIN_EMAIL` di Coolify dulu.
+- Batasnya: `PUT /me/password` 5 per 15 menit per akun, `POST /me/email-change` 3 per 15 menit per akun, dan konfirmasinya 10 per menit per akun.
+
+| Email | Subjek | Isi |
+| --- | --- | --- |
+| Kode, ke email baru | "Kode ganti email Denly Days" | "Halo {nama},", "Kami menerima permintaan untuk mengganti email akun Denly Days kamu ke alamat ini. Masukkan kode berikut di app untuk menyelesaikannya:", kodenya, "Kode ini berlaku selama 60 menit dan hanya bisa dipakai sekali. Demi keamanan akunmu, jangan berikan kode ini kepada siapa pun, termasuk orang yang mengaku dari Denly Days.", dan "Kalau kamu tidak meminta penggantian email, abaikan saja email ini. Email akunmu tidak berubah." |
+| Email diganti, ke email lama | "Email akun Denly Days kamu sudah diganti" | "Halo {nama},", "Email akun Denly Days kamu baru saja diganti dari alamat ini ke {email baru, disamarkan}. Mulai sekarang, gunakan email baru itu untuk masuk dan untuk mengatur ulang kata sandi.", dan "Kalau bukan kamu yang menggantinya, segera hubungi {SUPPORT_EMAIL} supaya kami bisa membantu mengamankan akunmu." |
+| Kata sandi diubah, ke email akun | "Kata sandi akun Denly Days kamu sudah diubah" | "Halo {nama},", "Kata sandi akun Denly Days kamu baru saja diubah lewat app, dan akunmu sudah dikeluarkan dari HP lain.", dan "Kalau bukan kamu yang mengubahnya, segera atur ulang kata sandi lewat Lupa kata sandi di app, lalu hubungi {SUPPORT_EMAIL}." |
+
+- Ketiganya memakai tampilan, penutup "Salam hangat, Denly Days", dan catatan kaki yang sama dengan email kode. Selama `SUPPORT_EMAIL` kosong, kalimat yang menyebutnya tidak ditulis di email ganti email, dan berhenti di "...di app." di email kata sandi.
+- Email baru disamarkan sebagai dua huruf pertama sebelum @ (satu huruf kalau lebih pendek), lalu "***" dan domainnya, misalnya "ba***@gmail.com".
+- `/privasi` mendapat tanggal berlaku baru. Resend disebut juga mengirim kode ganti email dan pemberitahuan keamanan akun, dan masa simpan kode menyebut kode ganti email beserta email barunya.
 
 ### Sumber user
 Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
@@ -274,6 +313,7 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
   "name": "Iqbal",
   "email": "nama@email.com",
   "email_verified_at": null,
+  "has_password": true,
   "color": "mawar",
   "timezone": "Asia/Jakarta",
   "locale": "id",
@@ -310,9 +350,11 @@ Dipakai oleh `GET /me`, `PATCH /me`, dan balasan daftar atau masuk.
 
 - `invitation` adalah kode undanganmu yang masih berlaku, atau `null`. Rinciannya di bagian Ruang dan undangan.
 - `birth_date` dicek dengan pola dan kalender (`--02-30` ditolak, `--02-29` boleh), lalu disimpan sebagai teks. Pengingat v0.2 memakai bagian `MM-DD`; 29 Februari diingatkan 28 Februari di tahun biasa.
-- Email dan kata sandi belum bisa diubah di v0.1. Tema (Mawar atau Anggrek, terang atau gelap) disimpan di HP saja.
+- Email dan kata sandi tidak diubah lewat PATCH ini, tetapi lewat endpoint di Ganti email dan kata sandi (v1.x). Tema (Mawar atau Anggrek, terang atau gelap) disimpan di HP saja.
 
 `email_verified_at` (v1.0) berisi waktu email diverifikasi, atau `null` selama belum. Rinciannya di bagian Lupa kata sandi dan verifikasi email.
+
+`has_password` (v1.x) bernilai `false` untuk akun dari Masuk dengan Google yang belum punya kata sandi, dan `true` untuk yang lain. Rinciannya di Ganti email dan kata sandi.
 
 ### Foto profil
 
@@ -344,6 +386,7 @@ Akun bisa dihapus dari app kapan saja. Semua datanya langsung dihapus permanen, 
 - Email dan akun Google yang sama bisa dipakai lagi untuk daftar sebagai akun baru, tanpa data lama.
 - Cadangan database tidak diubah, jadi data yang dihapus baru hilang dari sana saat cadangan lama terhapus otomatis, paling lama 30 hari kemudian.
 - **Tanpa app:** halaman publik `GET /hapus-akun`, yang dibutuhkan Google Play, menjelaskan cara menghapus dari app dan cara memintanya lewat email dari alamat akun ke alamat kontak di `SUPPORT_EMAIL`. Admin memprosesnya paling lambat 3 × 24 jam lewat aksi "Hapus akun" di panel, dengan proses yang sama.
+- Akun admin (email di `ADMIN_EMAIL`) tidak bisa dihapus lewat app: 422 `validation_failed`, "Akun admin hanya bisa dihapus lewat server." Panel admin mengenali admin dari emailnya, jadi tanpa batas ini orang lain bisa mendaftar dengan email itu setelah akun admin terhapus, lalu masuk ke panel (v1.x).
 
 ### Ekspor data (v1.0)
 
@@ -384,9 +427,101 @@ Salinan semua data yang bisa kamu lihat di app bisa diunduh kapan saja sebagai s
 - `user` memakai sumber user. `spaces` berisi ruang yang masih terbuka beserta profil anggotanya, dan koleksi lain memakai sumber yang sama dengan sync, diurutkan menurut waktu dibuat.
 - Isinya sama dengan yang terlihat di app: Ruang Pribadi dan Ruang Bersama beserta seluruh isinya yang belum dihapus, termasuk data buatan pasangan di Ruang Bersama. Isi Ruang Pribadi pasangan, data yang sudah dihapus, dan Ruang Bersama yang sudah ditutup tidak ikut.
 - Kata sandi, token masuk, token FCM, dan ID akun Google tidak ikut. `devices` hanya menyebut platform dan waktunya.
-- Foto tidak ikut sebagai file. Setiap baris `memory_photos` membawa `url` dan `thumb_url` baru yang berlaku 7 hari, jadi app bisa menawarkan unduh semua foto. Foto profil ikut lewat `avatar_url` di `user`.
-- Di app, Pengaturan > Ekspor data menyimpan file itu ke HP, lalu menawarkan unduh fotonya. Konfirmasi keluar dari Ruang Bersama dan hapus akun menyarankan ekspor dulu, dan halaman `/hapus-akun` juga menyebutnya.
-- File ini memenuhi hak atas salinan data (Pasal 7 UU PDP) dalam format yang dapat dibaca sistem elektronik (Pasal 13), langsung tanpa menunggu batas 3 × 24 jam di Pasal 32. Impor dari file ini belum ada.
+- Foto tidak ikut sebagai file. Setiap baris `memory_photos` membawa `url` dan `thumb_url` baru yang berlaku 7 hari, jadi app bisa menawarkan unduh semua foto, atau membuat ZIP berisi foto (v1.x). Foto profil ikut lewat `avatar_url` di `user`.
+- Di app, Pengaturan > Ekspor data menyimpan file itu ke HP, atau ZIP berisi file itu dan semua fotonya (v1.x). Konfirmasi keluar dari Ruang Bersama dan hapus akun menyarankan ekspor dulu, dan halaman `/hapus-akun` juga menyebutnya.
+- File ini memenuhi hak atas salinan data (Pasal 7 UU PDP) dalam format yang dapat dibaca sistem elektronik (Pasal 13), langsung tanpa menunggu batas 3 × 24 jam di Pasal 32. Impor dari file ini dijelaskan di Impor data (v1.x).
+
+### Ekspor ZIP berisi foto (v1.x)
+
+Ekspor data juga bisa disimpan sebagai satu file ZIP berisi file JSON dan semua fotonya. ZIP dibuat di app dari `GET /me/export` dan URL foto di dalamnya, jadi server tidak berubah.
+
+```text
+denly-days-2026-11-03.zip
+├── data.json
+├── foto-profil.jpg
+└── foto-kenangan/
+    ├── 01m4drb7k0qz3n8st5vw2hx4cy.jpg
+    └── …
+```
+
+- `data.json` adalah balasan `GET /me/export` apa adanya, termasuk `format_version`.
+- `foto-kenangan/{id}.jpg` adalah versi penuh setiap foto di `memory_photos`, dengan ID foto sebagai nama file. Thumbnail tidak ikut, karena server membuatnya lagi saat foto diunggah.
+- `foto-profil.jpg` ikut kalau `avatar_url` di `user` terisi.
+- Foto disimpan tanpa kompresi tambahan karena sudah JPEG; `data.json` dikompres.
+- ZIP hanya disimpan kalau semua foto berhasil diunduh. Kalau ada yang tetap gagal setelah dicoba ulang, app menawarkan coba lagi atau ekspor tanpa foto, jadi tidak ada ZIP yang diam-diam tidak lengkap.
+- Ukurannya kira-kira 1 MB per foto. Sebelum mulai, app menyebut jumlah fotonya dan memeriksa ruang kosong di HP.
+- File disimpan di `Download/Denly Days/denly-days-{tanggal}.zip` dan bisa dibagikan. Ekspor file JSON saja tetap ada.
+- Satu ZIP memakai satu `GET /me/export`, jadi batas 5 per jam tetap berlaku.
+- `/privasi` menyebut ZIP di hak menyalin data, dengan tanggal berlaku baru: "lewat Pengaturan > Ekspor data di app, sebagai file JSON, atau ZIP berisi file itu dan semua fotomu."
+
+### Impor data (v1.x)
+
+File ekspor, JSON atau ZIP, bisa diimpor ke Ruang Pribadi atau Ruang Bersama. Isinya disalin sebagai data baru, dan pasangan tidak menerima notifikasi untuk setiap baris.
+
+| Endpoint | Body | Berhasil | Ditolak |
+| --- | --- | --- | --- |
+| `POST /me/import` | Baris per koleksi, paling banyak 1.000 baris per request | 200 berisi jumlah baris yang dibuat dan dilewati per koleksi | 422 `validation_failed`, dengan `errors` per baris seperti `tasks.12.title`; 429 `too_many_requests` |
+
+```json
+{
+  "savings_goals": [],
+  "trips": [],
+  "task_lists": [
+    {
+      "id": "01m4fa0q20h7x3k9ws2bt5yn8e",
+      "space_id": "01m4dgdt40te98hy85v3fe2t18",
+      "trip_id": null,
+      "name": "Belanja",
+      "emoji": "🛒",
+      "color": "toska",
+      "position": 1024,
+      "archived_at": null,
+      "created_by": "01m4dg5jegv6sp4xav8efqzcqe",
+      "created_at": "2026-10-08T10:30:00.000000Z"
+    }
+  ],
+  "tasks": [],
+  "savings_entries": [],
+  "special_dates": [],
+  "memories": []
+}
+```
+
+Balasannya:
+
+```json
+{
+  "data": {
+    "created": {"savings_goals": 0, "trips": 0, "task_lists": 1, "tasks": 0, "savings_entries": 0, "special_dates": 0, "memories": 0},
+    "skipped": {"savings_goals": 0, "trips": 0, "task_lists": 0, "tasks": 0, "savings_entries": 0, "special_dates": 0, "memories": 0}
+  }
+}
+```
+
+Alur di app:
+
+- App membaca file, memastikan `app` bernilai "Denly Days" dan `format_version` 1, lalu menampilkan isi setiap ruang di file. Untuk setiap ruang itu, pengguna memilih tujuannya: Ruang Pribadi, Ruang Bersama kalau ada, atau dilewati.
+- App memberi setiap baris ID baru dan menyesuaikan semua rujukannya, lalu menyimpan rencana itu sampai impor selesai. Impor yang terputus dilanjutkan dengan ID yang sama, bukan diulang. Mengimpor file yang sama dua kali membuat salinan dua kali, dan app mengingatkannya.
+- Baris dikirim per bagian, paling banyak 1.000 baris, induk lebih dulu: target, perjalanan, daftar, tugas, setoran, tanggal penting, lalu kenangan. Rujukan boleh ke baris di request yang sama, atau ke baris di ruang tujuan dari bagian sebelumnya.
+- Setelah bagian terakhir, app menjalankan sync biasa untuk mengambil hasilnya.
+
+Aturan di server:
+
+- Setiap baris memakai kolom dan aturan yang sama dengan `PUT`-nya. Kalau satu baris saja tidak valid, seluruh request ditolak 422 dan tidak ada yang tersimpan.
+- `space_id` daftar, target, tanggal penting, perjalanan, dan kenangan harus ruang terbuka milikmu. Tugas mengikuti daftarnya, dan setoran mengikuti targetnya.
+- ID yang sudah ada di ruang yang sama, termasuk yang sudah dihapus, dilewati dan dihitung di `skipped`, jadi bagian yang terkirim ulang aman. ID yang dipakai di ruang lain ditolak 422 di baris itu.
+- Tugas yang daftarnya tidak ada, dan setoran yang targetnya tidak ada, ditolak 422. `trip_id` kenangan, `savings_goal_id` perjalanan, dan `next_task_id` yang tidak ditemukan disimpan kosong. Checklist yang perjalanannya tidak ada, atau yang perjalanannya sudah punya checklist, menjadi daftar biasa.
+- Dari file ikut tersimpan: `created_at` (paling lambat waktu server), `completed_at`, `archived_at`, `position`, aturan ulang, mata uang, dan nominal. `updated_at` diisi waktu impor, supaya barisnya sampai ke semua HP lewat sync.
+- Pembuat dan pelaku (`created_by`, `user_id` setoran, `completed_by`, dan `assignee_ids`) dipertahankan kalau orangnya anggota ruang tujuan. Kalau bukan, diganti akun pengimpor. Penanggung jawab di luar ruang dibuang, dan tugas tanpa penanggung jawab jatuh ke pengimpor.
+- Server menghitung `remind_at` dan patokan tugas berulang seperti biasa. Pengingat yang waktunya sudah lewat tidak dikirim. Target yang totalnya sudah mencapai target langsung tercapai tanpa push.
+- Impor tidak mengirim notifikasi apa pun. Hanya push sinkron yang terkirim ke pasangan kalau tujuannya Ruang Bersama.
+- Yang tidak diimpor: komentar, reaksi, profil, foto profil, perangkat, dan ruang itu sendiri.
+- Batasnya 30 request per jam per akun.
+
+Foto:
+
+- Foto hanya ikut dari ZIP. Setelah semua bagian berhasil, app memasukkan setiap file `foto-kenangan/{id}.jpg` ke antrean sebagai `POST /memory-photos/{id baru}`, dengan `memory_id` baru, `position`, dan `taken_at` dari file.
+- Foto dari kenangan yang dilewati tidak diunggah. Dari file JSON saja, kenangan diimpor tanpa foto, dan app menyebutnya sebelum mulai.
 
 ### Kebijakan privasi dan syarat layanan (v1.0)
 
@@ -401,7 +536,7 @@ Dua halaman publik di server menjelaskan data apa yang dipakai Denly Days dan at
 - Pengelola data adalah Iqbal Fahrozi, dengan kontak di `SUPPORT_EMAIL`. Pertanyaan dan permintaan hak dijawab paling lambat 3 × 24 jam.
 - Denly Days untuk pengguna berusia 18 tahun ke atas.
 - Yang disebut tidak dipakai: lokasi GPS (app tidak meminta izin lokasi), kontak, iklan, dan analytics.
-- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), Resend (email berisi kode verifikasi dan kode atur ulang kata sandi, v1.0), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
+- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), Resend (email berisi kode verifikasi, kode atur ulang kata sandi, kode ganti email, dan pemberitahuan keamanan akun, v1.0 dan v1.x), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
 - URL `/privasi` dipakai di Play Console, layar persetujuan Google, dan app. Di app, layar Daftar dan Masuk menulis "Dengan mendaftar atau masuk dengan Google, kamu menyetujui Syarat layanan dan Kebijakan privasi" dengan tautan ke kedua halaman, dan Pengaturan menautkan keduanya.
 
 ## Ruang dan undangan
@@ -1083,6 +1218,32 @@ Tugas, setoran, dan kenangan di Ruang Bersama bisa diberi komentar dan reaksi em
 - Mengubah atau menghapus komentar tidak mengirim push. Reaksi yang diganti atau dihapus dalam 10 menit itu juga tidak mengirim push lagi.
 - Saat diketuk, app membuka detail subjeknya beserta komentarnya, mengikuti aturan ketuk di bagian Notifikasi push.
 
+## Aktivitas (v1.x)
+
+Layar Aktivitas menampilkan apa saja yang terjadi di Ruang Bersama selama 30 hari terakhir, terbaru di atas. Isinya dihitung di HP dari data sync, jadi server tidak berubah dan tidak ada koleksi baru.
+
+| Kejadian | Contoh | Diambil dari |
+| --- | --- | --- |
+| Tugas baru | "Dina menambah tugas Beli galon", atau "Dina menitipkan Beli galon ke kamu" | `tasks`: `created_at`, `created_by`, `assignee_ids` |
+| Tugas selesai | "Dina menyelesaikan Bayar listrik" | `tasks`: `completed_at`, `completed_by` |
+| Setoran | "Dina menabung Rp200.000 untuk Dana Liburan" | `savings_entries` bertipe `deposit`: `created_at`, `user_id` |
+| Penarikan | "Dina mengambil Rp100.000 dari Dana Liburan" | `savings_entries` bertipe `withdrawal` |
+| Target baru dan tercapai | "Dina membuat target Dana Liburan", "Dana Liburan tercapai" | `savings_goals`: `created_at`, `created_by`, `achieved_at` |
+| Perjalanan dan tanggal penting baru | "Dina merencanakan Liburan ke Bali" | `trips` dan `special_dates`: `created_at`, `created_by` |
+| Kenangan baru | "Dina menyimpan kenangan Pantai Kuta" | `memories`: `created_at`, `created_by` |
+| Foto baru di kenangan lama | "Dina menambah 5 foto ke Pantai Kuta" | `memory_photos`: `created_at`, `uploaded_by`, digabung per kenangan per hari |
+| Komentar | "Dina mengomentari Beli galon: Sudah, ya!" | `comments`: `created_at`, `user_id` |
+| Reaksi | "Dina memberi reaksi ❤️ ke Pantai Kuta" | `reactions`: `created_at`, `user_id` |
+| Bergabung | "Dina bergabung ke Ruang Bersama" | anggota di `spaces`: `joined_at` |
+
+- Hanya Ruang Bersama. Kegiatanmu sendiri ikut dan ditulis "Kamu", dan daftarnya bisa disaring ke kegiatan pasangan saja.
+- Dikelompokkan per hari menurut zona waktu ruang: Hari ini, Kemarin, lalu tanggalnya.
+- Mengetuk satu baris membuka layar yang sama dengan mengetuk notifikasinya: detail tugas, detail target, detail kenangan, atau bagian komentarnya.
+- Data yang sudah dihapus hilang dari feed bersama kejadiannya. Perubahan seperti ganti judul atau tenggat, dan penghapusan, tidak tampil, karena tidak tersimpan sebagai riwayat.
+- Ikon lonceng di kepala Beranda membuka layar ini, dengan titik kalau ada kegiatan pasangan sejak layar itu terakhir dibuka. Waktu terakhir dibuka disimpan di HP per akun.
+- Baris hasil impor memakai `created_at` dari file, jadi muncul di waktu aslinya, bukan menumpuk di hari impor.
+- Tidak ada endpoint, kolom, atau koleksi baru, jadi app tidak perlu sync penuh.
+
 ## Sinkron
 
 `GET /sync` adalah satu-satunya cara HP membaca data ruang: sekali penuh setelah masuk, lalu hanya yang berubah. Beranda, filter tugas, dan statistik tabungan dihitung dari hasilnya di cache lokal.
@@ -1566,3 +1727,53 @@ Empat butir ini mengubah isi push `savings_achieved`, dari usulan sesi Flutter a
 - [x] Nama dan nominal setoran hanya disebut kalau target tercapai karena setoran baru, karena push ini menggantikan push setoran itu. Pemicu lain memakai teks tanpa nama.
 - [x] Kelebihan dihitung dari total bersih saat push dibuat, dalam transaksi yang sama yang menandai target tercapai.
 - [x] Aturan lain push ini tetap, teks `savings_deposit` dan `savings_withdrawal` tidak berubah, dan app tidak perlu diubah.
+
+### Ganti email dan kata sandi (v1.x)
+
+Sepuluh butir ini merancang ganti email dan kata sandi dari Pengaturan, atas permintaan pemilik, dan disetujui pada 3 November 2026.
+
+- [x] Tiga endpoint langsung, tidak lewat antrean: `PUT /me/password`, `POST /me/email-change`, dan `POST /me/email-change/confirm`.
+- [x] Konfirmasinya seperti hapus akun: kata sandi saat ini, atau akun Google yang tersambung. Akun Google tanpa kata sandi bisa membuat kata sandi dari Pengaturan.
+- [x] Kolom baru `has_password` di sumber user, supaya app tahu konfirmasi mana yang diminta.
+- [x] Ganti kata sandi mengeluarkan akun dari HP lain beserta token FCM-nya; HP ini tetap masuk.
+- [x] Email baru dipastikan lewat kode 6 angka yang dikirim ke email itu, dengan aturan kode yang sama seperti lupa kata sandi. Setelah diganti, email langsung terverifikasi dan semua HP tetap masuk.
+- [x] Email pemberitahuan ke email lama saat email diganti, dengan email baru disamarkan, dan ke email akun saat kata sandi diubah. Teks ketiga email sesuai tabel di bagian Ganti email dan kata sandi.
+- [x] Akun admin tidak bisa mengganti email atau menghapus akunnya lewat app, supaya `ADMIN_EMAIL` tidak bisa didaftarkan orang lain untuk masuk ke panel admin. Hapus akun admin lewat app sekarang masih bisa, jadi butir ini juga menutup celah itu.
+- [x] Batasnya per akun: 5 per 15 menit untuk ganti kata sandi, 3 per 15 menit untuk minta kode, dan 10 per menit untuk konfirmasi.
+- [x] `/privasi` mendapat tanggal berlaku baru: Resend juga mengirim kode ganti email dan pemberitahuan keamanan, dan masa simpan kode menyebut kode ganti email beserta email barunya.
+- [x] Tidak ada koleksi sync baru, jadi app tidak perlu sync penuh.
+
+### Ekspor ZIP berisi foto (v1.x)
+
+Lima butir ini merancang ekspor ZIP, atas permintaan pemilik, dan disetujui pada 3 November 2026.
+
+- [x] ZIP dibuat di app dari `GET /me/export` dan URL foto di dalamnya, bukan di server, supaya server tidak perlu menyalin semua foto ke satu file besar. Server tidak berubah.
+- [x] Isinya `data.json` apa adanya, `foto-kenangan/{id}.jpg` versi penuh, dan `foto-profil.jpg` kalau ada. Bentuk ini dipakai juga oleh impor.
+- [x] ZIP hanya disimpan kalau semua foto berhasil diunduh; kalau tidak, app menawarkan coba lagi atau ekspor tanpa foto.
+- [x] Ekspor file JSON saja tetap ada.
+- [x] `/privasi` menyebut ZIP di hak menyalin data, dengan tanggal berlaku baru.
+
+### Impor data (v1.x)
+
+Sepuluh butir ini merancang impor dari file ekspor, atas permintaan pemilik, dan disetujui pada 3 November 2026.
+
+- [x] Satu endpoint `POST /me/import` yang menyimpan banyak baris sekaligus, langsung dan tidak lewat antrean, paling banyak 1.000 baris per request. App membaca file dan mengirimnya per bagian.
+- [x] Isi file disalin sebagai data baru dengan ID dari app. Pengguna memilih tujuan setiap ruang di file: Ruang Pribadi, Ruang Bersama, atau dilewati.
+- [x] Satu baris tidak valid membuat seluruh request ditolak 422, dengan error per baris. ID yang sudah ada di ruang yang sama dilewati, jadi bagian yang terkirim ulang aman.
+- [x] `created_at` dari file ikut disimpan (paling lambat waktu server), sebagai pengecualian aturan bahwa `created_at` hanya diisi server, supaya baris lama tidak tampil seperti baru di feed aktivitas.
+- [x] Pembuat dan pelaku asli dipertahankan kalau orangnya anggota ruang tujuan; kalau bukan, diganti pengimpor.
+- [x] Impor tidak mengirim notifikasi selain push sinkron. Pengingat yang sudah lewat tidak dikirim, dan target yang sudah tercapai tidak dirayakan lagi.
+- [x] Komentar, reaksi, profil, foto profil, dan perangkat tidak diimpor.
+- [x] Foto hanya ikut dari ZIP, diunggah app lewat `POST /memory-photos/{id}` setelah datanya masuk.
+- [x] Batasnya 30 request per jam per akun.
+- [x] Tidak ada koleksi sync baru, jadi app tidak perlu sync penuh.
+
+### Feed aktivitas (v1.x)
+
+Lima butir ini merancang feed aktivitas atas permintaan pemilik, sebagai ganti tabel `activities` di tab utama yang ditunda pada 22 Oktober 2026, dan disetujui pada 3 November 2026.
+
+- [x] Feed dihitung di HP dari data sync, tanpa tabel `activities`, endpoint, atau koleksi baru di server.
+- [x] Isinya kegiatan di Ruang Bersama selama 30 hari terakhir, sesuai tabel di bagian Aktivitas; kegiatanmu sendiri ikut sebagai "Kamu".
+- [x] Perubahan dan penghapusan tidak tampil, karena tidak tersimpan sebagai riwayat. Data yang dihapus hilang dari feed.
+- [x] Ikon lonceng di Beranda membuka feed, dengan titik untuk kegiatan pasangan yang belum dilihat.
+- [x] Tidak ada kolom atau koleksi baru, jadi app tidak perlu sync penuh.
