@@ -700,6 +700,22 @@ Penarikan dicatat sebagai setoran dengan `type` `withdrawal`, jadi tidak ada end
 - Push `savings_withdrawal` dikirim ke anggota lain saat penarikan baru dicatat, dengan preferensi `savings_activity`, channel `aktivitas`, `visibility` `PRIVATE`, dan `tag` `goal-{id}` seperti push tabungan lain. Judulnya nama target, isinya "{nama} mengambil {nominal}". Mengubah atau menghapus penarikan tidak mengirim push, dan penarikan tidak pernah memicu `savings_deposit`.
 - Kolom `type` sudah ada sejak v0.1, jadi app tidak perlu sync penuh. App versi lama menghitung penarikan sebagai setoran, jadi kedua HP perlu memakai app baru sebelum penarikan pertama dicatat.
 
+### Isi push target tercapai (v1.x)
+
+Push `savings_achieved` menyebut kelebihan dari target, dan siapa yang menabung kalau target tercapai karena setoran baru. Judulnya tetap nama target.
+
+| Target tercapai karena | Total melewati target | Total pas sama dengan target |
+| --- | --- | --- |
+| Setoran baru | "{nama} menabung {nominal}. Target tercapai, lebih {kelebihan}!" | "{nama} menabung {nominal}. Target tercapai!" |
+| Setoran atau penarikan diubah, penarikan dihapus, atau `target_amount` diturunkan | "Target tabungan ini tercapai, lebih {kelebihan}." | "Target tabungan ini tercapai" (seperti sebelumnya) |
+
+- Contoh: target Rp1.000.000, terkumpul Rp950.000, lalu Iqbal menyetor Rp60.000. Pasangannya menerima "Iqbal menabung Rp60.000. Target tercapai, lebih Rp10.000!".
+- {nama} adalah nama akun yang mencatat setoran, dan {nominal} nominal setoran itu, sama seperti di push `savings_deposit`.
+- {kelebihan} adalah total (setoran dikurangi penarikan) dikurangi `target_amount`, dari hitungan yang sama yang menandai target tercapai. Angka di push tidak ikut berubah kalau setoran diubah sesudahnya.
+- {nominal} dan {kelebihan} diformat seperti nominal di push lain: desimal dari tabel Uang, "Rp" atau "¥" di depan angka, dan kode mata uang untuk yang lain, misalnya "USD 10,50".
+- Aturan lain tetap: paling banyak sekali per target, ke anggota lain, menggantikan `savings_deposit` untuk setoran yang sama, preferensi `savings_activity`, channel `aktivitas`, `visibility` `PRIVATE`, dan `tag` `goal-{id}`. Isi `data` tidak berubah.
+- Teksnya dibuat server, jadi app tidak perlu diubah, dan tidak ada perubahan bentuk data atau sync.
+
 ### Pengingat setor rutin (v0.2)
 
 - Jadwalnya disimpan di target: `reminder_frequency` (`weekly` atau `monthly`) dan `reminder_day`. Tanpa `reminder_frequency`, target tidak diingatkan.
@@ -1541,3 +1557,12 @@ Sembilan butir ini merancang perkiraan kurs di Tabungan, dari usulan sesi Flutte
 - [x] Tanpa batas khusus: ikut batas umum 120 per menit per akun, karena server hanya membaca kurs tersimpan. App mengambilnya paling sering sekali per 6 jam dan menyimpannya di HP untuk dipakai saat offline.
 - [x] App menulis "ECB" dan tanggal kurs di dekat setiap perkiraan, sesuai syarat pemakaian ulang statistik ECB, dan `/syarat` mendapat satu kalimat bahwa perkiraan kurs hanya gambaran, dengan tanggal berlaku baru. `/privasi` tidak berubah.
 - [x] Tidak ada koleksi sync baru, jadi app tidak perlu sync penuh.
+
+### Isi push target tercapai (v1.x)
+
+Empat butir ini mengubah isi push `savings_achieved`, dari usulan sesi Flutter atas permintaan pemilik, dan disetujui pada 3 November 2026.
+
+- [x] Empat teks di tabel bagian Isi push target tercapai, persis seperti usulan.
+- [x] Nama dan nominal setoran hanya disebut kalau target tercapai karena setoran baru, karena push ini menggantikan push setoran itu. Pemicu lain memakai teks tanpa nama.
+- [x] Kelebihan dihitung dari total bersih saat push dibuat, dalam transaksi yang sama yang menandai target tercapai.
+- [x] Aturan lain push ini tetap, teks `savings_deposit` dan `savings_withdrawal` tidak berubah, dan app tidak perlu diubah.
