@@ -61,12 +61,12 @@ it('keeps the code for verifying the email apart', function () {
     expect(VerificationCode::query()->count())->toBe(2);
 });
 
-it('queues the email once the code is saved', function () {
-    User::factory()->create(['email' => 'nama@email.com']);
+it('queues the email to the name of the account once the code is saved', function () {
+    User::factory()->create(['email' => 'nama@email.com', 'name' => 'Iqbal']);
 
     $this->postJson('/api/v1/auth/forgot-password', ['email' => 'nama@email.com']);
 
-    Mail::assertQueued(VerificationCodeMail::class, fn (VerificationCodeMail $mail) => $mail->afterCommit === true);
+    Mail::assertQueued(VerificationCodeMail::class, fn (VerificationCodeMail $mail) => $mail->afterCommit === true && $mail->recipientName === 'Iqbal');
 });
 
 it('returns 422 for an email that is missing or not an email', function (array $body) {

@@ -33,7 +33,7 @@ class IssueVerificationCode
                 ],
             );
 
-            Mail::to($user)->queue(new VerificationCodeMail($purpose, $code));
+            Mail::to($user)->queue(new VerificationCodeMail($purpose, $code, $user->name));
         });
     }
 }

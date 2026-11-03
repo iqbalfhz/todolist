@@ -12,11 +12,20 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * The plain text email with a code to reset the password or verify the email.
+ * The email with a code to reset the password or verify the email, in HTML
+ * with a plain text version for mail apps that do not show HTML.
  */
 class VerificationCodeMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    /**
+     * The name of the account the code is for.
+     *
+     * Declared with a default rather than promoted, so an email queued
+     * before this field existed is still sent, with a greeting without a name.
+     */
+    public string $recipientName = '';
 
     /**
      * Create a new message instance.
@@ -24,8 +33,10 @@ class VerificationCodeMail extends Mailable implements ShouldQueue
      * It is queued once the transaction that saved the code commits, so
      * nobody receives a code that was never stored.
      */
-    public function __construct(public VerificationPurpose $purpose, public string $code)
+    public function __construct(public VerificationPurpose $purpose, public string $code, string $recipientName = '')
     {
+        $this->recipientName = $recipientName;
+
         $this->afterCommit();
     }
 
@@ -42,9 +53,24 @@ class VerificationCodeMail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
-        return new Content(text: 'mail.verification-code', with: [
-            'intro' => __("mail.{$this->purpose->value}.intro", ['code' => $this->code]),
-            'outro' => __("mail.{$this->purpose->value}.outro", ['minutes' => VerificationCode::VALID_FOR_MINUTES]),
-        ]);
+        $supportEmail = config('admin.support_email');
+
+        return new Content(
+            view: 'mail.verification-code',
+            text: 'mail.verification-code-text',
+            with: [
+                'subjectLine' => __("mail.{$this->purpose->value}.subject"),
+                'greeting' => $this->recipientName === ''
+                    ? __('mail.greeting_without_name')
+                    : __('mail.greeting', ['name' => $this->recipientName]),
+                'intro' => __("mail.{$this->purpose->value}.intro"),
+                'validity' => __('mail.validity', ['minutes' => VerificationCode::VALID_FOR_MINUTES]),
+                'outro' => __("mail.{$this->purpose->value}.outro"),
+                'closing' => __('mail.closing'),
+                'signature' => __('mail.signature'),
+                'automated' => __('mail.automated'),
+                'supportEmail' => filled($supportEmail) ? $supportEmail : null,
+            ],
+        );
     }
 }
