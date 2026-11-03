@@ -53,10 +53,11 @@ it('shows the terms of service with the rules of the shared space', function () 
 
     $response->assertOk()
         ->assertSee('Syarat layanan Denly Days')
-        ->assertSee('Berlaku sejak 1 November 2026.')
+        ->assertSee('Berlaku sejak 3 November 2026.')
         ->assertSee('Kamu berusia 18 tahun ke atas.')
         ->assertSee('Ruang Bersama berisi tepat dua orang')
         ->assertSee('Tabungan di Denly Days hanya catatan.')
+        ->assertSee('Perkiraan kurs di Tabungan memakai kurs referensi harian Bank Sentral Eropa (ECB) dan hanya gambaran. Kurs di bank atau tempat penukaran uang bisa berbeda.')
         ->assertSee('hukum Republik Indonesia');
 });
 

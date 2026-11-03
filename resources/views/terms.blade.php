@@ -1,6 +1,6 @@
 <x-public-page :title="'Syarat layanan '.config('app.name')">
     <h1>Syarat layanan {{ config('app.name') }}</h1>
-    <p>Berlaku sejak 1 November 2026.</p>
+    <p>Berlaku sejak 3 November 2026.</p>
     <p>Dengan membuat akun atau memakai {{ config('app.name') }}, kamu menyetujui syarat ini dan <a href="{{ route('privacy-policy') }}">Kebijakan privasi</a>. {{ config('app.name') }} dikelola oleh Iqbal Fahrozi.</p>
 
     <h2>Siapa yang boleh memakai</h2>
@@ -40,6 +40,7 @@
         <li>{{ config('app.name') }} gratis dan disediakan sebagaimana adanya. Kami berusaha menjaga datamu tetap aman dan layanan tetap berjalan, tetapi tidak menjamin layanan selalu tersedia atau bebas gangguan.</li>
         <li>Fitur bisa berubah, bertambah, atau dihentikan. Simpan salinan datamu lewat Ekspor data kalau kamu membutuhkannya.</li>
         <li>Tabungan di {{ config('app.name') }} hanya catatan. Aplikasi ini tidak menyimpan, memindahkan, atau mengelola uang sungguhan.</li>
+        <li>Perkiraan kurs di Tabungan memakai kurs referensi harian Bank Sentral Eropa (ECB) dan hanya gambaran. Kurs di bank atau tempat penukaran uang bisa berbeda.</li>
     </ul>
 
     <h2>Penghentian</h2>
