@@ -33,7 +33,7 @@ it('shows the privacy policy with its controller, providers, retention, and righ
 
     $response->assertOk()
         ->assertSee('Kebijakan privasi Denly Days')
-        ->assertSee('Berlaku sejak 2 November 2026.')
+        ->assertSee('Berlaku sejak 3 November 2026.')
         ->assertSee('dikelola oleh Iqbal Fahrozi')
         ->assertSee('mailto:bantuan@contoh.test', false)
         ->assertSee('Kami tidak memakai lokasi GPS')
@@ -42,9 +42,9 @@ it('shows the privacy policy with its controller, providers, retention, and righ
         ->assertSee('OpenStreetMap')
         ->assertSee('disimpan 30 hari sebagai catatan sinkron, supaya HP lain ikut menghapusnya, lalu dihapus permanen')
         ->assertSee('Notifikasi yang gagal terkirim, beserta isinya, dihapus paling lama 30 hari kemudian.')
-        ->assertSee('<strong>Resend</strong> mengirim email berisi kode verifikasi dan kode atur ulang kata sandi, jadi menerima alamat emailmu dan isi email itu.', false)
-        ->assertSee('Kode verifikasi dan kode atur ulang kata sandi disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa.')
-        ->assertSee('Pengaturan &gt; Ekspor data', false)
+        ->assertSee('<strong>Resend</strong> mengirim email berisi kode verifikasi, kode atur ulang kata sandi, kode ganti email, dan pemberitahuan keamanan akun, jadi menerima alamat emailmu dan isi email itu.', false)
+        ->assertSee('Kode verifikasi, kode atur ulang kata sandi, dan kode ganti email disimpan sebagai hash, lalu dihapus setelah dipakai atau paling lama sehari setelah kedaluwarsa. Alamat email baru yang menunggu kode ganti email disimpan bersama kodenya dan ikut terhapus.')
+        ->assertSee('lewat Pengaturan &gt; Ekspor data di app, sebagai file JSON, atau ZIP berisi file itu dan semua fotomu.', false)
         ->assertSee('untuk pengguna berusia 18 tahun ke atas');
 });
 
