@@ -228,21 +228,25 @@ describe('update', function () {
         'restore' => [fn (User $user) => SavingsGoal::factory()->for($user->personalSpace())->archived()->create(), null, null],
     ]);
 
-    it('marks the goal achieved when the target drops to what was already saved', function () {
+    it('marks the goal achieved, with a push that names no one, when the target drops to or below what was already saved', function (int $target, string $body) {
         Queue::fake([SendPushNotification::class]);
         $this->travelTo('2026-10-08 12:00:00');
-        [$user, $partner, $space] = actingAsPartnered();
+        [, $partner, $space] = actingAsPartnered();
         $goal = SavingsGoal::factory()->for($space)->create(['name' => 'Dana Liburan', 'target_amount' => 1_000_000]);
         SavingsEntry::factory()->for($goal)->create(['amount' => 400_000]);
 
-        $response = $this->patchJson("/api/v1/savings-goals/{$goal->id}", ['target_amount' => 400_000]);
+        $response = $this->patchJson("/api/v1/savings-goals/{$goal->id}", ['target_amount' => $target]);
 
         $response->assertOk()->assertJsonPath('data.achieved_at', '2026-10-08T12:00:00.000000Z');
         Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $partner->id
             && $job->type === PushType::SavingsAchieved
             && $job->title === 'Dana Liburan'
+            && $job->body === $body
             && $job->savingsGoalId === $goal->id);
-    });
+    })->with([
+        'down to what was saved' => [400_000, 'Target tabungan ini tercapai'],
+        'below what was saved' => [350_000, 'Target tabungan ini tercapai, lebih Rp50.000.'],
+    ]);
 
     it('clears the achievement when the target rises above what was saved', function () {
         $user = actingAsApiUser();

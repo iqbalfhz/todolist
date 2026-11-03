@@ -14,8 +14,9 @@ return [
     | 22 October 2026, the memory_created text on 23 October 2026, the
     | savings_withdrawal, comment_created, and reaction_created texts on
     | 29 October 2026, the partner_left texts and the partner_joined text for
-    | a restored space on 30 October 2026, and the memory_flashback texts on
-    | 2 November 2026.
+    | a restored space on 30 October 2026, the memory_flashback texts on
+    | 2 November 2026, and the savings_achieved texts that name the deposit
+    | and the amount above the target on 3 November 2026.
     |
     */
 
@@ -38,6 +39,9 @@ return [
 
     'savings_achieved' => [
         'body' => 'Target tabungan ini tercapai',
+        'over_target_body' => 'Target tabungan ini tercapai, lebih :excess.',
+        'deposit_body' => ':name menabung :amount. Target tercapai!',
+        'deposit_over_target_body' => ':name menabung :amount. Target tercapai, lebih :excess!',
     ],
 
     'savings_withdrawal' => [

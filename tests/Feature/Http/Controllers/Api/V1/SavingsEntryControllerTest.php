@@ -285,21 +285,38 @@ describe('store', function () {
             && $job->savingsGoalId === $goal->id);
     });
 
-    it('queues only the savings_achieved push for the deposit that reaches the target', function () {
+    it('queues only the savings_achieved push for the deposit that reaches the target, naming who saved how much and what is above it', function (string $currency, int $target, array $entries, int $amount, string $body) {
         Queue::fake([SendPushNotification::class]);
-        [, $partner, $space] = actingAsPartnered();
-        $goal = SavingsGoal::factory()->for($space)->create(['target_amount' => 200_000]);
+        [$owner, $partner, $space] = actingAsPartnered();
+        $partner->update(['name' => 'Iqbal']);
+        $goal = SavingsGoal::factory()->for($space)->create(['name' => 'Dana Liburan', 'currency' => $currency, 'target_amount' => $target]);
+        SavingsEntry::factory()->for($goal)->forEachSequence(...$entries)->create();
 
-        $this->putJson('/api/v1/savings-entries/'.newId(), [
+        $this->actingAs($partner, 'sanctum')->putJson('/api/v1/savings-entries/'.newId(), [
             'savings_goal_id' => $goal->id,
-            'amount' => 200_000,
-            'entry_date' => '2026-10-08',
+            'amount' => $amount,
+            'entry_date' => '2026-11-03',
         ]);
 
         Queue::assertPushedTimes(SendPushNotification::class, 1);
-        Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $partner->id
-            && $job->type === PushType::SavingsAchieved);
-    });
+        Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $owner->id
+            && $job->type === PushType::SavingsAchieved
+            && $job->title === 'Dana Liburan'
+            && $job->body === $body
+            && $job->spaceId === $space->id
+            && $job->savingsGoalId === $goal->id);
+    })->with([
+        'exactly the target' => ['IDR', 1_000_000, [['amount' => 950_000]], 50_000, 'Iqbal menabung Rp50.000. Target tercapai!'],
+        'past the target' => ['IDR', 1_000_000, [['amount' => 950_000]], 60_000, 'Iqbal menabung Rp60.000. Target tercapai, lebih Rp10.000!'],
+        'past the target after a withdrawal' => [
+            'IDR',
+            1_000_000,
+            [['amount' => 950_000], ['type' => 'withdrawal', 'amount' => 50_000]],
+            160_000,
+            'Iqbal menabung Rp160.000. Target tercapai, lebih Rp60.000!',
+        ],
+        'past the target in a currency with cents' => ['USD', 100_000, [['amount' => 95_000]], 6_050, 'Iqbal menabung USD 60,50. Target tercapai, lebih USD 10,50!'],
+    ]);
 
     it('does not celebrate a goal twice', function () {
         Queue::fake([SendPushNotification::class]);
@@ -378,6 +395,25 @@ describe('update', function () {
     })->with([
         'up to the target' => [500_000, true],
         'still below the target' => [400_000, false],
+    ]);
+
+    it('queues the savings_achieved push without a name when a changed amount reaches the target', function (int $newAmount, string $body) {
+        Queue::fake([SendPushNotification::class]);
+        [, $partner, $space] = actingAsPartnered();
+        $goal = SavingsGoal::factory()->for($space)->create(['name' => 'Dana Liburan', 'target_amount' => 1_000_000]);
+        $entry = SavingsEntry::factory()->for($goal)->create(['amount' => 950_000]);
+
+        $this->patchJson("/api/v1/savings-entries/{$entry->id}", ['amount' => $newAmount]);
+
+        Queue::assertPushedTimes(SendPushNotification::class, 1);
+        Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $partner->id
+            && $job->type === PushType::SavingsAchieved
+            && $job->title === 'Dana Liburan'
+            && $job->body === $body
+            && $job->savingsGoalId === $goal->id);
+    })->with([
+        'exactly the target' => [1_000_000, 'Target tabungan ini tercapai'],
+        'past the target' => [1_010_000, 'Target tabungan ini tercapai, lebih Rp10.000.'],
     ]);
 
     it('clears the achievement when the amount drops below the target', function () {
@@ -509,6 +545,23 @@ describe('destroy', function () {
         $this->deleteJson("/api/v1/savings-entries/{$withdrawal->id}");
 
         expect($goal->fresh()->achieved_at)->not->toBeNull();
+    });
+
+    it('queues the savings_achieved push without a name when deleting a withdrawal takes the total past the target', function () {
+        Queue::fake([SendPushNotification::class]);
+        [, $partner, $space] = actingAsPartnered();
+        $goal = SavingsGoal::factory()->for($space)->create(['name' => 'Dana Liburan', 'target_amount' => 1_000_000]);
+        SavingsEntry::factory()->for($goal)->create(['amount' => 1_050_000]);
+        $withdrawal = SavingsEntry::factory()->for($goal)->withdrawal()->create(['amount' => 100_000]);
+
+        $this->deleteJson("/api/v1/savings-entries/{$withdrawal->id}");
+
+        Queue::assertPushedTimes(SendPushNotification::class, 1);
+        Queue::assertPushed(SendPushNotification::class, fn (SendPushNotification $job) => $job->userId === $partner->id
+            && $job->type === PushType::SavingsAchieved
+            && $job->title === 'Dana Liburan'
+            && $job->body === 'Target tabungan ini tercapai, lebih Rp50.000.'
+            && $job->savingsGoalId === $goal->id);
     });
 
     it('deletes the comments and reactions on the entry, leaving those on other entries alone', function () {

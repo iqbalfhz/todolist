@@ -37,7 +37,11 @@ class CreateSavingsEntry
             $entry->user_id = $actor->id;
             $entry->save();
 
-            $celebrates = $this->refreshSavingsProgress->handle($goal, $actor);
+            $celebrates = $this->refreshSavingsProgress->handle(
+                $goal,
+                $actor,
+                $entry->type === SavingsEntryType::Deposit ? $entry : null,
+            );
             $replacements = [
                 'name' => $actor->name,
                 'amount' => $this->formatMoney->handle($entry->amount, $goal->currency),
