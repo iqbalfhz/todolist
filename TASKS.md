@@ -4,6 +4,7 @@
 
 ## Waiting On
 
+- [ ] **Pastikan kurs pertama tersimpan di server** - oleh pemilik, since 2026-11-03; setelah deploy perkiraan kurs, jalankan `php artisan exchange-rates:fetch` sekali di Terminal Coolify. Balasan "Exchange rates of {tanggal} stored." berarti server bisa mengambil kurs ECB dan `GET /exchange-rates` langsung terisi; tanpa itu, kurs baru terisi saat jadwal tiap jam berikutnya
 - [ ] **Baca teks kebijakan privasi dan syarat layanan** - oleh pemilik, since 2026-11-01; buka `https://denlydays.iqbalfhz.my.id/privasi` dan `/syarat`, lalu kabari kalau ada yang ingin diubah. Sebelum rilis publik, sebaiknya keduanya diperiksa ahli hukum
 - [ ] **Isi tautan kebijakan di layar persetujuan Google** - oleh pemilik, since 2026-11-01; di Google Auth Platform > Branding: Application home page `https://denlydays.iqbalfhz.my.id`, Privacy policy `https://denlydays.iqbalfhz.my.id/privasi`, dan Terms of service `https://denlydays.iqbalfhz.my.id/syarat`. Ini juga syarat verifikasi brand sebelum status diubah ke In production
 
@@ -139,3 +140,4 @@
 - [x] ~~Resend untuk email kode disiapkan pemilik: domain `denlydays.iqbalfhz.my.id` terverifikasi (region Tokyo, DNS dipasang otomatis lewat Cloudflare), `MAIL_*` diisi di Coolify, dan email atur ulang kata sandi sampai di Kotak Masuk Gmail~~ (2026-11-03)
 - [x] ~~Sesi Flutter menyelesaikan kelima fitur dari serah terima 2 November: tugas berulang di beberapa hari, `sync_expired`, kenangan hari ini, lupa kata sandi dan verifikasi email, serta tautan kebijakan (terlihat di repo app)~~ (2026-11-03)
 - [x] ~~Email kode berformat HTML berwarna mawar dengan versi teks, sapaan nama, pesan keamanan, dan catatan kaki, atas permintaan pemilik setelah email pertama sampai. Teksnya disetujui 3 November~~ (2026-11-03)
+- [x] ~~Perkiraan kurs (v1.x), dari usulan sesi Flutter atas permintaan pemilik: `GET /exchange-rates` membalas kurs referensi harian ECB yang tersimpan (base `EUR`, keenam kode di tabel Uang sebagai teks desimal persis dari ECB), `exchange-rates:fetch` mengambilnya tiap jam langsung dari situs ECB tanpa menimpa kurs terakhir kalau gagal, dan kode error baru 503 `exchange_rates_unavailable` sebelum pengambilan pertama. `/syarat` mendapat kalimat bahwa perkiraan kurs hanya gambaran (berlaku 3 November 2026). Kontraknya disetujui 3 November~~ (2026-11-03)
