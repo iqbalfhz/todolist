@@ -529,15 +529,16 @@ Dua halaman publik di server menjelaskan data apa yang dipakai Denly Days dan at
 
 | Halaman | Isi pokok |
 | --- | --- |
-| `GET /privasi` | Pengelola data dan kontak, data yang disimpan dan yang tidak, tujuannya, dasar pemrosesan, siapa yang bisa melihat, penyedia layanan, masa simpan, hak pengguna, keamanan, usia, dan perubahan kebijakan |
-| `GET /syarat` | Siapa yang boleh memakai, akun, Ruang Bersama, kepemilikan isi, larangan, layanan dan ketersediaannya, penghentian, batas tanggung jawab, hukum yang berlaku, dan perubahan syarat |
+| `GET /privasi` | Pengendali dan kontak, istilah, data yang diproses dan yang tidak, tujuan dan dasar pemrosesan (Pasal 20 UU PDP), pihak yang dapat melihat, penyedia layanan dan transfer ke luar Indonesia, masa simpan, keamanan dan pemberitahuan kegagalan pelindungan data, hak Subjek Data Pribadi (Pasal 5 sampai 13), pengguna di bawah umur, notifikasi dan email, informasi dari Google, perubahan kebijakan, serta kontak dan pengaduan |
+| `GET /syarat` | Istilah, ketentuan pengguna, akun dan keamanan, Ruang Bersama, Konten, larangan, layanan, penangguhan dan penghentian, batasan tanggung jawab, keadaan kahar, perubahan Syarat, hukum yang berlaku dan penyelesaian sengketa, ketentuan lain, dan kontak |
 
 - Keduanya berbahasa Indonesia, satu gaya dengan `/hapus-akun`, dan saling bertaut di bagian bawah. Setiap halaman menulis tanggal berlakunya.
 - Pengelola data adalah Iqbal Fahrozi, dengan kontak di `SUPPORT_EMAIL`. Pertanyaan dan permintaan hak dijawab paling lambat 3 × 24 jam.
 - Denly Days untuk pengguna berusia 18 tahun ke atas.
 - Yang disebut tidak dipakai: lokasi GPS (app tidak meminta izin lokasi), kontak, iklan, dan analytics.
-- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), Resend (email berisi kode verifikasi, kode atur ulang kata sandi, kode ganti email, dan pemberitahuan keamanan akun, v1.0 dan v1.x), dan penyedia server. Data bisa diproses di luar Indonesia oleh penyedia itu.
+- Penyedia layanan yang disebut: Cloudflare (jaringan, penyimpanan foto, dan cadangan), Google (notifikasi lewat Firebase Cloud Messaging dan Masuk dengan Google), OpenStreetMap (peta yang dimuat langsung oleh HP, dan pencarian tempat yang hanya menerima kata kuncinya lewat server), Resend (email berisi kode verifikasi, kode atur ulang kata sandi, kode ganti email, dan pemberitahuan keamanan akun, v1.0 dan v1.x), sedangkan server aplikasi dan database dikelola sendiri oleh pengelola (4 November 2026). Data bisa diproses di luar Indonesia oleh penyedia itu.
 - URL `/privasi` dipakai di Play Console, layar persetujuan Google, dan app. Di app, layar Daftar dan Masuk menulis "Dengan mendaftar atau masuk dengan Google, kamu menyetujui Syarat layanan dan Kebijakan privasi" dengan tautan ke kedua halaman, dan Pengaturan menautkan keduanya.
+- Sejak 4 November 2026, teks kedua halaman mengikuti dokumen "Kebijakan Privasi dan Syarat Layanan Denly Days" yang disetujui pemilik: bab bernomor dengan sapaan "Anda", tabel data, dasar pemrosesan, penyedia, masa simpan, dan hak menurut UU PDP. Catatan untuk ahli hukum di dokumen itu masih terbuka. Selama `SUPPORT_EMAIL` kosong, kalimat yang menyebut alamat kontak menyebut pengelola atau dihilangkan.
 
 ## Ruang dan undangan
 
