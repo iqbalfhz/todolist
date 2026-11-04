@@ -49,6 +49,13 @@ return [
         'email_taken' => 'Email ini sudah dipakai akun lain.',
     ],
 
+    'import' => [
+        'too_many_rows' => 'Paling banyak :max baris per permintaan.',
+        'id_taken' => 'ID ini sudah dipakai data lain.',
+        'task_list_missing' => 'Daftar untuk tugas ini tidak ditemukan.',
+        'savings_goal_missing' => 'Target untuk setoran ini tidak ditemukan.',
+    ],
+
     'parent_deleted' => [
         'task_list' => 'Daftar ini sudah dihapus.',
         'savings_goal' => 'Target ini sudah dihapus.',
@@ -176,6 +183,12 @@ return [
         'body' => 'komentar',
         'since' => 'since',
         'cursor' => 'cursor',
+        'created_at' => 'waktu dibuat',
+        'created_by' => 'pembuat',
+        'completed_by' => 'yang menyelesaikan',
+        'next_task_id' => 'tugas berikutnya',
+        'user_id' => 'penabung',
+        'rows' => 'baris',
     ],
 
 ];

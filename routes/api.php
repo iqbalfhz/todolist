@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AccessTokenController;
 use App\Http\Controllers\Api\V1\AvatarController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\DataExportController;
+use App\Http\Controllers\Api\V1\DataImportController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\EmailChangeController;
 use App\Http\Controllers\Api\V1\EmailVerificationController;
@@ -59,6 +60,9 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/me', [MeController::class, 'destroy'])
             ->middleware('throttle:account-delete')
             ->name('me.destroy');
+        Route::post('/me/import', [DataImportController::class, 'store'])
+            ->middleware('throttle:data-import')
+            ->name('me.import');
         Route::get('/me/export', [DataExportController::class, 'show'])
             ->middleware('throttle:data-export')
             ->name('me.export');

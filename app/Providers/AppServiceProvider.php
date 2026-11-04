@@ -83,6 +83,9 @@ class AppServiceProvider extends ServiceProvider
         // One export reads every row the account can see.
         RateLimiter::for('data-export', fn (Request $request) => Limit::perHour(5)->by($request->user()?->id ?: $request->ip()));
 
+        // One import part saves up to a thousand rows.
+        RateLimiter::for('data-import', fn (Request $request) => Limit::perHour(30)->by($request->user()?->id ?: $request->ip()));
+
         // Per email, so one inbox is not flooded, and per IP, so one sender cannot try many inboxes.
         // The limit runs before validation, so only an email sent as text reaches the string functions.
         RateLimiter::for('password-forgot', function (Request $request): array {
